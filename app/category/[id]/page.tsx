@@ -8,7 +8,6 @@ import { getSubcategories, Subcategory } from '@/lib/subcategory'
 
 interface PageProps {
   params: { id: string }
-  searchParams: { [key: string]: string | string[] | undefined }
 }
 
 async function getCategoryData(id: string) {
@@ -21,7 +20,7 @@ async function getCategoryData(id: string) {
   return { category, subcategories }
 }
 
-export default async function CategoryPage({ params, searchParams }: PageProps) {
+export default async function CategoryPage({ params }: PageProps) {
   const { category, subcategories } = await getCategoryData(params.id)
 
   return (

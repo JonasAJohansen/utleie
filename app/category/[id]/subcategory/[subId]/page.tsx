@@ -17,7 +17,6 @@ type Props = {
     id: string
     subId: string
   }
-  searchParams: { [key: string]: string | string[] | undefined }
 }
 
 async function getSubcategoryData(categoryId: string, subcategoryId: string) {
@@ -32,7 +31,7 @@ async function getSubcategoryData(categoryId: string, subcategoryId: string) {
   return { category, subcategory }
 }
 
-export default async function SubcategoryPage({ params, searchParams }: Props) {
+export default async function SubcategoryPage({ params }: Props) {
   const { category, subcategory } = await getSubcategoryData(params.id, params.subId)
 
   const items = allItems.filter(item => 

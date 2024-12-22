@@ -1,14 +1,5 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-// import { useRouter } from 'next/navigation'
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search } from 'lucide-react'
 import { ItemGrid } from '@/components/ItemGrid'
-import { SearchFilters } from '@/components/SearchFilters'
-import type { SearchFilters as SearchFiltersType } from '@/components/SearchFilters'
 import { categories } from '@/lib/categoryData'
 
 // This would typically come from a database or API
@@ -20,85 +11,40 @@ const allItems = [
   { id: 5, name: 'Lawn Mower', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.4, location: 'Chicago, IL', priceType: 'day', category: 'Home & Garden', subcategory: 'Garden Equipment', features: ['Pet Friendly', 'Long Term Rental'] },
 ]
 
-export default function SubcategoryPage({ params }: { params: { id: string, subId: string } }) {
-  const [searchQuery, setSearchQuery] = useState('')
-  // const [filters, setFilters] = useState<SearchFiltersType>({
-  //   priceRange: [0, 100],
-  //   category: 'All Categories',
-  //   sortBy: 'relevance',
-  //   features: [],
-  //   dateRange: { from: undefined, to: undefined },
-  //   location: '',
-  //   rating: 0
-  // })
-  const [items, setItems] = useState(allItems)
-  // const router = useRouter()
+// These functions would typically fetch data from your backend
+const getCategoryName = (id: string) => {
+  const category = categories.find(c => c.id === parseInt(id))
+  return category ? category.name : ''
+}
 
-  useEffect(() => {
-    // Filter items based on category and subcategory
-    const filteredItems = allItems.filter(item => 
-      item.category === getCategoryName(params.id) && 
-      item.subcategory === getSubcategoryName(params.id, params.subId)
-    )
-    setItems(filteredItems)
-  }, [params.id, params.subId])
+const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
+  const category = categories.find(c => c.id === parseInt(categoryId))
+  const subcategory = category?.subcategories.find(sc => sc.id === parseInt(subcategoryId))
+  return subcategory ? subcategory.name : ''
+}
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Implement search logic here
-  }
+export default function SubcategoryPage({ params }: { params: { id: string; subId: string } }) {
+  const categoryName = getCategoryName(params.id)
+  const subcategoryName = getSubcategoryName(params.id, params.subId)
 
-  const handleFilterChange = (newFilters: SearchFiltersType) => {
-    // Implement filter logic here
-    console.log('New filters:', newFilters)
-  }
-
-  // These functions would typically fetch data from your backend
-  const getCategoryName = (id: string) => {
-    const category = categories.find(c => c.id === parseInt(id))
-    return category ? category.name : ''
-  }
-
-  const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
-    const category = categories.find(c => c.id === parseInt(categoryId))
-    const subcategory = category?.subcategories.find(sc => sc.id === parseInt(subcategoryId))
-    return subcategory ? subcategory.name : ''
-  }
+  const items = allItems.filter(item => 
+    item.category === categoryName && 
+    item.subcategory === subcategoryName
+  )
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">{getCategoryName(params.id)} - {getSubcategoryName(params.id, params.subId)}</h1>
+      <h1 className="text-3xl font-bold">{categoryName} - {subcategoryName}</h1>
 
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <Input
-          type="text"
-          placeholder="Search in this subcategory..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-grow"
-        />
-        <Button type="submit">
-          <Search className="h-4 w-4 mr-2" />
-          Search
-        </Button>
-      </form>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <SearchFilters onFilterChange={handleFilterChange} />
-        </div>
-        <div className="md:col-span-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Items in {getSubcategoryName(params.id, params.subId)}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">{items.length} items found</p>
-              <ItemGrid items={items} />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Items in {subcategoryName}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4">{items.length} items found</p>
+          <ItemGrid items={items} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

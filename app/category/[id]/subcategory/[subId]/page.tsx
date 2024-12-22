@@ -12,9 +12,9 @@ const allItems = [
   { id: 5, name: 'Lawn Mower', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.4, location: 'Chicago, IL', priceType: 'day', category: 'Home & Garden', subcategory: 'Garden Equipment', features: ['Pet Friendly', 'Long Term Rental'] },
 ]
 
-type Params = {
-  id: string
-  subId: string
+type Props = {
+  params: { id: string; subId: string }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
 async function getSubcategoryData(categoryId: string, subcategoryId: string) {
@@ -29,7 +29,7 @@ async function getSubcategoryData(categoryId: string, subcategoryId: string) {
   return { category, subcategory }
 }
 
-export default async function SubcategoryPage({ params }: { params: Params }) {
+export default async function SubcategoryPage({ params }: Props) {
   const { category, subcategory } = await getSubcategoryData(params.id, params.subId)
 
   const items = allItems.filter(item => 

@@ -25,9 +25,9 @@ const userData = {
 }
 
 const userListings = [
-  { id: 1, name: 'Mountain Bike', price: 25, image: '/placeholder.svg?height=200&width=300', rating: 4.5, location: 'New York, NY', priceType: 'day' },
-  { id: 2, name: 'Camping Tent', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.2, location: 'New York, NY', priceType: 'day' },
-  { id: 3, name: 'Surfboard', price: 35, image: '/placeholder.svg?height=200&width=300', rating: 4.7, location: 'New York, NY', priceType: 'day' },
+  { id: 1, name: 'Mountain Bike', price: 25, image: '/placeholder.svg?height=200&width=300', rating: 4.5, location: 'New York, NY', priceType: 'day', features: ['21-speed', 'Front suspension'] },
+  { id: 2, name: 'Camping Tent', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.2, location: 'New York, NY', priceType: 'day', features: ['4-person', 'Waterproof'] },
+  { id: 3, name: 'Surfboard', price: 35, image: '/placeholder.svg?height=200&width=300', rating: 4.7, location: 'New York, NY', priceType: 'day', features: ['8 ft', 'Beginner-friendly'] },
 ]
 
 export default function UserProfile() {

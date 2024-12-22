@@ -43,7 +43,13 @@ const featuredCategories = [
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState({ categories: [], priceRange: [0, 100] })
+  const [filters, setFilters] = useState<{
+    categories: string[];
+    priceRange: [number, number];
+  }>({
+    categories: [],
+    priceRange: [0, 100]
+  })
   const router = useRouter()
 
   useEffect(() => {

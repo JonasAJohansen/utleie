@@ -4,9 +4,6 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from "@/lib/utils"
 import { LayoutDashboard, Package, Users, Tag, AlertTriangle } from 'lucide-react'
-import dynamic from 'next/dynamic'
-
-const ClientSideAdminLayout = dynamic(() => import('./ClientSideAdminLayout'), { ssr: false })
 
 const sidebarNavItems = [
   {
@@ -73,11 +70,23 @@ function SidebarNav({ className, items, ...props }: SidebarNavProps) {
   )
 }
 
-export default function AdminLayout({
+export default function ClientSideAdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  return <ClientSideAdminLayout>{children}</ClientSideAdminLayout>
+  return (
+    <div className="flex h-screen overflow-hidden">
+      <aside className="w-64 bg-background border-r overflow-y-auto">
+        <div className="p-6">
+          <h2 className="text-lg font-semibold mb-4">Admin Dashboard</h2>
+          <SidebarNav items={sidebarNavItems} />
+        </div>
+      </aside>
+      <main className="flex-1 overflow-y-auto p-6">
+        {children}
+      </main>
+    </div>
+  )
 }
 

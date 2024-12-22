@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { DateRange } from "react-day-picker"
 
 interface RentalRequestProps {
   itemId: number
@@ -23,30 +24,30 @@ interface RentalRequestProps {
 }
 
 export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates }: RentalRequestProps) {
-  const [selectedDates, setSelectedDates] = useState<Date[] | undefined>(undefined)
+  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(undefined)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [totalPrice, setTotalPrice] = useState(0)
 
   useEffect(() => {
-    if (selectedDates && selectedDates.length === 2) {
-      const days = differenceInDays(selectedDates[1], selectedDates[0]) + 1
-      setTotalPrice(days * 25) // Fixed price of $25 per day
+    if (selectedRange?.from && selectedRange?.to) {
+      const days = differenceInDays(selectedRange.to, selectedRange.from) + 1
+      setTotalPrice(days * pricePerDay)
     } else {
       setTotalPrice(0)
     }
-  }, [selectedDates])
+  }, [selectedRange, pricePerDay])
 
-  const handleDateSelect = (dates: Date[] | undefined) => {
-    setSelectedDates(dates)
+  const handleDateSelect = (range: DateRange | undefined) => {
+    setSelectedRange(range)
   }
 
   const handleRequest = () => {
-    if (selectedDates && selectedDates.length === 2) {
+    if (selectedRange?.from && selectedRange?.to) {
       console.log('Rental request sent:', { 
         itemId, 
         itemName, 
-        startDate: selectedDates[0], 
-        endDate: selectedDates[1],
+        startDate: selectedRange.from, 
+        endDate: selectedRange.to,
         totalPrice
       })
       setIsDialogOpen(false)
@@ -77,7 +78,7 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
           </Label>
           <Calendar
             mode="range"
-            selected={selectedDates}
+            selected={selectedRange}
             onSelect={handleDateSelect}
             numberOfMonths={1}
             disabled={(date) => 
@@ -100,15 +101,15 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
               table: { width: '100%' }
             }}
           />
-          {selectedDates?.length === 1 && (
+          {selectedRange?.from && !selectedRange.to && (
             <p className="text-center mt-4 text-muted-foreground">
               Select an end date to see total price
             </p>
           )}
-          {selectedDates?.length === 2 && (
+          {selectedRange?.from && selectedRange.to && (
             <div className="text-center mt-4 space-y-1">
               <p>
-                Selected dates: {format(selectedDates[0], 'PP')} to {format(selectedDates[1], 'PP')}
+                Selected dates: {format(selectedRange.from, 'PP')} to {format(selectedRange.to, 'PP')}
               </p>
               <p className="font-bold">
                 Total Price: ${totalPrice}
@@ -119,7 +120,7 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
         <DialogFooter>
           <Button 
             onClick={handleRequest} 
-            disabled={!selectedDates || selectedDates.length !== 2}
+            disabled={!selectedRange?.from || !selectedRange?.to}
             className="w-full"
           >
             Send Request

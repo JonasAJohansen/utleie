@@ -21,10 +21,10 @@ const userListings = [
 ]
 
 const rentalHistory = [
-  { id: 1, itemName: 'DSLR Camera', startDate: '2023-06-10', endDate: '2023-06-12', totalPrice: 120, status: 'completed', location: 'New York, NY' },
-  { id: 2, itemName: 'Electric Scooter', startDate: '2023-06-20', endDate: '2023-06-22', totalPrice: 45, status: 'completed', location: 'San Francisco, CA' },
-  { id: 3, itemName: 'Mountain Bike', startDate: '2023-07-01', endDate: '2023-07-03', totalPrice: 75, status: 'active', location: 'Denver, CO' },
-  { id: 4, itemName: 'Camping Tent', startDate: '2023-07-15', endDate: '2023-07-17', totalPrice: 90, status: 'active', location: 'Portland, OR' },
+  { id: 1, itemName: 'DSLR Camera', startDate: '2023-06-10', endDate: '2023-06-12', totalPrice: 120, status: 'completed' as const, location: 'New York, NY' },
+  { id: 2, itemName: 'Electric Scooter', startDate: '2023-06-20', endDate: '2023-06-22', totalPrice: 45, status: 'completed' as const, location: 'San Francisco, CA' },
+  { id: 3, itemName: 'Mountain Bike', startDate: '2023-07-01', endDate: '2023-07-03', totalPrice: 75, status: 'active' as const, location: 'Denver, CO' },
+  { id: 4, itemName: 'Camping Tent', startDate: '2023-07-15', endDate: '2023-07-17', totalPrice: 90, status: 'active' as const, location: 'Portland, OR' },
 ]
 
 export default function Dashboard() {

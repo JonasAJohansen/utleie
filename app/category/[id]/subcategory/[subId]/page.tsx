@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ItemGrid } from '@/components/ItemGrid'
 import { categories } from '@/lib/categoryData'
 import { getSubcategoryById, Subcategory } from '@/lib/subcategory'
+import { useRouter } from 'next/navigation'
 
 // This would typically come from a database or API
 const allItems = [
@@ -15,29 +16,39 @@ const allItems = [
   { id: 5, name: 'Lawn Mower', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.4, location: 'Chicago, IL', priceType: 'day', category: 'Home & Garden', subcategory: 'Garden Equipment', features: ['Pet Friendly', 'Long Term Rental'] },
 ]
 
-export default function SubcategoryPage({ params }: { params: { id: string, subId: string } }) {
+type Props = {
+  params: Promise<{ id: string; subId: string }>,
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export default function SubcategoryPage({ params }: Props) {
   const [category, setCategory] = useState<(typeof categories)[0] | undefined>()
   const [subcategory, setSubcategory] = useState<Subcategory | undefined>()
   const [items, setItems] = useState<typeof allItems>([])
-  //const router = useRouter()
+  const router = useRouter()
 
   useEffect(() => {
-    const categoryId = parseInt(params.id)
-    const subcategoryId = parseInt(params.subId)
-    const foundCategory = categories.find(c => c.id === categoryId)
-    const foundSubcategory = getSubcategoryById(categoryId, subcategoryId)
+    async function loadData() {
+      const { id, subId } = await params
+      const categoryId = parseInt(id)
+      const subcategoryId = parseInt(subId)
+      const foundCategory = categories.find(c => c.id === categoryId)
+      const foundSubcategory = getSubcategoryById(categoryId, subcategoryId)
 
-    if (foundCategory && foundSubcategory) {
-      setCategory(foundCategory)
-      setSubcategory(foundSubcategory)
-      setItems(allItems.filter(item => 
-        item.category === foundCategory.name && 
-        item.subcategory === foundSubcategory.name
-      ))
-    } else {
-      window.location.href = '/404'
+      if (foundCategory && foundSubcategory) {
+        setCategory(foundCategory)
+        setSubcategory(foundSubcategory)
+        setItems(allItems.filter(item => 
+          item.category === foundCategory.name && 
+          item.subcategory === foundSubcategory.name
+        ))
+      } else {
+        router.push('/404')
+      }
     }
-  }, [params.id, params.subId])
+
+    loadData()
+  }, [params, router])
 
   if (!category || !subcategory) {
     return null

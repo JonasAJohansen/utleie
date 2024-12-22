@@ -1,6 +1,3 @@
-"use client"
-
-// Inspired by react-hot-toast library
 import * as React from "react"
 
 import type {
@@ -24,13 +21,6 @@ const actionTypes = {
   DISMISS_TOAST: "DISMISS_TOAST",
   REMOVE_TOAST: "REMOVE_TOAST",
 } as const
-
-let count = 0
-
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
-}
 
 type ActionType = typeof actionTypes
 
@@ -143,7 +133,7 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
-  const id = genId()
+  const id = Math.random().toString(36).substr(2, 9)
 
   const update = (props: ToasterToast) =>
     dispatch({
@@ -192,3 +182,4 @@ function useToast() {
 }
 
 export { useToast, toast }
+

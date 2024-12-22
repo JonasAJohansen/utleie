@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
@@ -9,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 // import { DatePickerWithRange } from "@/components/ui/date-range-picker"
-import { CalendarIcon } from 'lucide-react'
 
 interface SearchFiltersProps {
   onFilterChange: (filters: SearchFilters) => void

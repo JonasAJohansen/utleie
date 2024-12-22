@@ -56,7 +56,7 @@ export default function UserProfile() {
               <span className="ml-1 font-semibold">{userData.rating.toFixed(1)}</span>
               <span className="ml-2 text-gray-600">({userData.totalRentals} rentals)</span>
             </div>
-            <p className="mt-4 text-gray-700">{userData.bio}</p>
+            <p className="mt-4 text-gray-700">{userData.bio.replace(/'/g, "&apos;")}</p>
             <div className="mt-4 flex justify-center md:justify-start space-x-4">
               <Button>
                 <MessageCircle className="mr-2 h-4 w-4" /> Message

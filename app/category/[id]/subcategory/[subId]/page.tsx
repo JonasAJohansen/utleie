@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ItemGrid } from '@/components/ItemGrid'
 import { categories } from '@/lib/categoryData'
+import { Metadata } from 'next'
 
 // This would typically come from a database or API
 const allItems = [
@@ -23,14 +24,12 @@ const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
   return subcategory ? subcategory.name : ''
 }
 
-// Update the Props type to match Next.js page conventions
-type Props = {
-  params: { id: string; subId: string }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
 // Add async to the component definition
-export default async function SubcategoryPage({ params }: Props) {
+export default async function SubcategoryPage({
+  params,
+}: {
+  params: { id: string; subId: string }
+}) {
   const categoryName = getCategoryName(params.id)
   const subcategoryName = getSubcategoryName(params.id, params.subId)
 

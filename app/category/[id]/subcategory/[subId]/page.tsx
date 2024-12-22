@@ -23,7 +23,14 @@ const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
   return subcategory ? subcategory.name : ''
 }
 
-export default function SubcategoryPage({ params }: { params: { id: string; subId: string } }) {
+interface SubcategoryPageProps {
+  params: {
+    id: string;
+    subId: string;
+  };
+}
+
+export default function SubcategoryPage({ params }: SubcategoryPageProps) {
   const categoryName = getCategoryName(params.id)
   const subcategoryName = getSubcategoryName(params.id, params.subId)
 

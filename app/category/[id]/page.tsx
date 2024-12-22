@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { categories } from '@/lib/categoryData'
 import { getSubcategories, Subcategory } from '@/lib/subcategory'
 
-interface CategoryPageProps {
+interface PageProps {
   params: { id: string }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
 async function getCategoryData(id: string) {
@@ -20,7 +21,7 @@ async function getCategoryData(id: string) {
   return { category, subcategories }
 }
 
-export default async function CategoryPage({ params }: CategoryPageProps) {
+export default async function CategoryPage({ params, searchParams }: PageProps) {
   const { category, subcategories } = await getCategoryData(params.id)
 
   return (

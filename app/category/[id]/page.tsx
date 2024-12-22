@@ -8,11 +8,13 @@ import { getSubcategories, Subcategory } from '@/lib/subcategory'
 import { Metadata } from 'next'
 
 type Props = {
-  params: { id: string }
+  params: Promise<{ id: string }>,
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const category = categories.find(c => c.id === parseInt(params.id))
+  const { id } = await params
+  const category = categories.find(c => c.id === parseInt(id))
   if (!category) {
     return {
       title: 'Category Not Found',
@@ -34,7 +36,8 @@ async function getCategoryData(id: string) {
 }
 
 export default async function CategoryPage({ params }: Props) {
-  const { category, subcategories } = await getCategoryData(params.id)
+  const { id } = await params
+  const { category, subcategories } = await getCategoryData(id)
 
   return (
     <div className="space-y-6">

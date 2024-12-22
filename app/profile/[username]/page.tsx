@@ -77,7 +77,7 @@ export default function UserProfile() {
         <TabsContent value="listings">
           <Card>
             <CardHeader>
-              <CardTitle>{userData.name}'s Listings</CardTitle>
+              <CardTitle>{`${userData.name}s Listings`}</CardTitle>
             </CardHeader>
             <CardContent>
               <ItemGrid items={userListings} />

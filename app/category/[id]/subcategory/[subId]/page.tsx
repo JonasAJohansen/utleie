@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ItemGrid } from '@/components/ItemGrid'
 import { categories } from '@/lib/categoryData'
-import { Metadata } from 'next'
 
 // This would typically come from a database or API
 const allItems = [

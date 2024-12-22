@@ -23,12 +23,12 @@ const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
   return subcategory ? subcategory.name : ''
 }
 
-// Add async to the component definition
-export default async function SubcategoryPage({
-  params,
-}: {
+type Props = {
   params: { id: string; subId: string }
-}) {
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
+export default function SubcategoryPage({ params, searchParams }: Props) {
   const categoryName = getCategoryName(params.id)
   const subcategoryName = getSubcategoryName(params.id, params.subId)
 

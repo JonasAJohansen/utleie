@@ -1,32 +1,27 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense } from 'react'
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { categories } from '@/lib/categoryData'
 import { getSubcategories, Subcategory } from '@/lib/subcategory'
 
-export default function CategoryPage({ params }: { params: { id: string } }) {
-  const [category, setCategory] = useState<(typeof categories)[0] | undefined>()
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([])
-  const router = useRouter()
+interface CategoryPageProps {
+  params: { id: string }
+}
 
-  useEffect(() => {
-    const categoryId = parseInt(params.id)
-    const foundCategory = categories.find(c => c.id === categoryId)
-    if (foundCategory) {
-      setCategory(foundCategory)
-      setSubcategories(getSubcategories(categoryId))
-    } else {
-      router.push('/404')
-    }
-  }, [params.id, router])
-
+async function getCategoryData(id: string) {
+  const categoryId = parseInt(id)
+  const category = categories.find(c => c.id === categoryId)
   if (!category) {
-    return null
+    notFound()
   }
+  const subcategories = getSubcategories(categoryId)
+  return { category, subcategories }
+}
+
+export default async function CategoryPage({ params }: CategoryPageProps) {
+  const { category, subcategories } = await getCategoryData(params.id)
 
   return (
     <div className="space-y-6">
@@ -37,24 +32,32 @@ export default function CategoryPage({ params }: { params: { id: string } }) {
           <CardTitle>Subcategories</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {subcategories.map((subcategory) => (
-              <Link 
-                key={subcategory.id} 
-                href={`/category/${category.id}/subcategory/${subcategory.id}`}
-                className="block"
-              >
-                <Button
-                  variant="outline"
-                  className="w-full h-24 text-lg font-semibold"
-                >
-                  {subcategory.name}
-                </Button>
-              </Link>
-            ))}
-          </div>
+          <Suspense fallback={<div>Loading subcategories...</div>}>
+            <SubcategoryList categoryId={category.id} subcategories={subcategories} />
+          </Suspense>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+function SubcategoryList({ categoryId, subcategories }: { categoryId: number, subcategories: Subcategory[] }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {subcategories.map((subcategory) => (
+        <Link 
+          key={subcategory.id} 
+          href={`/category/${categoryId}/subcategory/${subcategory.id}`}
+          className="block"
+        >
+          <Button
+            variant="outline"
+            className="w-full h-24 text-lg font-semibold"
+          >
+            {subcategory.name}
+          </Button>
+        </Link>
+      ))}
     </div>
   )
 }

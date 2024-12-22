@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -22,7 +23,17 @@ const allItems = [
 
 export default function SubcategoryPage({ params }: { params: { id: string, subId: string } }) {
   const [searchQuery, setSearchQuery] = React.useState('')
+  const [filters, setFilters] = React.useState<SearchFiltersType>({
+    priceRange: [0, 100],
+    category: 'All Categories',
+    sortBy: 'relevance',
+    features: [],
+    dateRange: { from: undefined, to: undefined },
+    location: '',
+    rating: 0
+  })
   const [items, setItems] = React.useState(allItems)
+  const router = useRouter()
 
   useEffect(() => {
     // Filter items based on category and subcategory
@@ -36,13 +47,11 @@ export default function SubcategoryPage({ params }: { params: { id: string, subI
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     // Implement search logic here
-    console.log('Search query:', searchQuery)
   }
 
   const handleFilterChange = (newFilters: SearchFiltersType) => {
+    setFilters(newFilters)
     // Implement filter logic here
-    console.log('New filters:', newFilters)
-    // You would typically use these filters to update the 'items' state
   }
 
   // These functions would typically fetch data from your backend

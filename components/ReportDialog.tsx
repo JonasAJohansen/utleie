@@ -33,7 +33,7 @@ export function ReportDialog({ open, onOpenChange, reportType, reportedItemId, r
         <DialogHeader>
           <DialogTitle>Report {reportType === 'listing' ? 'Listing' : 'User'}</DialogTitle>
           <DialogDescription>
-            Please provide details about why you're reporting this {reportType}.
+            Please provide details about why you&apos;re reporting this {reportType}.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>

@@ -58,7 +58,7 @@ export default function ItemListing() {
   const [newReview, setNewReview] = useState({ rating: 0, comment: '' })
   const [selectedImage, setSelectedImage] = useState(item.images[0])
   const [showReportDialog, setShowReportDialog] = useState(false)
-  const params = useParams()
+  useParams()
   const currentUser = { username: 'Alice' }
 
   useEffect(() => {

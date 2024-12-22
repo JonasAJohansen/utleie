@@ -5,20 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-interface RentalRequest {
-  id: number
-  username: string
-  startDate: string
-  endDate: string
-  status: 'pending' | 'approved' | 'rejected'
-}
-
 interface RentalRequestsProps {
-  itemId: number
   itemName: string
 }
 
-export function RentalRequests({ itemId, itemName }: RentalRequestsProps) {
+export function RentalRequests({ itemName }: Omit<RentalRequestsProps, 'itemId'>) {
   const [requests, setRequests] = useState<RentalRequest[]>([
     { id: 1, username: 'Alice', startDate: '2023-07-01', endDate: '2023-07-03', status: 'pending' },
     { id: 2, username: 'Bob', startDate: '2023-07-15', endDate: '2023-07-17', status: 'pending' },
@@ -66,5 +57,13 @@ export function RentalRequests({ itemId, itemName }: RentalRequestsProps) {
       </CardContent>
     </Card>
   )
+}
+
+interface RentalRequest {
+  id: number
+  username: string
+  startDate: string
+  endDate: string
+  status: 'pending' | 'approved' | 'rejected'
 }
 

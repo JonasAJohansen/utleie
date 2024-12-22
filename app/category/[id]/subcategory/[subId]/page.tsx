@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Search } from 'lucide-react'
 import { ItemGrid } from '@/components/ItemGrid'
-import { SearchFilters as SearchFiltersComponent } from '@/components/SearchFilters'
-import type { SearchFilters } from '@/components/SearchFilters'
+import { SearchFilters } from '@/components/SearchFilters'
+import type { SearchFilters as SearchFiltersType } from '@/components/SearchFilters'
 import { categories } from '@/lib/categoryData'
 
 // This would typically come from a database or API
@@ -22,15 +22,15 @@ const allItems = [
 
 export default function SubcategoryPage({ params }: { params: { id: string, subId: string } }) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState<SearchFilters>({
-    priceRange: [0, 100],
-    category: 'All Categories',
-    sortBy: 'relevance',
-    features: [],
-    dateRange: { from: undefined, to: undefined },
-    location: '',
-    rating: 0
-  })
+  // const [filters, setFilters] = useState<SearchFiltersType>({
+  //   priceRange: [0, 100],
+  //   category: 'All Categories',
+  //   sortBy: 'relevance',
+  //   features: [],
+  //   dateRange: { from: undefined, to: undefined },
+  //   location: '',
+  //   rating: 0
+  // })
   const [items, setItems] = useState(allItems)
   // const router = useRouter()
 
@@ -48,9 +48,9 @@ export default function SubcategoryPage({ params }: { params: { id: string, subI
     // Implement search logic here
   }
 
-  const handleFilterChange = (newFilters: SearchFilters) => {
-    setFilters(newFilters)
+  const handleFilterChange = (newFilters: SearchFiltersType) => {
     // Implement filter logic here
+    console.log('New filters:', newFilters)
   }
 
   // These functions would typically fetch data from your backend
@@ -85,7 +85,7 @@ export default function SubcategoryPage({ params }: { params: { id: string, subI
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="md:col-span-1">
-          <SearchFiltersComponent onFilterChange={handleFilterChange} />
+          <SearchFilters onFilterChange={handleFilterChange} />
         </div>
         <div className="md:col-span-3">
           <Card>

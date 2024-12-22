@@ -1,3 +1,4 @@
+import { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ItemGrid } from '@/components/ItemGrid'
@@ -12,11 +13,6 @@ const allItems = [
   { id: 5, name: 'Lawn Mower', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.4, location: 'Chicago, IL', priceType: 'day', category: 'Home & Garden', subcategory: 'Garden Equipment', features: ['Pet Friendly', 'Long Term Rental'] },
 ]
 
-type Props = {
-  params: { id: string; subId: string }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
 async function getSubcategoryData(categoryId: string, subcategoryId: string) {
   const category = categories.find(c => c.id === parseInt(categoryId))
   if (!category) {
@@ -29,7 +25,24 @@ async function getSubcategoryData(categoryId: string, subcategoryId: string) {
   return { category, subcategory }
 }
 
-export default async function SubcategoryPage({ params }: Props) {
+export async function generateMetadata({ 
+  params 
+}: { 
+  params: { id: string; subId: string } 
+}): Promise<Metadata> {
+  const { category, subcategory } = await getSubcategoryData(params.id, params.subId)
+  
+  return {
+    title: `${subcategory.name} - ${category.name}`,
+    description: `Browse ${subcategory.name} items in our ${category.name} collection`,
+  }
+}
+
+export default async function SubcategoryPage({
+  params,
+}: {
+  params: { id: string; subId: string }
+}) {
   const { category, subcategory } = await getSubcategoryData(params.id, params.subId)
 
   const items = allItems.filter(item => 

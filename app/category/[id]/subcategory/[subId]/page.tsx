@@ -1,55 +1,62 @@
+import { Suspense } from 'react'
+import { notFound } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ItemGrid } from '@/components/ItemGrid'
+import { Button } from "@/components/ui/button"
 import { categories } from '@/lib/categoryData'
-import { Params } from 'next/dist/shared/lib/router/utils/route-matcher'
 
-// This would typically come from a database or API
-const allItems = [
-  { id: 1, name: 'Mountain Bike', price: 25, image: '/placeholder.svg?height=200&width=300', rating: 4.5, location: 'Denver, CO', priceType: 'day', category: 'Sports & Outdoors', subcategory: 'Cycling', features: ['Free Delivery', 'Damage Protection'] },
-  { id: 2, name: 'Camping Tent', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.2, location: 'Portland, OR', priceType: 'day', category: 'Sports & Outdoors', subcategory: 'Camping & Hiking', features: ['Pet Friendly', 'Long Term Rental'] },
-  { id: 3, name: 'Surfboard', price: 35, image: '/placeholder.svg?height=200&width=300', rating: 4.7, location: 'Los Angeles, CA', priceType: 'day', category: 'Sports & Outdoors', subcategory: 'Water Sports', features: ['Free Delivery', 'Damage Protection'] },
-  { id: 4, name: 'DSLR Camera', price: 40, image: '/placeholder.svg?height=200&width=300', rating: 4.8, location: 'New York, NY', priceType: 'day', category: 'Electronics', subcategory: 'Cameras', features: ['Instant Book', 'Flexible Cancellation'] },
-  { id: 5, name: 'Lawn Mower', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.4, location: 'Chicago, IL', priceType: 'day', category: 'Home & Garden', subcategory: 'Garden Equipment', features: ['Pet Friendly', 'Long Term Rental'] },
-]
+interface CategoryPageProps {
+  params: {
+    id: string
+  }
+}
 
-// These functions would typically fetch data from your backend
-const getCategoryName = (id: string) => {
+async function getCategoryData(id: string) {
+  // This would typically be an API call or database query
   const category = categories.find(c => c.id === parseInt(id))
-  return category ? category.name : ''
+  if (!category) {
+    notFound()
+  }
+  return category
 }
 
-const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
-  const category = categories.find(c => c.id === parseInt(categoryId))
-  const subcategory = category?.subcategories.find(sc => sc.id === parseInt(subcategoryId))
-  return subcategory ? subcategory.name : ''
-}
-
-type Props = {
-  params: Params
-}
-
-export default async function SubcategoryPage({ params }: Props) {
-  const categoryName = getCategoryName(params.id as string)
-  const subcategoryName = getSubcategoryName(params.id as string, params.subId as string)
-
-  const items = allItems.filter(item => 
-    item.category === categoryName && 
-    item.subcategory === subcategoryName
-  )
+export default async function CategoryPage({ params }: CategoryPageProps) {
+  const category = await getCategoryData(params.id)
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">{categoryName} - {subcategoryName}</h1>
-
+      <h1 className="text-3xl font-bold">{category.name}</h1>
+      
       <Card>
         <CardHeader>
-          <CardTitle>Items in {subcategoryName}</CardTitle>
+          <CardTitle>Subcategories</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="mb-4">{items.length} items found</p>
-          <ItemGrid items={items} />
+          <Suspense fallback={<div>Loading subcategories...</div>}>
+            <SubcategoryList categoryId={params.id} />
+          </Suspense>
         </CardContent>
       </Card>
+    </div>
+  )
+}
+
+async function SubcategoryList({ categoryId }: { categoryId: string }) {
+  const category = await getCategoryData(categoryId)
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      {category.subcategories.map((subcategory) => (
+        <Button
+          key={subcategory.id}
+          variant="outline"
+          className="h-24 text-lg font-semibold"
+          asChild
+        >
+          <a href={`/category/${categoryId}/subcategory/${subcategory.id}`}>
+            {subcategory.name}
+          </a>
+        </Button>
+      ))}
     </div>
   )
 }

@@ -1,16 +1,10 @@
 'use client'
 
-import React from 'react'
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search } from 'lucide-react'
 import { ItemGrid } from '@/components/ItemGrid'
-import { SearchFilters } from '@/components/SearchFilters'
-import type { SearchFilters as SearchFiltersType } from '@/components/SearchFilters'
 import { categories } from '@/lib/categoryData'
+import { getSubcategoryById, Subcategory } from '@/lib/subcategory'
 
 // This would typically come from a database or API
 const allItems = [
@@ -22,84 +16,46 @@ const allItems = [
 ]
 
 export default function SubcategoryPage({ params }: { params: { id: string, subId: string } }) {
-  const [searchQuery, setSearchQuery] = React.useState('')
-  const [filters, setFilters] = React.useState<SearchFiltersType>({
-    priceRange: [0, 100],
-    category: 'All Categories',
-    sortBy: 'relevance',
-    features: [],
-    dateRange: { from: undefined, to: undefined },
-    location: '',
-    rating: 0
-  })
-  const [items, setItems] = React.useState(allItems)
-  const router = useRouter()
+  const [category, setCategory] = useState<(typeof categories)[0] | undefined>()
+  const [subcategory, setSubcategory] = useState<Subcategory | undefined>()
+  const [items, setItems] = useState<typeof allItems>([])
+  //const router = useRouter()
 
   useEffect(() => {
-    // Filter items based on category and subcategory
-    const filteredItems = allItems.filter(item => 
-      item.category === getCategoryName(params.id) && 
-      item.subcategory === getSubcategoryName(params.id, params.subId)
-    )
-    setItems(filteredItems)
+    const categoryId = parseInt(params.id)
+    const subcategoryId = parseInt(params.subId)
+    const foundCategory = categories.find(c => c.id === categoryId)
+    const foundSubcategory = getSubcategoryById(categoryId, subcategoryId)
+
+    if (foundCategory && foundSubcategory) {
+      setCategory(foundCategory)
+      setSubcategory(foundSubcategory)
+      setItems(allItems.filter(item => 
+        item.category === foundCategory.name && 
+        item.subcategory === foundSubcategory.name
+      ))
+    } else {
+      window.location.href = '/404'
+    }
   }, [params.id, params.subId])
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Implement search logic here
-  }
-
-  const handleFilterChange = (newFilters: SearchFiltersType) => {
-    setFilters(newFilters)
-    // Implement filter logic here
-  }
-
-  // These functions would typically fetch data from your backend
-  const getCategoryName = (id: string) => {
-    const category = categories.find(c => c.id === parseInt(id))
-    return category ? category.name : ''
-  }
-
-  const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
-    const category = categories.find(c => c.id === parseInt(categoryId))
-    const subcategory = category?.subcategories.find(sc => sc.id === parseInt(subcategoryId))
-    return subcategory ? subcategory.name : ''
+  if (!category || !subcategory) {
+    return null
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold">{getCategoryName(params.id)} - {getSubcategoryName(params.id, params.subId)}</h1>
+      <h1 className="text-3xl font-bold">{category.name} - {subcategory.name}</h1>
 
-      <form onSubmit={handleSearch} className="flex gap-2">
-        <Input
-          type="text"
-          placeholder="Search in this subcategory..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-grow"
-        />
-        <Button type="submit">
-          <Search className="h-4 w-4 mr-2" />
-          Search
-        </Button>
-      </form>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="md:col-span-1">
-          <SearchFilters onFilterChange={handleFilterChange} />
-        </div>
-        <div className="md:col-span-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Items in {getSubcategoryName(params.id, params.subId)}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">{items.length} items found</p>
-              <ItemGrid items={items} />
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Items in {subcategory.name}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4">{items.length} items found</p>
+          <ItemGrid items={items} />
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -1,7 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MessageSquare, Star, Package, Search } from 'lucide-react'
+import { useUser } from "@clerk/nextjs"
+import { redirect } from "next/navigation"
 
 export default function ProfilePage() {
+  const { user } = useUser()
+
+  if (!user) {
+    redirect('/sign-in')
+  }
+
   const stats = [
     { name: 'Active Listings', value: 5, icon: Package },
     { name: 'Total Rentals', value: 23, icon: Star },
@@ -16,7 +24,7 @@ export default function ProfilePage() {
           <CardTitle>My Account</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600 mb-4">Welcome to your account dashboard. Here you can view and manage your account information, listings, favorites, and saved searches.</p>
+          <p className="text-gray-600 mb-4">Welcome, {user.firstName}! Here you can view and manage your account information, listings, favorites, and saved searches.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((stat) => (
               <Card key={stat.name}>

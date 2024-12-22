@@ -1,0 +1,1529 @@
+Read session and user data in your Next.js app with Clerk
+Clerk provides a set of hooks and helpers that you can use to access the active session and user data in your Next.js application. Here are examples of how to use these helpers in both the client and server-side to get you started.
+
+Server-side
+App Router
+auth() and currentUser() are App Router-specific helpers that you can use inside of your Route Handlers, Middleware, Server Components, and Server Actions.
+
+The auth() helper will return the Auth object of the currently active user. Now that request data is available in the global scope through Next.js's headers() and cookies() methods, passing the request object to Clerk is no longer required.
+
+The currentUser() helper will return the Backend User object of the currently active user. This is helpful if you want to render information, like their first and last name, directly from the server.
+
+Under the hood, currentUser() uses the clerkClient wrapper to make a call to the Backend API. This does count towards the Backend API request rate limit. This also uses fetch() so it is automatically deduped per request.
+
+Note
+
+Any requests from a Client Component to a Route Handler will read the session from cookies and will not need the token sent as a Bearer token.
+
+Server components and actions
+Route Handler
+Route Handler w/ User Fetch
+This example uses the new auth() helper to validate an authenticated user and the new currentUser() helper to access the Backend API User object for the authenticated user.
+
+app/page.tsx
+
+import { auth, currentUser } from '@clerk/nextjs/server'
+
+export default async function Page() {
+  // Get the userId from auth() -- if null, the user is not signed in
+  const { userId } = await auth()
+
+  if (userId) {
+    // Query DB for user specific information or display assets only to signed in users
+  }
+
+  // Get the Backend API User object when you need access to the user's information
+  const user = await currentUser()
+  // Use `user` to render user details or create UI elements
+}
+Pages Router
+API Route
+API Route w/ User Fetch
+getServerSideProps
+For Next.js applications using the Pages Router, you can retrieve information about the user and their authentication state, or control access to some or all of your API routes by using the getAuth() helper. The getAuth() helper does require Middleware.
+
+pages/api/auth.ts
+
+import type { NextApiRequest, NextApiResponse } from 'next'
+import { getAuth } from '@clerk/nextjs/server'
+
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { userId } = getAuth(req)
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  // retrieve data from your database
+
+  res.status(200).json({})
+}
+Client-side
+useAuth
+The useAuth hook is a convenient way to access the current auth state. This hook provides the minimal information needed for data-loading and helper methods to manage the current active session.
+
+example.tsx
+
+'use client'
+import { useAuth } from '@clerk/nextjs'
+
+export default function Example() {
+  const { isLoaded, userId, sessionId, getToken } = useAuth()
+
+  // In case the user signs out while on the page.
+  if (!isLoaded || !userId) {
+    return null
+  }
+
+  return (
+    <div>
+      Hello, {userId} your current active session is {sessionId}
+    </div>
+  )
+}
+useUser
+The useUser hook is a convenient way to access the current user data where you need it. This hook provides the user data and helper methods to manage the current active session.
+
+example.tsx
+
+'use client'
+import { useUser } from '@clerk/nextjs'
+
+export default function Example() {
+  const { isLoaded, isSignedIn, user } = useUser()
+
+  if (!isLoaded || !isSignedIn) {
+    return null
+  }
+
+  return <div>Hello, {user.firstName} welcome to Clerk</div>
+}
+Feedback
+What did you think of this content?
+
+It was helpful
+
+It was not helpful
+
+I have feedback
+Last updated on Nov 18, 2024
+Build your own sign-in and sign-up pages for your Next.js app with Clerk
+This guide shows you how to use the <SignIn /> and <SignUp /> components with the Next.js optional catch-all route in order to build custom sign-in and sign-up pages for your Next.js app.
+
+If the prebuilt components don't meet your specific needs or if you require more control over the logic, you can rebuild the existing Clerk flows using the Clerk API. For more information, see the custom flow guides.
+
+Note
+
+Watch the video version of this guide on the Clerk YouTube channel → YouTube (4 minutes).
+
+Note
+
+Just getting started with Clerk and Next.js? See the quickstart tutorial!
+
+Build a sign-up page
+The following example demonstrates how to render the <SignUp /> component.
+
+app/sign-up/[[...sign-up]]/page.tsx
+
+import { SignUp } from '@clerk/nextjs'
+
+export default function Page() {
+  return <SignUp />
+}
+Build a sign-in page
+The following example demonstrates how to render the <SignIn /> component.
+
+app/sign-in/[[...sign-in]]/page.tsx
+
+import { SignIn } from '@clerk/nextjs'
+
+export default function Page() {
+  return <SignIn />
+}
+Make the sign-up and sign-in routes public
+By default, clerkMiddleware() makes all routes public. This step is specifically for applications that have configured clerkMiddleware() to make all routes protected. If you have not configured clerkMiddleware() to protect all routes, you can skip this step.
+
+To make the sign-up and sign-in routes public:
+
+Navigate to your middleware.ts file.
+Create a new route matcher that matches the sign-up and sign-in routes, or you can add them to an existing route matcher that is making routes public.
+Create a check to see if the user's current route is a public route. If it is not a public route, use auth.protect() to protect the route.
+middleware.ts
+
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)'])
+
+export default clerkMiddleware(async (auth, request) => {
+  if (!isPublicRoute(request)) {
+    await auth.protect()
+  }
+})
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+Update your environment variables
+Update your environment variables to point to your custom sign-in and sign-up pages. Learn more about the available environment variables.
+
+.env.local
+
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+Visit your new pages
+Run your project with the following command:
+
+npm
+yarn
+pnpm
+terminal
+
+npm run dev
+Visit your new custom pages locally at localhost:3000/sign-in and localhost:3000/sign-up.
+
+Next steps
+Read user and session data
+Learn how to use Clerk's hooks and helpers to access the active session and user data in your Next.js application.
+
+Client-side helpers
+Learn more about Next.js client-side helpers and how to use them.
+
+Next.js SDK Reference
+Learn more about additional Next.js methods.
+
+Clerk components
+Learn more about Clerk's prebuilt components that make authentication and user management easy.
+
+Feedback
+What did you think of this content?
+
+It was helpful
+
+It was not helpful
+
+I have feedback
+Last updated on Dec 12, 2024
+
+Integrate Clerk into your Next.js Pages Router app with tRPC
+You will learn the following:
+Create a Clerk authentication context
+Use the Clerk context in tRPC queries
+Access the context data in your backend
+Create a protected procedure
+Use your protected procedure
+Before you start
+Integrate Clerk into your Next.js application
+Example repository
+Minimal Clerk + tRPC + Next.js Pages Router Example
+Create Clerk authentication context
+Clerk's Auth object includes important authentication information like the current user's session ID, user ID, and organization ID. It also contains methods to check for the current user's permissions and to retrieve their session token.
+
+To add Clerk's authentication context (Auth object) to your tRPC server, create a context file that will be used to create the context for every tRPC query sent to the server. This context file will use the getAuth() helper from Clerk to access the user's Auth object.
+
+src/server/context.ts
+
+import * as trpc from '@trpc/server'
+import * as trpcNext from '@trpc/server/adapters/next'
+import { getAuth } from '@clerk/nextjs/server'
+
+export const createContext = async (opts: trpcNext.CreateNextContextOptions) => {
+  return { auth: getAuth(opts.req) }
+}
+
+export type Context = trpc.inferAsyncReturnType<typeof createContext>
+Create tRPC context
+Create the tRPC context to use the Clerk context in your tRPC queries.
+
+src/pages/api/trpc/[trpc].ts
+
+import { appRouter } from '@/server/routers'
+import * as trpcNext from '@trpc/server/adapters/next'
+import { createContext } from 'src/server/context'
+
+export default trpcNext.createNextApiHandler({
+  router: appRouter,
+  createContext: createContext,
+})
+Access the context data in your backend
+The tRPC context, or ctx, should now have access to the Clerk authentication context. Use ctx in your queries to access the context data in any procedure.
+
+In the following example, the ctx is used to access the user's ID and return a greeting message. If the user is not signed in, the greeting will return hello! undefined.
+
+src/server/routers/index.ts
+
+import { router, publicProcedure } from '../trpc'
+
+export const exampleRouter = router({
+  hello: publicProcedure.query(({ ctx }) => {
+    return {
+      greeting: `hello! ${ctx.auth?.userId}`,
+    }
+  }),
+})
+Create a protected procedure
+In many applications, it's essential to restrict access to certain routes based on user authentication status. This ensures that sensitive data and functionality are only accessible to authorized users. tRPC middleware provides a powerful mechanism for implementing this protection within your application.
+
+In the following example, tRPC middleware is used to access the ctx, which contains the user's authentication information. If the user's ID exists in the authentication context, this means that the user is signed in. If the user is not signed in, an UNAUTHORIZED error is thrown.
+
+src/server/trpc.ts
+
+import { initTRPC, TRPCError } from '@trpc/server'
+import superjson from 'superjson'
+import { type Context } from './context'
+
+const t = initTRPC.context<Context>().create({
+  transformer: superjson,
+  errorFormatter({ shape }) {
+    return shape
+  },
+})
+
+// check if the user is signed in, otherwise throw an UNAUTHORIZED code
+const isAuthed = t.middleware(({ next, ctx }) => {
+  if (!ctx.auth.userId) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
+  }
+  return next({
+    ctx: {
+      auth: ctx.auth,
+    },
+  })
+})
+
+export const router = t.router
+
+export const publicProcedure = t.procedure
+
+// export this procedure to be used anywhere in your application
+export const protectedProcedure = t.procedure.use(isAuthed)
+Use your protected procedure
+Once you have created your procedure, you can use it in any router.
+
+In the following example, the protected procedure is used to return a secret message that includes the user's ID. If the user is not signed in, the hello procedure will return an UNAUTHORIZED error, as configured in the step above.
+
+src/server/routers/index.ts
+
+import { router, protectedProcedure } from '../trpc'
+
+export const protectedRouter = router({
+  hello: protectedProcedure.query(({ ctx }) => {
+    return {
+      secret: `${ctx.auth?.userId} is using a protected procedure`,
+    }
+  }),
+})
+Feedback
+What did you think of this content?
+Next.js rendering modes and Clerk
+By default, Next.js attempts to optimize your application by statically generating pages at build-time that do not depend on data from the request. Authentication data is inherently dynamic and requires that rendering happens during request-time, so static generation is not possible in this scenario.
+
+To facilitate Next.js's default behavior, Clerk provides an opt-in approach to accessing authentication data during render:
+
+The auth() helper to access auth data in server components
+The <ClerkProvider dynamic> component that makes auth data available to wrapped client components
+The upcoming Partial Prerendering (PPR) feature in Next.js gives more control over static and dynamic rendering. Wrapping components that access auth data with <Suspense> allows pages to be prerender up to the <Suspense> boundaries.
+
+Accessing data with auth() (recommended)
+Clerk's auth() helper is a dynamic API that relies on request-time data. Using auth() will opt your entire route into dynamic rendering. auth() is only available for use in Server Components, but the data can be passed to Client Components if desired.
+
+
+import { auth } from '@clerk/nextjs/server'
+
+// This page will be dynamically rendered at request time
+export default async function Page() {
+  const { userId } = await auth()
+
+  return <p>Hello, {userId}</p>
+}
+Accessing data with <ClerkProvider dynamic> and useAuth()
+If you rely on useAuth() in Client Components that are also server-side rendered, you can wrap your components with <ClerkProvider dynamic>. As a best practice, also consider wrapping <ClerkProvider dynamic> in <Suspense> to setup your application to take advantage of PPR.
+
+
+import { ClerkProvider } from '@clerk/nextjs'
+
+export default async function Page() {
+  return (
+    <>
+      <header>
+        <Logo />
+        <Suspense fallback={<Skeleton />}>
+          <ClerkProvider dynamic>
+            <UserGreeting />
+          </ClerkProvider>
+        </Suspense>
+      </header>
+      <main>Hello world!</main>
+    </>
+  )
+}
+Make auth data available globally with <ClerkProvider dynamic> (not recommended)
+If you wish to make auth data available to all of your components, pass the dynamic prop to your root <ClerkProvider>. This is not recommended, as you lose the ability to granularly opt-in specific routes based on their data needs.
+
+Feedback
+What did you think of this content?
+
+clerkMiddleware() | Next.js
+The clerkMiddleware() helper integrates Clerk authentication into your Next.js application through Middleware. clerkMiddleware() is compatible with both the App and Pages routers.
+
+Configure clerkMiddleware()
+Create a middleware.ts file at the root of your project, or in your src/ directory if you have one.
+
+Note
+
+For more information about Middleware in Next.js, see the Next.js documentation.
+
+middleware.ts
+
+import { clerkMiddleware } from '@clerk/nextjs/server'
+
+export default clerkMiddleware()
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+By default, clerkMiddleware will not protect any routes. All routes are public and you must opt-in to protection for routes.
+
+createRouteMatcher()
+createRouteMatcher() is a Clerk helper function that allows you to protect multiple routes. createRouteMatcher() accepts an array of routes and checks if the route the user is trying to visit matches one of the routes passed to it. The paths provided to this helper can be in the same format as the paths provided to the Next Middleware matcher.
+
+The createRouteMatcher() helper returns a function that, if called with the req object from the Middleware, will return true if the user is trying to access a route that matches one of the routes passed to createRouteMatcher().
+
+In the following example, createRouteMatcher() sets all /dashboard and /forum routes as protected routes.
+
+
+const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/forum(.*)'])
+Protect routes
+You can protect routes by checking either or both of the following:
+
+User authentication status (user is signed in or out)
+User authorization status (user has the required role or permission)
+Protect routes based on user authentication status
+You can protect routes based on user authentication status by checking if the user is signed in.
+
+There are two methods that you can use:
+
+Use auth.protect() if you want to redirect unauthenticated users to the sign-in route automatically.
+Use auth().userId if you want more control over what your app does based on user authentication status.
+auth.protect()
+auth().userId()
+middleware.ts
+
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/forum(.*)'])
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) await auth.protect()
+})
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+Protect routes based on user authorization status
+You can protect routes based on user authorization status by checking if the user has the required roles or permissions.
+
+There are two methods that you can use:
+
+Use auth.protect() if you want Clerk to return a 404 if the user does not have the role or permission.
+Use auth().has() if you want more control over what your app does based on the authorization status.
+auth.protect()
+auth().has()
+middleware.ts
+
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+const isProtectedRoute = createRouteMatcher(['/admin(.*)'])
+
+export default clerkMiddleware(async (auth, req) => {
+  // Restrict admin routes to users with specific permissions
+  if (isProtectedRoute(req)) {
+    await auth.protect((has) => {
+      return (
+        has({ permission: 'org:sys_memberships:manage' }) ||
+        has({ permission: 'org:sys_domains_manage' })
+      )
+    })
+  }
+})
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+Protect multiple groups of routes
+You can use more than one createRouteMatcher() in your application if you have two or more groups of routes.
+
+The following example uses the has() method from the auth() helper.
+
+middleware.ts
+
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+const isTenantRoute = createRouteMatcher(['/organization-selector(.*)', '/orgid/(.*)'])
+
+const isTenantAdminRoute = createRouteMatcher(['/orgId/(.*)/memberships', '/orgId/(.*)/domain'])
+
+export default clerkMiddleware(async (auth, req) => {
+  // Restrict admin routes to users with specific permissions
+  if (isTenantAdminRoute(req)) {
+    await auth.protect((has) => {
+      return (
+        has({ permission: 'org:sys_memberships:manage' }) ||
+        has({ permission: 'org:sys_domains_manage' })
+      )
+    })
+  }
+  // Restrict organization routes to signed in users
+  if (isTenantRoute(req)) await auth.protect()
+})
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+Protect all routes
+To protect all routes in your application and define specific routes as public, you can use any of the above methods and simply invert the if condition.
+
+middleware.ts
+
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)'])
+
+export default clerkMiddleware(async (auth, request) => {
+  if (!isPublicRoute(request)) {
+    await auth.protect()
+  }
+})
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+Debug your Middleware
+If you are having issues getting your Middleware dialed in, or are trying to narrow down auth-related issues, you can use the debugging feature in clerkMiddleware(). Add { debug: true } to clerkMiddleware() and you will get debug logs in your terminal.
+
+middleware.ts
+
+import { clerkMiddleware } from '@clerk/nextjs/server'
+
+export default clerkMiddleware(
+  (auth, req) => {
+    // Add your middleware checks
+  },
+  { debug: true },
+)
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+If you would like to set up debugging for your development environment only, you can use the process.env.NODE_ENV variable to conditionally enable debugging. For example, { debug: process.env.NODE_ENV === 'development' }.
+
+Combine Middleware
+You can combine other Middleware with Clerk's Middleware by returning the second Middleware from clerkMiddleware().
+
+middleware.ts
+
+import { clerkMiddleware, createRouteMatcher, redirectToSignIn } from '@clerk/nextjs/server'
+import createMiddleware from 'next-intl/middleware'
+
+import { AppConfig } from './utils/AppConfig'
+
+const intlMiddleware = createMiddleware({
+  locales: AppConfig.locales,
+  localePrefix: AppConfig.localePrefix,
+  defaultLocale: AppConfig.defaultLocale,
+})
+
+const isProtectedRoute = createRouteMatcher(['dashboard/(.*)'])
+
+export default clerkMiddleware(async (auth, req) => {
+  if (isProtectedRoute(req)) await auth.protect()
+
+  return intlMiddleware(req)
+})
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    // Always run for API routes
+    '/(api|trpc)(.*)',
+  ],
+}
+clerkMiddleware() options
+The clerkMiddleware() function accepts an optional object. The following options are available:
+
+audience?
+string | string[]
+A string or list of audiences. If passed, it is checked against the aud claim in the token.
+
+authorizedParties?
+string[]
+An allowlist of origins to verify against, to protect your application from the subdomain cookie leaking attack.
+For example: ['http://localhost:3000', 'https://example.com']
+
+clockSkewInMs?
+number
+Specifies the allowed time difference (in milliseconds) between the Clerk server (which generates the token) and the clock of the user's application server when validating a token. Defaults to 5000 ms (5 seconds).
+
+domain?
+string
+The domain used for satellites to inform Clerk where this application is deployed.
+
+isSatellite?
+boolean
+When using Clerk's satellite feature, this should be set to true for secondary domains.
+
+jwtKey
+string
+Used to verify the session token in a networkless manner. Supply the PEM public key from the API keys page -> Show JWT public key -> PEM Public Key section in the Clerk Dashboard. It's recommended to use the environment variable instead. For more information, refer to Manual JWT verification.
+
+organizationSyncOptions?
+OrganizationSyncOptions | undefined
+Used to activate a specific organization or personal account based on URL path parameters. If there's a mismatch between the active organization in the session (e.g., as reported by auth()) and the organization indicated by the URL, the middleware will attempt to activate the organization specified in the URL.
+
+proxyUrl?
+string
+Specify the URL of the proxy, if using a proxy.
+
+signInUrl?
+string
+An alternative sign in URL.
+
+signUpUrl?
+string
+An alternative sign up URL.
+
+publishableKey
+string
+The Clerk Publishable Key for your instance. This can be found on the API keys page in the Clerk Dashboard.
+
+secretKey?
+string
+The Clerk Secret Key for your instance. This can be found on the API keys page in the Clerk Dashboard. The CLERK_ENCRYPTION_KEY environment variable must be set when providing secretKey as an option, refer to Dynamic keys.
+
+It's also possible to dynamically set options based on the incoming request:
+
+middleware.ts
+
+import { clerkMiddleware } from '@clerk/nextjs/server'
+
+export default clerkMiddleware(
+  (auth, req) => {
+    // Add your middleware checks
+  },
+  (req) => ({
+    // Provide `domain` based on the request host
+    domain: req.nextUrl.host,
+  }),
+)
+Dynamic keys
+Note
+
+Dynamic keys are not accessible on the client-side.
+
+The following options, known as "Dynamic Keys," are shared to the Next.js application server through clerkMiddleware, enabling access by server-side helpers like auth():
+
+signUpUrl
+signInUrl
+secretKey
+publishableKey
+Dynamic keys are encrypted and shared during request time using a AES encryption algorithm. When providing a secretKey, the CLERK_ENCRYPTION_KEY environment variable is mandatory and used as the encryption key. If no secretKey is provided to clerkMiddleware, the encryption key defaults to CLERK_SECRET_KEY.
+
+When providing CLERK_ENCRYPTION_KEY, it is recommended to use a 32-byte (256-bit), pseudorandom value. You can use openssl to generate a key:
+
+terminal
+
+openssl rand --hex 32
+For multi-tenant applications, you can dynamically define Clerk keys depending on the incoming request. Here's an example:
+
+middleware.ts
+
+import { clerkMiddleware } from '@clerk/nextjs/server'
+
+// You would typically fetch these keys from a external store or environment variables.
+const tenantKeys = {
+  tenant1: { publishableKey: 'pk_tenant1...', secretKey: 'sk_tenant1...' },
+  tenant2: { publishableKey: 'pk_tenant2...', secretKey: 'sk_tenant2...' },
+}
+
+export default clerkMiddleware(
+  (auth, req) => {
+    // Add your middleware checks
+  },
+  (req) => {
+    // Resolve tenant based on the request
+    const tenant = getTenant(req)
+    return tenantKeys[tenant]
+  },
+)
+OrganizationSyncOptions
+The organizationSyncOptions property on the clerkMiddleware() options object has the type OrganizationSyncOptions, which has the following properties:
+
+organizationPatterns
+Pattern[]
+Specifies URL patterns that are organization-specific, containing an organization ID or slug as a path parameter. If a request matches this path, the organization identifier will be used to set that org as active.
+
+If the route also matches the personalAccountPatterns prop, this prop takes precedence.
+
+Patterns must have a path parameter named either :id (to match a Clerk organization ID) or :slug (to match a Clerk organization slug).
+
+Warning
+
+If the organization can't be activated—either because it doesn't exist or the user lacks access—the previously active organization will remain unchanged. Components must detect this case and provide an appropriate error and/or resolution pathway, such as calling notFound() or displaying an <OrganizationSwitcher />.
+
+Common examples:
+
+["/orgs/:slug", "/orgs/:slug/(.*)"]
+["/orgs/:id", "/orgs/:id/(.*)"]
+["/app/:any/orgs/:slug", "/app/:any/orgs/:slug/(.*)"]
+personalAccountPatterns
+Pattern[]
+URL patterns for resources that exist within the context of a Clerk Personal Account (user-specific, outside any organization).
+
+If the route also matches the organizationPattern prop, the organizationPattern prop takes precedence.
+
+Common examples:
+
+["/me", "/me/(.*)"]
+["/user/:any", "/user/:any/(.*)"]
+Pattern
+A Pattern is a string that represents the structure of a URL path. In addition to any valid URL, it may include:
+
+Named path parameters prefixed with a colon (e.g., :id, :slug, :any).
+Wildcard token, (.*), which matches the remainder of the path.
+Examples
+/orgs/:slug
+URL	Matches	:slug value
+/orgs/acmecorp	✅	acmecorp
+/orgs	❌	n/a
+/orgs/acmecorp/settings	❌	n/a
+/app/:any/orgs/:id
+URL	Matches	:id value
+/app/petstore/orgs/org_123	✅	org_123
+/app/dogstore/v2/orgs/org_123	❌	n/a
+/personal-account/(.*)
+URL	Matches
+/personal-account/settings	✅
+/personal-account	❌
+
+Auth object
+The Auth object contains important information like the current user's session ID, user ID, and organization ID. It also contains methods to check for permissions and retrieve the current user's session token. It's returned by the useAuth() hook, the auth() and getAuth() helpers, and the request object in server contexts.
+
+Auth object properties
+sessionId
+string
+The ID of the current session.
+
+userId
+string
+The ID of the current user.
+
+orgId
+string | undefined
+The ID of the user's active organization.
+
+orgRole
+OrganizationCustomRoleKey | undefined
+The current user's role in their active organization.
+
+orgSlug
+string | undefined
+The URL-friendly identifier of the user's active organization.
+
+orgPermissions
+OrganizationCustomPermissionKey[] | undefined
+The current user's active organization permissions.
+
+sessionClaims
+JwtPayload
+The current user's session claims.
+
+actor
+ActClaim | undefined
+Holds identifier for the user that is impersonating the current user. Read more about impersonation.
+
+has()
+(isAuthorizedParams: CheckAuthorizationParamsWithCustomPermissions) => boolean
+A function that returns a boolean based on the permission or role provided as parameter. Can be used for authorization.
+
+factorVerificationAge
+[number, number] | null
+An array where each item represents the number of minutes since the last verification of a first or second factor: [firstFactorAge, secondFactorAge].
+
+getToken()
+ServerGetToken
+A function that returns a promise that resolves to the current user's session token. Can also be used to retrieve a custom JWT template.
+
+debug
+AuthObjectDebug
+Used to help debug issues when using Clerk in development.
+
+OrganizationCustomRoleKey
+The orgRole property on the Auth object has the type OrganizationCustomRoleKey.
+
+OrganizationCustomRoleKey is a string that represents the user's role in the organization. Clerk provides the default roles org:admin and org:member. However, you can create custom roles as well.
+
+OrganizationCustomPermissionKey
+The orgPermissions property on the Auth object has the type OrganizationCustomPermissionKey.
+
+OrganizationCustomPermissionKey is a string that represents the permission of the user in the organization. Clerk provides default System Permissions, and you can create custom permissions.
+
+has()
+has() determines if the user has a role or permission.
+
+
+function has(isAuthorizedParams: CheckAuthorizationParamsWithCustomPermissions): boolean
+CheckAuthorizationParamsWithCustomPermissions
+CheckAuthorizationParamsWithCustomPermissions has the following properties:
+
+role
+string
+The role to check for.
+
+permission
+string
+The permission to check for.
+
+reverification?
+ReverificationConfig
+The reverification configuration to check for. This feature is currently in public beta. It is not recommended for production use.
+
+ReverificationConfig
+
+type ReverificationConfig =
+  | SessionVerificationTypes
+  | {
+      level: SessionVerificationLevel
+      afterMinutes: SessionVerificationAfterMinutes
+    }
+
+type SessionVerificationTypes = 'strict_mfa' | 'strict' | 'moderate' | 'lax'
+The ReverificationConfig type has the following properties:
+
+strict_mfa
+Requires the user to verify their credentials within the past 10 minutes. If not verified, prompt for both the first and second factors.
+
+strict
+Requires the user to verify their credentials within the past 10 minutes. If not verified, prompt for the second factor.
+
+moderate
+Requires the user to verify their credentials within the past hour. If not verified, prompt for the second factor.
+
+lax
+Requires the user to verify their credentials within the past day. If not verified, prompt for the second factor.
+
+level
+"first_factor" | "second_factor" | "multi_factor"
+The reverification level of credentials to check for.
+
+afterMinutes
+number
+The age of the factor level to check for. Value should be greater than or equal to 1 and less than 99,999.
+
+has() permissions example
+You can use has() to check if a user is authorized to access a component.
+
+In the following example:
+
+has() is used to check if the user has the org:team_settings:manage permission.
+If the user does not have the permission, null is returned and the "Team Settings" component is not rendered.
+app/page.tsx
+
+import { auth } from '@clerk/nextjs/server'
+
+export default async function Page() {
+  const { has } = await auth()
+
+  const canManage = has({ permission: 'org:team_settings:manage' })
+
+  if (!canManage) return null
+
+  return <h1>Team Settings</h1>
+}
+has() reverification example
+Important
+
+This example demonstrates how to handle reverification server-side. For information on how to handle reverification on the client-side, see the guide on reverification.
+
+You can use has() to check if a user has verified their credentials within a certain time frame.
+
+The following example uses the has() helper to check if the user has verified their credentials within a specific time period. The strict configuration sets the time period to 10 minutes. If the user hasn't verified their credentials within 10 minutes, the reverificationErrorResponse utility is used to return an error.
+
+app/api/reverification-example/route.ts
+
+import { auth, reverificationErrorResponse } from '@clerk/nextjs/server'
+
+export const POST = async (req: Request) => {
+  const { has } = await auth()
+
+  // Check if the user has *not* verified their credentials within the past 10 minutes.
+  const shouldUserRevalidate = !has({ reverification: 'strict' })
+
+  // If the user hasn't reverified, return an error with the matching configuration (e.g., `strict`)
+  if (shouldUserRevalidate) {
+    return reverificationErrorResponse('strict')
+  }
+
+  // If the user has verified credentials, return a successful response
+  return new Response({ success: true })
+}
+getToken()
+You can use getToken() on an Auth object to retrieve the user's session token. You can also use this method to retrieve a custom JWT template.
+
+Tokens can only be generated if the user is signed in.
+
+ServerGetToken
+
+type ServerGetToken = (options?: ServerGetTokenOptions) => Promise<string | null>
+ServerGetTokenOptions
+getToken() accepts an optional options parameter, which has the following properties:
+
+template?
+string
+The name of the custom JWT template to retrieve.
+
+Use getToken() in the frontend
+The Auth object is not available in the frontend. To use the getToken() method in the frontend:
+
+For React-based applications, you can use the useAuth() hook. See the reference documentation for example usage.
+For JavaScript applications, see the reference documentation for example usage.
+Use getToken() in the backend
+Next.js
+Node
+Remix
+To use the getToken() method in the backend:
+
+In App Router applications, use the auth() helper.
+In Pages Router applications, use the getAuth() helper.
+App Router
+Pages Router
+app/api/get-token-example/route.ts
+
+import { auth } from '@clerk/nextjs/server'
+
+export async function GET() {
+  const { getToken } = await auth()
+
+  const template = 'test'
+
+  const token = await getToken({ template })
+
+  return Response.json({ token })
+}
+Auth object example without active organization
+The following is an example of the Auth object without an active organization:
+
+
+{
+  sessionId: 'sess_123',
+  userId: 'user_123',
+  orgId: null,
+  orgRole: null,
+  orgSlug: null,
+  orgPermissions: null,
+  has: [Function (anonymous)],
+  getToken: [AsyncFunction (anonymous)],
+  claims: {
+    azp: 'http://localhost:3000',
+    exp: 1666622607,
+    iat: 1666622547,
+    iss: 'https://clerk.quiet.muskox-85.lcl.dev',
+    nbf: 1666622537,
+    sid: 'sess_123',
+    sub: 'user_123',
+  },
+}
+Auth object example with active organization
+The following is an example of the Auth object with an active organization:
+
+
+{
+  sessionId: 'sess_123',
+  userId: 'user_123',
+  orgId: 'org_123',
+  orgRole: 'org:admin',
+  orgSlug: undefined,
+  orgPermissions: ['org:team_settings:manage'], // Custom permissions
+  has: [Function (anonymous)],
+  getToken: [AsyncFunction (anonymous)],
+  claims: {
+    azp: 'http://localhost:3000',
+    exp: 1666622607,
+    iat: 1666622547,
+    iss: 'https://clerk.quiet.muskox-85.lcl.dev',
+    nbf: 1666622537,
+    sid: 'sess_123',
+    sub: 'user_123',
+  },
+}
+Auth object example with valid factor age
+
+{
+  sessionId: 'sess_123',
+  userId: 'user_123',
+  orgId: null,
+  orgRole: null,
+  orgSlug: null,
+  orgPermissions: null,
+  factorVerificationAge: [0,0],
+  has: [Function (anonymous)],
+  getToken: [AsyncFunction (anonymous)],
+  claims: {
+    azp: 'http://localhost:3000',
+    exp: 1666622607,
+    iat: 1666622547,
+    iss: 'https://clerk.quiet.muskox-85.lcl.dev',
+    nbf: 1666622537,
+    sid: 'sess_123',
+    sub: 'user_123',
+  },
+}
+Auth object example of a user without an MFA method registered
+
+{
+  sessionId: 'sess_123',
+  userId: 'user_123',
+  orgId: null,
+  orgRole: null,
+  orgSlug: null,
+  orgPermissions: null,
+  factorVerificationAge: [0, -1],
+  has: [Function (anonymous)],
+  getToken: [AsyncFunction (anonymous)],
+  claims: {
+    azp: 'http://localhost:3000',
+    exp: 1666622607,
+    iat: 1666622547,
+    iss: 'https://clerk.quiet.muskox-85.lcl.dev',
+    nbf: 1666622537,
+    sid: 'sess_123',
+    sub: 'user_123',
+  },
+}
+
+auth()
+The auth() helper returns the Auth object of the currently active user, as well as the redirectToSignIn() method.
+
+Only available for App Router.
+Only works on the server-side, such as in Server Components, Route Handlers, and Server Actions.
+Requires clerkMiddleware() to be configured.
+auth.protect()
+auth includes a single property, the protect() method, which you can use in two ways:
+
+to check if a user is authenticated (signed in)
+to check if a user is authorized (has the correct roles or permissions) to access something, such as a component or a route handler
+The following table describes how auth.protect() behaves based on user authentication or authorization status:
+
+Authenticated	Authorized	auth.protect() will
+Yes	Yes	Return the Auth object.
+Yes	No	Return a 404 error.
+No	No	Redirect the user to the sign-in page*.
+Important
+
+*For non-document requests, such as API requests, auth.protect() returns a 404 error to users who aren't authenticated.
+
+auth.protect() accepts the following parameters:
+
+role?
+string
+The role to check for.
+
+permission?
+string
+The permission to check for.
+
+has?
+(isAuthorizedParams: CheckAuthorizationParamsWithCustomPermissions) => boolean
+A function that returns a boolean based on the permission or role provided as parameter. Can be used for authorization. See the dedicated has() section for more information.
+
+unauthorizedUrl?
+string
+The URL to redirect the user to if they are not authorized.
+
+unauthenticatedUrl?
+string
+The URL to redirect the user to if they are not authenticated.
+
+Examples
+auth.protect() can be used to check if a user is authenticated or authorized to access certain parts of your application or even entire routes. See detailed examples in the dedicated guide.
+
+redirectToSignIn()
+The auth() helper returns the redirectToSignIn() method, which you can use to redirect the user to the sign-in page.
+
+redirectToSignIn() accepts the following parameters:
+
+returnBackUrl?
+string | URL
+The URL to redirect the user back to after they sign in.
+
+Note
+
+auth() on the server-side can only access redirect URLs defined via environment variables or clerkMiddleware dynamic keys.
+
+Example
+The following example shows how to use redirectToSignIn() to redirect the user to the sign-in page if they are not authenticated. It's also common to use redirectToSignIn() in clerkMiddleware() to protect entire routes; see the clerkMiddleware() docs for more information.
+
+app/page.tsx
+
+import { auth } from '@clerk/nextjs/server'
+
+export default async function Page() {
+  const { userId, redirectToSignIn } = await auth()
+
+  if (!userId) return redirectToSignIn()
+
+  return <h1>Hello, {userId}</h1>
+}
+Use auth() to retrieve userId
+You can use auth() to check if a userId exists. If it does not, that means there is no user signed in. You can use this information to protect pages, as shown in the following example:
+
+app/page.tsx
+
+import { auth } from '@clerk/nextjs/server'
+
+export default async function Page() {
+  const { userId }: { userId: string | null } = await auth()
+
+  if (!userId) return null
+
+  return <h1>Hello, {userId}</h1>
+}
+Use auth() for data fetching
+When using a Clerk integration, or if you need to send a JWT along to a server, you can use the getToken() function that is returned by auth().
+
+app/api/example/route.ts
+
+import { auth } from '@clerk/nextjs/server'
+
+export async function GET() {
+  const { userId, getToken } = await auth()
+
+  if (!userId) {
+    return new Response('User is not signed in.', { status: 401 })
+  }
+
+  try {
+    const token = await getToken({ template: 'supabase' })
+
+    // Add logic here to fetch data from Supabase and return it.
+
+    const data = { supabaseData: 'Hello World' }
+
+    return Response.json({ data })
+  } catch (error) {
+    return Response.json(error)
+  }
+}
+Use auth() to protect your app
+You can protect certain parts of your application or even entire routes based on a user's authentication and/or authorization status. See detailed examples in the dedicated guide.
+
+Feedback
+What did you think of this content?
+
+currentUser()
+The currentUser helper returns the Backend User object of the currently active user. It can be used in Server Components, Route Handlers, and Server Actions.
+
+Under the hood, this helper:
+
+calls fetch(), so it is automatically deduped per request.
+uses the GET /v1/users/{user_id} endpoint.
+counts towards the Backend API request rate limit.
+app/page.tsx
+
+import { currentUser } from '@clerk/nextjs/server'
+
+export default async function Page() {
+  const user = await currentUser()
+
+  if (!user) return <div>Not signed in</div>
+
+  return <div>Hello {user?.firstName}</div>
+}
+
+Route Handlers
+Clerk provides helpers that allow you to protect your Route Handlers, fetch the current user, and interact with the Clerk Backend API.
+
+Protect your Route Handlers
+If you aren't protecting your Route Handler using clerkMiddleware(), you can protect your Route Handler in two ways:
+
+Use auth.protect() if you want Clerk to return a 404 error when there is no signed in user.
+Use auth().userId if you want to customize the behavior or error message.
+auth.protect()
+auth().userId()
+app/api/route.ts
+
+import { auth } from '@clerk/nextjs/server'
+
+export async function GET() {
+  // If there is no signed in user, this will return a 404 error
+  await auth.protect()
+
+  // Add your Route Handler logic here
+
+  return Response.json({ message: 'Hello world!' })
+}
+Retrieve data from external sources
+Clerk provides integrations with a number of popular databases.
+
+The following example demonstrates how to use auth().getToken() to retrieve a token from a JWT template and use it to fetch data from the external source.
+
+app/api/route.ts
+
+import { NextResponse } from 'next/server'
+import { auth } from '@clerk/nextjs/server'
+export async function GET() {
+  const { userId, getToken } = await auth()
+
+  if (!userId) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  const token = await getToken({ template: 'supabase' })
+
+  // Fetch data from Supabase and return it.
+  const data = { supabaseData: 'Hello World' }
+
+  return NextResponse.json({ data })
+}
+Retrieve the current user
+In some cases, you might need the current user in your Route Handler. Clerk provides an asynchronous helper called currentUser() to retrieve the current Backend User object.
+
+app/api/route.ts
+
+import { NextResponse } from 'next/server'
+import { currentUser } from '@clerk/nextjs/server'
+export async function GET() {
+  const user = await currentUser()
+
+  if (!user) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
+  return NextResponse.json({ user })
+}
+Interact with Clerk's Backend API
+The JavaScript Backend SDK exposes the Backend API resources and low-level authentication utilities for JavaScript environments.
+
+clerkClient exposes an instance of the JavaScript Backend SDK for use in server environments.
+
+app/api/route.ts
+
+import { NextResponse, NextRequest } from 'next/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
+
+export async function POST(req: NextRequest) {
+  const { userId } = await auth()
+
+  if (!userId) return NextResponse.redirect(new URL('/sign-in', req.url))
+
+  const params = { firstName: 'John', lastName: 'Wick' }
+
+  const client = await clerkClient()
+
+  const user = await client.users.updateUser(userId, params)
+
+  return NextResponse.json({ user })
+}
+
+Server Actions
+Clerk provides helpers to allow you to protect your Server Actions, fetch the current user, and interact with the Clerk API.
+
+The following guide provides examples for using Server Actions in Server Components and in Client Components.
+
+With Server Components
+Protect your Server Actions
+You can use the auth() helper to protect your server actions. This helper will return the current user's ID if they are signed in, or null if they are not.
+
+actions.ts
+
+import { auth } from '@clerk/nextjs/server'
+
+export default function AddToCart() {
+  async function addItem(formData: FormData) {
+    'use server'
+
+    const { userId } = await auth()
+
+    if (!userId) {
+      throw new Error('You must be signed in to add an item to your cart')
+    }
+
+    console.log('add item server action', formData)
+  }
+
+  return (
+    <form action={addItem}>
+      <input value={'test'} type="text" name="name" />
+      <button type="submit">Add to Cart</button>
+    </form>
+  )
+}
+Accessing the current user
+Current user data is important for data enrichment. You can use the currentUser() helper to fetch the current user's data in your server actions.
+
+app/page.tsx
+
+import { currentUser } from '@clerk/nextjs/server'
+
+export default function AddHobby() {
+  async function addHobby(formData: FormData) {
+    'use server'
+
+    const user = await currentUser()
+
+    if (!user) {
+      throw new Error('You must be signed in to use this feature')
+    }
+
+    const serverData = {
+      usersHobby: formData.get('hobby'),
+      userId: user.id,
+      profileImage: user.imageUrl,
+    }
+
+    console.log('add item server action completed with user details ', serverData)
+  }
+
+  return (
+    <form action={addHobby}>
+      <input value={'soccer'} type="text" name="hobby" />
+      <button type="submit">Submit your hobby</button>
+    </form>
+  )
+}
+With Client Components
+When using Server Actions in Client Components, you need to make sure you use prop drilling to ensure that headers are available.
+
+Protect your Server Actions
+Use the following tabs to see an example of how to protect a Server Action that is used in a Client Component.
+
+Server Action
+Client Component
+Page
+app/actions.ts
+
+'use server'
+import { auth } from '@clerk/nextjs/server'
+
+export async function addItem(formData: FormData) {
+  const { userId } = await auth()
+
+  if (!userId) {
+    throw new Error('You must be signed in to add an item to your cart')
+  }
+
+  console.log('add item server action', formData)
+}
+Accessing the current user
+Use the following tabs to see an example of how to access the current user in a Server Action that is used in a Client Component.
+
+Server Action
+Client Component
+Page
+app/actions.ts
+
+'use server'
+import { currentUser } from '@clerk/nextjs/server'
+
+export async function addHobby(formData: FormData) {
+  const user = await currentUser()
+
+  if (!user) {
+    throw new Error('You must be signed in to use this feature')
+  }
+
+  const serverData = {
+    usersHobby: formData.get('hobby'),
+    userId: user.id,
+    profileImage: user.imageUrl,
+  }
+
+  console.log('add Hobby completed with user details ', serverData)
+}
+Feedback
+What did you think of this content?
+
+Next.js
+getAuth()
+getAuth()
+The getAuth() helper retrieves authentication state from the request object.
+
+Note
+
+If you are using App Router, use the auth() helper instead.
+
+Parameters
+req
+The Next.js request object.
+
+opts?
+An optional object that can be used to configure the behavior of the getAuth() function. It accepts the following properties:
+
+secretKey?: A string that represents the Secret Key used to sign the session token. If not provided, the Secret Key is retrieved from the environment variable CLERK_SECRET_KEY.
+Returns
+getAuth() returns the Auth object.
+
+Usage
+Basic usage
+The following example demonstrates how to use getAuth() to retrieve authentication information in an API route.
+
+app/api/example/route.ts
+
+import { getAuth } from '@clerk/nextjs/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { userId } = getAuth(req)
+
+  // Add logic that retrieves the data for the API route
+
+  return res.status(200).json({ userId: userId })
+}
+Protect API routes
+It is important to protect your API routes to ensure that only authenticated users can access them. You can do this by checking if the userId is present in the getAuth() response, like in the following example:
+
+app/api/example/route.ts
+
+import { getAuth } from '@clerk/nextjs/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { userId } = getAuth(req)
+
+  if (!userId) {
+    return res.status(401).json({ error: 'Not authenticated' })
+  }
+
+  // Add logic that retrieves the data for the API route
+
+  return res.status(200).json({ userId: userId })
+}
+Usage with getToken()
+getAuth() returns getToken(), which is a method that returns the current user's session token. You can also use this function to retrieve a custom JWT template, like in the following example:
+
+app/api/example/route.ts
+
+import { getAuth } from '@clerk/nextjs/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { getToken } = getAuth(req)
+
+  const token = await getToken({ template: 'supabase' })
+
+  // Add logic that retrieves the data
+  // from your database using the token
+
+  return res.status(200).json({})
+}
+Usage with clerkClient
+clerkClient is used to access the Backend SDK, which exposes Clerk's Backend API resources. You can use getAuth() to pass authentication information that many of the Backend SDK methods require, like in the following example:
+
+app/api/example/route.ts
+
+import { clerkClient, getAuth } from '@clerk/nextjs/server'
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { userId } = getAuth(req)
+
+  const client = await clerkClient()
+
+  const user = userId ? await client.users.getUser(userId) : null
+
+  return res.status(200).json({})
+}
+Feedback
+What did you think of this content?
+
+Next.js
+buildClerkProps()
+buildClerkProps
+Clerk uses buildClerkProps to inform the client-side helpers of the authentication state of the user. This function is used SSR in the getServerSideProps function of your Next.js application.
+
+Usage
+Basic usage
+pages/myServerSidePage
+
+import { getAuth, buildClerkProps } from '@clerk/nextjs/server'
+import { GetServerSideProps } from 'next'
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { userId } = getAuth(ctx.req)
+
+  if (!userId) {
+    // handle user is not signed in.
+  }
+
+  // Load any data your application needs for the page using the userId
+  return { props: { ...buildClerkProps(ctx.req) } }
+}
+Protecting pages using SSR
+It is important to protect your API routes to ensure that only authenticated users can access them. You can do this by checking if the userId is present in the getAuth() response.
+
+pages/api/example.ts
+
+import { clerkClient, getAuth, buildClerkProps } from '@clerk/nextjs/server'
+import { GetServerSideProps } from 'next'
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { userId } = getAuth(ctx.req)
+
+  const client = await clerkClient()
+
+  const user = userId ? await client.users.getUser(userId) : undefined
+
+  return { props: { ...buildClerkProps(ctx.req, { user }) } }
+}
+Usage with clerkClient
+The clerkClient allows you to access the Clerk API. You can use this to retrieve or update data.
+
+pages/api/example.ts
+
+import { getAuth, buildClerkProps, clerkClient } from '@clerk/nextjs/server'
+import { GetServerSideProps } from 'next'
+
+export const getServerSideProps: GetServerSideProps = async (ctx) => {
+  const { userId } = getAuth(ctx.req)
+
+  const user = userId ? await clerkClient().users.getUser(userId) : undefined
+
+  return { props: { ...buildClerkProps(ctx.req, { user }) } }
+}
+Feedback
+What did you think of this content?
+

@@ -2,18 +2,18 @@ import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { useUser } from "@clerk/nextjs"
+import { redirect } from "next/navigation"
 
 export default function ProfileLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // This would typically come from a database or authentication system
-  const user = {
-    name: 'John Doe',
-    username: 'johndoe',
-    email: 'john@example.com',
-    avatar: '/placeholder.svg',
+  const { user } = useUser()
+
+  if (!user) {
+    redirect('/sign-in')
   }
 
   const navItems = [
@@ -29,12 +29,12 @@ export default function ProfileLayout({
         <CardContent className="p-6">
           <div className="flex flex-col items-center mb-6">
             <Avatar className="w-24 h-24 mb-4">
-              <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+              <AvatarImage src={user.imageUrl} alt={user.fullName || ''} />
+              <AvatarFallback>{user.firstName?.[0]}</AvatarFallback>
             </Avatar>
-            <h2 className="text-xl font-semibold text-center">{user.name}</h2>
+            <h2 className="text-xl font-semibold text-center">{user.fullName}</h2>
             <p className="text-sm text-gray-500 text-center">@{user.username}</p>
-            <p className="text-sm text-gray-500 text-center mb-4">{user.email}</p>
+            <p className="text-sm text-gray-500 text-center mb-4">{user.primaryEmailAddress?.emailAddress}</p>
             <Button asChild className="w-full">
               <Link href="/profile/edit">Edit Profile</Link>
             </Button>

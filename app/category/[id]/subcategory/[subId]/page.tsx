@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ItemGrid } from '@/components/ItemGrid'
 import { categories } from '@/lib/categoryData'
+import { Params } from 'next/dist/shared/lib/router/utils/route-matcher'
 
 // This would typically come from a database or API
 const allItems = [
@@ -24,12 +25,12 @@ const getSubcategoryName = (categoryId: string, subcategoryId: string) => {
 }
 
 type Props = {
-  params: { id: string; subId: string }
+  params: Params
 }
 
-export default function SubcategoryPage({ params }: Props) {
-  const categoryName = getCategoryName(params.id)
-  const subcategoryName = getSubcategoryName(params.id, params.subId)
+export default async function SubcategoryPage({ params }: Props) {
+  const categoryName = getCategoryName(params.id as string)
+  const subcategoryName = getSubcategoryName(params.id as string, params.subId as string)
 
   const items = allItems.filter(item => 
     item.category === categoryName && 

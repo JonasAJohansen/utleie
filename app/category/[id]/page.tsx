@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button"
 import { categories } from '@/lib/categoryData'
 import { getSubcategories, Subcategory } from '@/lib/subcategory'
 
-interface PageProps {
-  params: { id: string }
+type PageProps = {
+  params: {
+    id: string
+  }
 }
 
 async function getCategoryData(id: string) {

@@ -5,10 +5,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { categories } from '@/lib/categoryData'
 import { getSubcategories, Subcategory } from '@/lib/subcategory'
+import { Metadata } from 'next'
 
-type PageProps = {
-  params: {
-    id: string
+type Props = {
+  params: { id: string }
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const category = categories.find(c => c.id === parseInt(params.id))
+  if (!category) {
+    return {
+      title: 'Category Not Found',
+    }
+  }
+  return {
+    title: `${category.name} | RentEase`,
   }
 }
 
@@ -22,7 +33,7 @@ async function getCategoryData(id: string) {
   return { category, subcategories }
 }
 
-export default async function CategoryPage({ params }: PageProps) {
+export default async function CategoryPage({ params }: Props) {
   const { category, subcategories } = await getCategoryData(params.id)
 
   return (

@@ -104,7 +104,7 @@ export default function AddListing() {
         description: "Your new listing has been added.",
       })
       router.push('/')
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "An error occurred while creating the listing. Please try again.",

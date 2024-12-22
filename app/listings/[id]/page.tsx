@@ -7,7 +7,7 @@ import { useParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Star, MessageCircle, MapPin, DollarSign, Clock, Shield, Flag } from 'lucide-react'
+import { Star, MessageCircle, MapPin, DollarSign, Flag } from 'lucide-react'
 import { UserReview } from '@/components/UserReview'
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { RentalRequest } from '@/components/RentalRequest'
@@ -59,9 +59,6 @@ export default function ItemListing() {
   const [selectedImage, setSelectedImage] = useState(item.images[0])
   const [showReportDialog, setShowReportDialog] = useState(false)
   const params = useParams()
-  const id = params.id as string
-
-  // In a real application, you would fetch the current user's information
   const currentUser = { username: 'Alice' }
 
   useEffect(() => {

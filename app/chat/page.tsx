@@ -117,7 +117,7 @@ export default function ChatPage() {
     }
   }
 
-  const handleEmojiSelect = (emoji: any) => {
+  const handleEmojiSelect = (emoji: { native: string }) => {
     setNewMessage(prev => prev + emoji.native)
   }
 

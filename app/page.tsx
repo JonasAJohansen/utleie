@@ -6,17 +6,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Search, Star, MapPin, Filter, ArrowRight } from 'lucide-react'
-import { FilterOptions } from '@/components/FilterOptions'
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+import { Search, Star, MapPin, ArrowRight } from 'lucide-react'
+
 
 const allItems = [
   { id: 1, name: 'Mountain Bike', price: 25, image: '/placeholder.svg?height=200&width=300', rating: 4.5, location: 'Denver, CO', priceType: 'day', category: 'Sports & Outdoors', lat: 39.7392, lng: -104.9903 },
@@ -43,13 +34,6 @@ const featuredCategories = [
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [filters, setFilters] = useState<{
-    categories: string[];
-    priceRange: [number, number];
-  }>({
-    categories: [],
-    priceRange: [0, 100]
-  })
   const router = useRouter()
 
   useEffect(() => {
@@ -61,9 +45,6 @@ export default function Home() {
     router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
   }
 
-  const handleFilterChange = (newFilters: { categories: string[], priceRange: [number, number] }) => {
-    setFilters(newFilters)
-  }
 
   return (
     <div className="space-y-16">

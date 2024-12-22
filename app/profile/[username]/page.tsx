@@ -1,7 +1,5 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Image from 'next/image'
 import { useParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,7 +30,7 @@ const userListings = [
 
 export default function UserProfile() {
   const params = useParams()
-  const username = params.username as string
+  //const username = params.username as string
   const [activeTab, setActiveTab] = useState('listings')
   const [showReportDialog, setShowReportDialog] = useState(false)
 
@@ -48,7 +46,7 @@ export default function UserProfile() {
         </Avatar>
         <div className="text-center md:text-left">
           <h1 className="text-3xl font-bold">{userData.name}</h1>
-          <p className="text-gray-500">@{userData.username}</p>
+          <p className="text-gray-500">@{params.username as string}</p>
           <div className="flex items-center justify-center md:justify-start mt-2">
             <MapPin className="h-4 w-4 mr-1 text-gray-500" />
             <span className="text-gray-500">{userData.location}</span>
@@ -58,7 +56,7 @@ export default function UserProfile() {
             <span className="ml-1 font-semibold">{userData.rating.toFixed(1)}</span>
             <span className="ml-2 text-gray-600">({userData.totalRentals} rentals)</span>
           </div>
-          <p className="mt-4 text-gray-700">{userData.bio}</p>
+          <p className="mt-4 text-gray-700">{userData.bio.replace("'", "&apos;")}</p>
           <div className="mt-4 flex justify-center md:justify-start space-x-4">
             <Button>
               <MessageCircle className="mr-2 h-4 w-4" /> Message

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -38,11 +38,7 @@ export default function SearchResults() {
   })
   const [searchResults, setSearchResults] = useState(allItems)
 
-  useEffect(() => {
-    performSearch()
-  }, [searchQuery, filters])
-
-  const performSearch = () => {
+  const performSearch = useCallback(() => {
     let filteredResults = allItems.filter(item => 
       (searchQuery === '' || item.name.toLowerCase().includes(searchQuery.toLowerCase())) &&
       (filters.category === 'All Categories' || item.category === filters.category) &&
@@ -81,7 +77,11 @@ export default function SearchResults() {
     if (filters.location) params.set('location', filters.location)
     params.set('rating', filters.rating.toString())
     router.push(`/search?${params.toString()}`, { scroll: false })
-  }
+  }, [searchQuery, filters])
+
+  useEffect(() => {
+    performSearch()
+  }, [searchQuery, filters, performSearch])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

@@ -12,9 +12,21 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Bell, Menu, Plus, Search, ShieldCheck } from 'lucide-react'
 import { UserButton, SignInButton, SignUpButton, useUser } from "@clerk/nextjs"
+import { useState } from 'react'
+import { Input } from "@/components/ui/input"
+import { useRouter } from 'next/navigation'
 
 export default function Navigation() {
   const { user } = useUser()
+  const [searchQuery, setSearchQuery] = useState('')
+  const router = useRouter()
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+    }
+  }
   console.log('Full user object:', user)
   console.log('User metadata:', user?.publicMetadata)
   console.log('User ID:', user?.id)
@@ -41,9 +53,18 @@ export default function Navigation() {
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" size="icon">
-              <Search className="h-5 w-5" />
-            </Button>
+            <form onSubmit={handleSearch} className="hidden md:flex items-center">
+              <Input
+                type="text"
+                placeholder="Search listings..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="mr-2"
+              />
+              <Button type="submit" variant="ghost" size="icon">
+                <Search className="h-5 w-5" />
+              </Button>
+            </form>
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>

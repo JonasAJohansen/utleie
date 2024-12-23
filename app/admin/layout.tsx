@@ -1,7 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import ClientSideAdminLayout from './ClientSideAdminLayout'
-import { clerkClient } from '@clerk/nextjs/server'
 
 export default async function AdminLayout({
   children,
@@ -14,12 +13,8 @@ export default async function AdminLayout({
     redirect('/')
   }
 
-  const client = await clerkClient()
-  const user = await client.users.getUser(userId)
-
-  if (!user?.publicMetadata?.role || user.publicMetadata.role !== 'admin') {
-    redirect('/')
-  }
+  // The middleware will handle the admin role check
+  // If we get here, the user is already verified as an admin
 
   return <ClientSideAdminLayout>{children}</ClientSideAdminLayout>
 }

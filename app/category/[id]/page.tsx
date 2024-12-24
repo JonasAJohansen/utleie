@@ -15,6 +15,11 @@ interface CategoryParams {
   rating?: string
 }
 
+interface PageProps {
+  params: { id: string }
+  searchParams?: Omit<CategoryParams, 'id'>
+}
+
 async function getCategoryListings({ id, ...params }: CategoryParams) {
   const values: any[] = [id]
   let paramIndex = 1
@@ -88,17 +93,7 @@ async function getCategoryListings({ id, ...params }: CategoryParams) {
   }
 }
 
-export default async function CategoryPage({
-  params: pageParams,
-  searchParams: pageSearchParams,
-}: {
-  params: { id: string }
-  searchParams?: Omit<CategoryParams, 'id'>
-}) {
-  // Await the params and searchParams
-  const params = await Promise.resolve(pageParams)
-  const searchParams = await Promise.resolve(pageSearchParams || {})
-  
+export default async function CategoryPage({ params, searchParams = {} }: PageProps) {
   const { listings, categoryName } = await getCategoryListings({ 
     id: params.id,
     ...searchParams 

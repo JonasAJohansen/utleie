@@ -14,13 +14,17 @@ import { ItemGrid } from '@/components/ItemGrid'
 import { sql } from '@vercel/postgres'
 import { auth } from '@clerk/nextjs/server'
 
+interface PageProps {
+  params: Promise<any> | undefined
+}
+
 async function getListingData(id: string) {
   try {
     const result = await sql`
       SELECT l.*, u.username, u.image_url as user_image
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      WHERE l.id = ${id}
+      WHERE l.id = ${id}::uuid
     `
     return result.rows[0]
   } catch (error) {
@@ -29,14 +33,15 @@ async function getListingData(id: string) {
   }
 }
 
-export default async function ItemListing({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> | { id: string } 
-}) {
+export default async function ItemListing({ params }: PageProps) {
   const resolvedParams = await Promise.resolve(params)
-  const item = await getListingData(resolvedParams.id)
   const { userId } = await auth()
+
+  if (!resolvedParams?.id) {
+    notFound()
+  }
+
+  const item = await getListingData(resolvedParams.id)
 
   if (!item) {
     notFound()
@@ -107,8 +112,6 @@ export default async function ItemListing({
           </div>
         </CardContent>
       </Card>
-
-      {/* You can add more sections here, such as reviews, related items, etc. */}
     </div>
   )
 }

@@ -1,7 +1,6 @@
 'use client'
 
-import { motion } from "framer-motion/dom"
-import { AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { Label } from "@/components/ui/label"
 
 interface AnimatedFilterControlProps {
@@ -31,4 +30,5 @@ export function AnimatedFilterControl({
       )}
     </AnimatePresence>
   )
-} 
+}
+

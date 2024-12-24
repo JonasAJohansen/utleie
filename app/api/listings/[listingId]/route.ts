@@ -2,16 +2,10 @@ import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-interface RouteSegmentConfig {
-  params: {
-    listingId: string
-  }
-}
-
 export async function DELETE(
-  request: Request,
-  { params }: RouteSegmentConfig
-): Promise<Response> {
+  request: NextRequest,
+  { params }: { params: { listingId: string } }
+): Promise<Response | NextResponse> {
   try {
     const { userId } = await auth()
     if (!userId) {

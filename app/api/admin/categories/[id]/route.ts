@@ -2,15 +2,9 @@ import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 
-type RouteContext = {
-  params: {
-    id: string
-  }
-}
-
 export async function PUT(
   request: Request,
-  context: RouteContext
+  { params }: { params: { id: string } }
 ) {
   const { userId } = await auth()
   const user = await currentUser()
@@ -35,7 +29,7 @@ export async function PUT(
         description = ${description},
         icon = ${icon},
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${context.params.id}::uuid
+      WHERE id = ${params.id}::uuid
       RETURNING *
     `
 
@@ -52,7 +46,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  context: RouteContext
+  { params }: { params: { id: string } }
 ) {
   const { userId } = await auth()
   const user = await currentUser()
@@ -70,7 +64,7 @@ export async function DELETE(
   try {
     // First check if there are any listings using this category
     const listingsCheck = await sql`
-      SELECT COUNT(*) FROM listings WHERE category_id = ${context.params.id}::uuid
+      SELECT COUNT(*) FROM listings WHERE category_id = ${params.id}::uuid
     `
 
     if (parseInt(listingsCheck.rows[0].count) > 0) {
@@ -82,7 +76,7 @@ export async function DELETE(
 
     const result = await sql`
       DELETE FROM categories
-      WHERE id = ${context.params.id}::uuid
+      WHERE id = ${params.id}::uuid
       RETURNING id
     `
 

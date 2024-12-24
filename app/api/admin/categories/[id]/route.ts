@@ -1,56 +1,26 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { sql } from '@vercel/postgres'
+import { NextResponse } from 'next/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 
-interface RouteParams {
-  params: {
-    id: string
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const { userId } = await auth()
+  const user = await currentUser()
+
+  if (!userId || !user) {
+    return new NextResponse('Unauthorized', { status: 401 })
   }
-}
 
-export async function DELETE(request: Request, { params }: RouteParams) {
-  try {
-    const { userId } = await auth()
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 })
-    }
-
-    const { id } = params
-
-    // First, update any listings that use this category to have null category_id
-    await sql`
-      UPDATE listings
-      SET category_id = NULL
-      WHERE category_id = ${id}
-    `
-
-    // Then delete the category
-    const result = await sql`
-      DELETE FROM categories
-      WHERE id = ${id}
-      RETURNING *
-    `
-
-    if (result.rowCount === 0) {
-      return new NextResponse('Category not found', { status: 404 })
-    }
-
-    return NextResponse.json(result.rows[0])
-  } catch (error) {
-    console.error('Error deleting category:', error)
-    return new NextResponse('Error deleting category', { status: 500 })
+  // Check if user has admin role
+  const userRole = user.privateMetadata.role
+  if (userRole !== 'org:admin') {
+    return new NextResponse('Forbidden', { status: 403 })
   }
-}
 
-export async function PUT(request: Request, { params }: RouteParams) {
   try {
-    const { userId } = await auth()
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 })
-    }
-
-    const { id } = params
-    const { name, description, icon, is_popular, is_featured } = await request.json()
+    const { name, description, icon } = await request.json()
 
     const result = await sql`
       UPDATE categories
@@ -58,20 +28,65 @@ export async function PUT(request: Request, { params }: RouteParams) {
         name = ${name},
         description = ${description},
         icon = ${icon},
-        is_popular = ${is_popular},
-        is_featured = ${is_featured},
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
+      WHERE id = ${params.id}::uuid
       RETURNING *
     `
 
-    if (result.rowCount === 0) {
+    if (result.rows.length === 0) {
       return new NextResponse('Category not found', { status: 404 })
     }
 
     return NextResponse.json(result.rows[0])
   } catch (error) {
-    console.error('Error updating category:', error)
-    return new NextResponse('Error updating category', { status: 500 })
+    console.error('Database Error:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const { userId } = await auth()
+  const user = await currentUser()
+
+  if (!userId || !user) {
+    return new NextResponse('Unauthorized', { status: 401 })
+  }
+
+  // Check if user has admin role
+  const userRole = user.privateMetadata.role
+  if (userRole !== 'org:admin') {
+    return new NextResponse('Forbidden', { status: 403 })
+  }
+
+  try {
+    // First check if there are any listings using this category
+    const listingsCheck = await sql`
+      SELECT COUNT(*) FROM listings WHERE category_id = ${params.id}::uuid
+    `
+
+    if (parseInt(listingsCheck.rows[0].count) > 0) {
+      return new NextResponse(
+        'Cannot delete category that has listings. Please remove or reassign the listings first.',
+        { status: 400 }
+      )
+    }
+
+    const result = await sql`
+      DELETE FROM categories
+      WHERE id = ${params.id}::uuid
+      RETURNING id
+    `
+
+    if (result.rows.length === 0) {
+      return new NextResponse('Category not found', { status: 404 })
+    }
+
+    return new NextResponse(null, { status: 204 })
+  } catch (error) {
+    console.error('Database Error:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 } 

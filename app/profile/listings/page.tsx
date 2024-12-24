@@ -1,17 +1,52 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
+import { useUser } from "@clerk/nextjs"
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Star, MapPin } from 'lucide-react'
 
-// This would typically come from a database
-const myListings = [
-  { id: 1, name: 'Mountain Bike', price: 25, image: '/placeholder.svg?height=200&width=300', rating: 4.5, location: 'Denver, CO', priceType: 'day' },
-  { id: 2, name: 'Camping Tent', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.2, location: 'Portland, OR', priceType: 'day' },
-  { id: 3, name: 'Surfboard', price: 35, image: '/placeholder.svg?height=200&width=300', rating: 4.7, location: 'Los Angeles, CA', priceType: 'day' },
-]
+interface Listing {
+  id: string
+  name: string
+  price: number
+  image: string
+  rating: number
+  location: string
+  created_at: string
+}
 
 export default function MyListingsPage() {
+  const { user } = useUser()
+  const [listings, setListings] = useState<Listing[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchListings() {
+      if (!user) return
+
+      try {
+        const response = await fetch(`/api/listings?userId=${user.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setListings(data)
+        }
+      } catch (error) {
+        console.error('Error fetching listings:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchListings()
+  }, [user])
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -21,25 +56,40 @@ export default function MyListingsPage() {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {myListings.map((listing) => (
-            <div key={listing.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-              <Image src={listing.image} alt={listing.name} width={300} height={200} className="w-full h-48 object-cover" />
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2">{listing.name}</h3>
-                <p className="text-gray-600 mb-2">${listing.price}/{listing.priceType}</p>
-                <div className="flex items-center mb-2">
-                  <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                  <span className="ml-1">{listing.rating.toFixed(1)}</span>
-                </div>
-                <div className="flex items-center text-sm text-gray-500">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  {listing.location}
+        {listings.length === 0 ? (
+          <div className="text-center py-6">
+            <p className="text-gray-500 mb-4">You haven't created any listings yet.</p>
+            <Button asChild>
+              <Link href="/listings/new">Create Your First Listing</Link>
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {listings.map((listing) => (
+              <div key={listing.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                <Image 
+                  src={listing.image || '/placeholder.svg?height=200&width=300'} 
+                  alt={listing.name} 
+                  width={300} 
+                  height={200} 
+                  className="w-full h-48 object-cover" 
+                />
+                <div className="p-4">
+                  <h3 className="font-semibold text-lg mb-2">{listing.name}</h3>
+                  <p className="text-gray-600 mb-2">${listing.price}/day</p>
+                  <div className="flex items-center mb-2">
+                    <Star className="h-5 w-5 text-yellow-400 fill-current" />
+                    <span className="ml-1">{listing.rating?.toFixed(1) || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-500">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {listing.location || 'Location not specified'}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

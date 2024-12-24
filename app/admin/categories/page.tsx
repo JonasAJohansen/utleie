@@ -1,4 +1,4 @@
-import { CategoriesTab } from '../components/CategoriesTab'
+import CategoriesTab from '../components/CategoriesTab'
 
 export default function CategoriesPage() {
   return (

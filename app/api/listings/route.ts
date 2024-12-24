@@ -1,32 +1,39 @@
-import { NextResponse } from 'next/server'
-import { auth, clerkClient } from '@clerk/nextjs/server'
 import { sql } from '@vercel/postgres'
+import { auth } from '@clerk/nextjs/server'
+import { getAuth, clerkClient } from '@clerk/nextjs/server'
+import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
 
-    let query = sql`
-      SELECT l.*, u.username
-      FROM listings l
-      JOIN users u ON l.user_id = u.id
-    `
-
-    if (userId) {
-      query = sql`
-        SELECT l.*, u.username
-        FROM listings l
-        JOIN users u ON l.user_id = u.id
-        WHERE l.user_id = ${userId}
-      `
+    if (!userId) {
+      return new NextResponse('User ID is required', { status: 400 })
     }
 
-    const result = await query
+    const { userId: authenticatedUserId } = await auth()
+
+    if (!authenticatedUserId || authenticatedUserId !== userId) {
+      return new NextResponse('Unauthorized', { status: 401 })
+    }
+
+    const result = await sql`
+      SELECT 
+        l.*,
+        COALESCE(AVG(r.rating), 0) as rating,
+        COUNT(r.id) as review_count
+      FROM listings l
+      LEFT JOIN reviews r ON l.id = r.listing_id
+      WHERE l.user_id = ${userId}
+      GROUP BY l.id
+      ORDER BY l.created_at DESC
+    `
+
     return NextResponse.json(result.rows)
   } catch (error) {
     console.error('Error fetching listings:', error)
-    return new NextResponse('Error fetching listings', { status: 500 })
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
 
@@ -39,11 +46,15 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { name, description, price, image } = body
+    const { name, description, price, image, categoryId } = body
+
+    if (!categoryId) {
+      return new NextResponse('Category is required', { status: 400 })
+    }
 
     // Get the user's data from Clerk
     const client = await clerkClient()
-    const clerkUser = await client.users.getUser(userId)
+    const user = await client.users.getUser(userId)
 
     // Check if user exists in our database
     const userResult = await sql`
@@ -56,17 +67,17 @@ export async function POST(request: Request) {
         INSERT INTO users (id, username, email, image_url)
         VALUES (
           ${userId}, 
-          ${clerkUser.username || ''}, 
-          ${clerkUser.emailAddresses[0]?.emailAddress || ''}, 
-          ${clerkUser.imageUrl || ''}
+          ${user.username || ''}, 
+          ${user.emailAddresses[0]?.emailAddress || ''}, 
+          ${user.imageUrl || ''}
         )
       `
     }
 
-    // Now create the listing
+    // Now create the listing with category
     const result = await sql`
-      INSERT INTO listings (name, description, price, image, user_id)
-      VALUES (${name}, ${description}, ${price}, ${image}, ${userId})
+      INSERT INTO listings (name, description, price, image, user_id, category_id)
+      VALUES (${name}, ${description}, ${price}, ${image}, ${userId}, ${categoryId})
       RETURNING id
     `
 

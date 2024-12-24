@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/components/ui/use-toast"
 import { useUser } from "@clerk/nextjs"
+import { CategorySelect } from '@/components/CategorySelect'
 
 export default function AddListing() {
   const router = useRouter()
@@ -18,11 +19,16 @@ export default function AddListing() {
     description: '',
     price: '',
     image: '',
+    categoryId: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setListing({ ...listing, [e.target.name]: e.target.value })
+  }
+
+  const handleCategoryChange = (value: string) => {
+    setListing({ ...listing, categoryId: value })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,6 +88,13 @@ export default function AddListing() {
                 value={listing.name}
                 onChange={handleChange}
                 required
+              />
+            </div>
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <CategorySelect
+                value={listing.categoryId}
+                onChange={handleCategoryChange}
               />
             </div>
             <div>

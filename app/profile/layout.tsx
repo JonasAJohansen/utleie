@@ -1,59 +1,75 @@
-import Link from 'next/link'
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+'use client'
+
 import { useUser } from "@clerk/nextjs"
-import { redirect } from "next/navigation"
+import { redirect, useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
+import { cn } from "@/lib/utils"
+
+interface ProfileLayoutProps {
+  children: React.ReactNode
+}
+
+const profileNavItems = [
+  {
+    title: "Settings",
+    href: "/profile",
+  },
+  {
+    title: "My Listings",
+    href: "/profile/listings",
+  },
+  {
+    title: "Wishlist",
+    href: "/profile/favorites",
+  },
+  {
+    title: "Saved Searches",
+    href: "/profile/saved-searches",
+  },
+]
 
 export default function ProfileLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
-  const { user } = useUser()
+}: ProfileLayoutProps) {
+  const { user, isLoaded } = useUser()
+  const router = useRouter()
+  const pathname = usePathname()
 
-  if (!user) {
-    redirect('/sign-in')
+  // Wait for user data to load before redirecting
+  if (isLoaded && !user) {
+    router.push('/sign-in')
+    return null
   }
 
-  const navItems = [
-    { name: 'My Account', href: '/profile' },
-    { name: 'My Listings', href: '/profile/listings' },
-    { name: 'Favorites', href: '/profile/favorites' },
-    { name: 'Saved Searches', href: '/profile/saved-searches' },
-  ]
-
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      <Card className="md:w-64 flex-shrink-0">
-        <CardContent className="p-6">
-          <div className="flex flex-col items-center mb-6">
-            <Avatar className="w-24 h-24 mb-4">
-              <AvatarImage src={user.imageUrl} alt={user.fullName || ''} />
-              <AvatarFallback>{user.firstName?.[0]}</AvatarFallback>
-            </Avatar>
-            <h2 className="text-xl font-semibold text-center">{user.fullName}</h2>
-            <p className="text-sm text-gray-500 text-center">@{user.username}</p>
-            <p className="text-sm text-gray-500 text-center mb-4">{user.primaryEmailAddress?.emailAddress}</p>
-            <Button asChild className="w-full">
-              <Link href="/profile/edit">Edit Profile</Link>
-            </Button>
-          </div>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <aside className="md:col-span-1">
           <nav className="space-y-2">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-              >
-                {item.name}
-              </Link>
-            ))}
+            <h2 className="text-xl font-semibold mb-4">Profile</h2>
+            <ul className="space-y-2">
+              {profileNavItems.map((item) => (
+                <li key={item.href}>
+                  <Link 
+                    href={item.href}
+                    className={cn(
+                      "block p-2 rounded-lg transition-colors",
+                      pathname === item.href
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-gray-100"
+                    )}
+                  >
+                    {item.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </nav>
-        </CardContent>
-      </Card>
-      <div className="flex-grow">
-        {children}
+        </aside>
+
+        <main className="md:col-span-3">
+          {children}
+        </main>
       </div>
     </div>
   )

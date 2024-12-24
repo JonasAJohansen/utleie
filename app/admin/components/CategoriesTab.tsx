@@ -1,250 +1,380 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Pencil, Plus, Trash2, ChevronRight, ChevronDown } from 'lucide-react'
+import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import React from 'react';
-import { Card } from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
+import { Plus, Pencil, Trash2, Star, TrendingUp } from 'lucide-react'
 
 interface Category {
-  id: number;
-  name: string;
-  subcategories: { id: number; name: string }[];
+  id: string
+  name: string
+  description: string
+  icon: string
+  is_popular: boolean
+  is_featured: boolean
+  created_at: string
+  updated_at: string
 }
 
-const initialCategories: Category[] = [
-  { 
-    id: 1, 
-    name: 'Sports & Outdoors', 
-    subcategories: [
-      { id: 1, name: 'Camping Gear' },
-      { id: 2, name: 'Bicycles' },
-    ]
-  },
-  { 
-    id: 2, 
-    name: 'Electronics', 
-    subcategories: [
-      { id: 3, name: 'Cameras' },
-      { id: 4, name: 'Laptops' },
-    ]
-  },
-  { 
-    id: 3, 
-    name: 'Home & Garden', 
-    subcategories: [
-      { id: 5, name: 'Power Tools' },
-      { id: 6, name: 'Furniture' },
-    ]
-  },
-]
+const defaultFormData = {
+  name: '',
+  description: '',
+  icon: '',
+  is_popular: false,
+  is_featured: false
+}
 
-export function CategoriesTab() {
-  const [categories, setCategories] = useState<Category[]>(initialCategories)
-  const [newCategoryName, setNewCategoryName] = useState('')
-  const [newSubcategoryName, setNewSubcategoryName] = useState('')
+export default function CategoriesTab() {
+  const [categories, setCategories] = useState<Category[]>([])
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
-  const [expandedCategories, setExpandedCategories] = useState<number[]>([])
+  const [formData, setFormData] = useState(defaultFormData)
+  const { toast } = useToast()
+  const router = useRouter()
 
-  const handleAddCategory = () => {
-    if (newCategoryName.trim()) {
-      const newCategory: Category = {
-        id: Math.max(0, ...categories.map(c => c.id)) + 1,
-        name: newCategoryName.trim(),
-        subcategories: [],
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
       }
-      setCategories([...categories, newCategory])
-      setNewCategoryName('')
-    }
-  }
-
-  const handleAddSubcategory = () => {
-    if (selectedCategory && newSubcategoryName.trim()) {
-      const updatedCategories = categories.map(category => {
-        if (category.id === selectedCategory.id) {
-          return {
-            ...category,
-            subcategories: [
-              ...category.subcategories,
-              {
-                id: Math.max(0, ...category.subcategories.map(sc => sc.id)) + 1,
-                name: newSubcategoryName.trim(),
-              }
-            ]
-          }
-        }
-        return category
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch categories",
+        variant: "destructive",
       })
-      setCategories(updatedCategories)
-      setNewSubcategoryName('')
     }
   }
 
-  const handleDeleteCategory = (id: number) => {
-    setCategories(categories.filter(category => category.id !== id))
+  const resetForm = () => {
+    setFormData(defaultFormData)
+    setSelectedCategory(null)
   }
 
-  const handleDeleteSubcategory = (categoryId: number, subcategoryId: number) => {
-    setCategories(categories.map(category => {
-      if (category.id === categoryId) {
-        return {
-          ...category,
-          subcategories: category.subcategories.filter(sc => sc.id !== subcategoryId)
-        }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const response = await fetch('/api/admin/categories', {
+        method: selectedCategory ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(selectedCategory ? {
+          id: selectedCategory.id,
+          ...formData
+        } : formData),
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: `Category ${selectedCategory ? 'updated' : 'created'} successfully`,
+        })
+        await fetchCategories()
+        setIsAddDialogOpen(false)
+        setIsEditDialogOpen(false)
+        resetForm()
+      } else {
+        throw new Error('Failed to save category')
       }
-      return category
-    }))
+    } catch (error) {
+      console.error('Error saving category:', error)
+      toast({
+        title: "Error",
+        description: `Failed to ${selectedCategory ? 'update' : 'create'} category`,
+        variant: "destructive",
+      })
+    }
   }
 
-  const handleEditCategory = (id: number, newName: string) => {
-    setCategories(categories.map(category =>
-      category.id === id ? { ...category, name: newName } : category
-    ))
-  }
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this category?')) return
 
-  const handleEditSubcategory = (categoryId: number, subcategoryId: number, newName: string) => {
-    setCategories(categories.map(category => {
-      if (category.id === categoryId) {
-        return {
-          ...category,
-          subcategories: category.subcategories.map(sc =>
-            sc.id === subcategoryId ? { ...sc, name: newName } : sc
-          )
-        }
+    try {
+      const response = await fetch(`/api/admin/categories/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Category deleted successfully",
+        })
+        await fetchCategories()
+      } else {
+        throw new Error('Failed to delete category')
       }
-      return category
-    }))
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete category",
+        variant: "destructive",
+      })
+    }
   }
 
-  const toggleCategoryExpansion = (categoryId: number) => {
-    setExpandedCategories(prev =>
-      prev.includes(categoryId)
-        ? prev.filter(id => id !== categoryId)
-        : [...prev, categoryId]
-    )
+  const handleEdit = (category: Category) => {
+    setSelectedCategory(category)
+    setFormData({
+      name: category.name,
+      description: category.description,
+      icon: category.icon,
+      is_popular: category.is_popular,
+      is_featured: category.is_featured
+    })
+    setIsEditDialogOpen(true)
+  }
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target
+    setFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleCheckboxChange = (name: string, checked: boolean) => {
+    setFormData(prev => ({ ...prev, [name]: checked }))
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex space-x-2">
-        <Input
-          placeholder="New category name"
-          value={newCategoryName}
-          onChange={(e) => setNewCategoryName(e.target.value)}
-        />
-        <Button onClick={handleAddCategory}>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Categories</h2>
+        <Button onClick={() => setIsAddDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Category
         </Button>
       </div>
-      <Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Subcategories</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {categories.map((category) => (
-            <React.Fragment key={category.id}>
-              <TableRow>
+
+      <Dialog 
+        open={isAddDialogOpen} 
+        onOpenChange={(open) => {
+          setIsAddDialogOpen(open)
+          if (!open) resetForm()
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Category</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Category name"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <Textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Category description"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Icon (emoji or URL)</label>
+              <Input
+                name="icon"
+                value={formData.icon}
+                onChange={handleInputChange}
+                placeholder="Category icon"
+              />
+            </div>
+            <div className="flex space-x-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_popular"
+                  checked={formData.is_popular}
+                  onCheckedChange={(checked) => 
+                    handleCheckboxChange('is_popular', checked === true)
+                  }
+                />
+                <label htmlFor="is_popular" className="text-sm font-medium">
+                  Popular Category
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is_featured"
+                  checked={formData.is_featured}
+                  onCheckedChange={(checked) => 
+                    handleCheckboxChange('is_featured', checked === true)
+                  }
+                />
+                <label htmlFor="is_featured" className="text-sm font-medium">
+                  Featured Category
+                </label>
+              </div>
+            </div>
+            <Button type="submit" className="w-full">
+              Add Category
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog 
+        open={isEditDialogOpen} 
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open)
+          if (!open) resetForm()
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Name</label>
+              <Input
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Category name"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Description</label>
+              <Textarea
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                placeholder="Category description"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Icon (emoji or URL)</label>
+              <Input
+                name="icon"
+                value={formData.icon}
+                onChange={handleInputChange}
+                placeholder="Category icon"
+              />
+            </div>
+            <div className="flex space-x-4">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit_is_popular"
+                  checked={formData.is_popular}
+                  onCheckedChange={(checked) => 
+                    handleCheckboxChange('is_popular', checked === true)
+                  }
+                />
+                <label htmlFor="edit_is_popular" className="text-sm font-medium">
+                  Popular Category
+                </label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="edit_is_featured"
+                  checked={formData.is_featured}
+                  onCheckedChange={(checked) => 
+                    handleCheckboxChange('is_featured', checked === true)
+                  }
+                />
+                <label htmlFor="edit_is_featured" className="text-sm font-medium">
+                  Featured Category
+                </label>
+              </div>
+            </div>
+            <Button type="submit" className="w-full">
+              Update Category
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Icon</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {categories.map((category) => (
+              <TableRow key={category.id}>
+                <TableCell>{category.icon}</TableCell>
+                <TableCell className="font-medium">{category.name}</TableCell>
+                <TableCell>{category.description}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-0"
-                    onClick={() => toggleCategoryExpansion(category.id)}
-                  >
-                    {expandedCategories.includes(category.id) ? (
-                      <ChevronDown className="h-4 w-4 mr-2" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4 mr-2" />
+                  <div className="flex items-center space-x-2">
+                    {category.is_popular && (
+                      <div className="flex items-center text-yellow-500" title="Popular">
+                        <TrendingUp className="h-4 w-4" />
+                      </div>
                     )}
-                    {category.name}
-                  </Button>
+                    {category.is_featured && (
+                      <div className="flex items-center text-yellow-500" title="Featured">
+                        <Star className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
                 </TableCell>
-                <TableCell>{category.subcategories.length}</TableCell>
+                <TableCell>{new Date(category.created_at).toLocaleDateString()}</TableCell>
                 <TableCell>
-                  <div className="flex space-x-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Add Subcategory</DialogTitle>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="subcategoryName" className="text-right">
-                              Name
-                            </Label>
-                            <Input
-                              id="subcategoryName"
-                              value={newSubcategoryName}
-                              onChange={(e) => setNewSubcategoryName(e.target.value)}
-                              className="col-span-3"
-                            />
-                          </div>
-                        </div>
-                        <Button onClick={() => {
-                          setSelectedCategory(category)
-                          handleAddSubcategory()
-                        }}>
-                          Add Subcategory
-                        </Button>
-                      </DialogContent>
-                    </Dialog>
-                    <Button variant="ghost" size="icon" onClick={() => {
-                      const newName = prompt('Enter new category name', category.name)
-                      if (newName) handleEditCategory(category.id, newName)
-                    }}>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleEdit(category)}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteCategory(category.id)}>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleDelete(category.id)}
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </TableCell>
               </TableRow>
-              {expandedCategories.includes(category.id) && category.subcategories.map(subcategory => (
-                <TableRow key={`${category.id}-${subcategory.id}`}>
-                  <TableCell className="pl-10">{subcategory.name}</TableCell>
-                  <TableCell></TableCell>
-                  <TableCell>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        const newName = prompt('Enter new subcategory name', subcategory.name)
-                        if (newName) handleEditSubcategory(category.id, subcategory.id, newName)
-                      }}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteSubcategory(category.id, subcategory.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </React.Fragment>
-          ))}
-        </TableBody>
-      </Table>
-      </Card>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

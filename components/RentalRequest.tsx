@@ -15,18 +15,49 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { DateRange } from "react-day-picker"
+import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
 
 interface RentalRequestProps {
-  itemId: number
+  itemId: string
   itemName: string
   pricePerDay: number
   unavailableDates: Date[]
 }
 
-export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates }: RentalRequestProps) {
+export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates = [] }: RentalRequestProps) {
   const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(undefined)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [totalPrice, setTotalPrice] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const [bookedDates, setBookedDates] = useState<Date[]>([])
+  const { toast } = useToast()
+
+  useEffect(() => {
+    // Fetch unavailable dates from approved rental requests
+    const fetchBookedDates = async () => {
+      try {
+        const response = await fetch(`/api/rental-requests?listingId=${itemId}`)
+        if (response.ok) {
+          const data = await response.json()
+          const dates: Date[] = []
+          data.forEach((booking: { startDate: string, endDate: string }) => {
+            const start = new Date(booking.startDate)
+            const end = new Date(booking.endDate)
+            const current = new Date(start)
+            while (current <= end) {
+              dates.push(new Date(current))
+              current.setDate(current.getDate() + 1)
+            }
+          })
+          setBookedDates(dates)
+        }
+      } catch (error) {
+        console.error('Error fetching booked dates:', error)
+      }
+    }
+    fetchBookedDates()
+  }, [itemId])
 
   useEffect(() => {
     if (selectedRange?.from && selectedRange?.to) {
@@ -41,21 +72,48 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
     setSelectedRange(range)
   }
 
-  const handleRequest = () => {
-    if (selectedRange?.from && selectedRange?.to) {
-      console.log('Rental request sent:', { 
-        itemId, 
-        itemName, 
-        startDate: selectedRange.from, 
-        endDate: selectedRange.to,
-        totalPrice
+  const handleRequest = async () => {
+    if (!selectedRange?.from || !selectedRange?.to) return
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/rental-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          listingId: itemId,
+          startDate: format(selectedRange.from, 'yyyy-MM-dd'),
+          endDate: format(selectedRange.to, 'yyyy-MM-dd'),
+          totalPrice
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.text()
+        throw new Error(error)
+      }
+
+      toast({
+        title: "Request sent!",
+        description: "The owner will review your request soon.",
       })
       setIsDialogOpen(false)
+      setSelectedRange(undefined)
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to send request",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
     }
   }
 
   const isDateUnavailable = (date: Date) => {
-    return unavailableDates.some(unavailableDate => 
+    return [...unavailableDates, ...bookedDates].some(unavailableDate => 
       isSameDay(unavailableDate, date)
     )
   }
@@ -85,7 +143,7 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
               date < new Date() || isDateUnavailable(date)
             }
             modifiers={{
-              booked: unavailableDates
+              booked: [...unavailableDates, ...bookedDates]
             }}
             modifiersStyles={{
               booked: { textDecoration: 'line-through', color: 'red' }
@@ -120,10 +178,10 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
         <DialogFooter>
           <Button 
             onClick={handleRequest} 
-            disabled={!selectedRange?.from || !selectedRange?.to}
+            disabled={!selectedRange?.from || !selectedRange?.to || isLoading}
             className="w-full"
           >
-            Send Request
+            {isLoading ? "Sending..." : "Send Request"}
           </Button>
         </DialogFooter>
       </DialogContent>

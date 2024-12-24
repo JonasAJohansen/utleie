@@ -1,32 +1,71 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Trash2, Search } from 'lucide-react'
+import { Badge } from "@/components/ui/badge"
+import { Trash2, Search, Eye } from 'lucide-react'
 import { Card } from "@/components/ui/card"
+import Link from 'next/link'
 
-const listings = [
-  { id: 1, name: 'Mountain Bike', owner: 'John Doe', category: 'Sports & Outdoors', status: 'Active' },
-  { id: 2, name: 'DSLR Camera', owner: 'Jane Smith', category: 'Electronics', status: 'Active' },
-  { id: 3, name: 'Camping Tent', owner: 'Bob Johnson', category: 'Sports & Outdoors', status: 'Inactive' },
-  { id: 4, name: 'Lawn Mower', owner: 'Alice Brown', category: 'Home & Garden', status: 'Active' },
-  { id: 5, name: 'Surfboard', owner: 'Charlie Wilson', category: 'Sports & Outdoors', status: 'Active' },
-]
+interface Listing {
+  id: string
+  name: string
+  username: string
+  category_name: string
+  status: string
+  price: number
+  created_at: string
+}
 
 export function ListingsTab() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [listings, setListings] = useState<Listing[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchListings() {
+      try {
+        const response = await fetch('/api/admin/listings')
+        if (response.ok) {
+          const data = await response.json()
+          setListings(data)
+        }
+      } catch (error) {
+        console.error('Error fetching listings:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchListings()
+  }, [])
 
   const filteredListings = listings.filter(listing =>
     listing.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    listing.owner.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    listing.category.toLowerCase().includes(searchTerm.toLowerCase())
+    listing.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    listing.category_name.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleDelete = (id: number) => {
-    console.log(`Delete listing with id: ${id}`)
-    // Implement delete functionality here
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this listing?')) return
+
+    try {
+      const response = await fetch(`/api/admin/listings/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        setListings(listings.filter(listing => listing.id !== id))
+      }
+    } catch (error) {
+      console.error('Error deleting listing:', error)
+    }
+  }
+
+  if (isLoading) {
+    return <div>Loading...</div>
   }
 
   return (
@@ -43,32 +82,47 @@ export function ListingsTab() {
         </div>
       </div>
       <Card>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Owner</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredListings.map((listing) => (
-            <TableRow key={listing.id}>
-              <TableCell>{listing.name}</TableCell>
-              <TableCell>{listing.owner}</TableCell>
-              <TableCell>{listing.category}</TableCell>
-              <TableCell>{listing.status}</TableCell>
-              <TableCell>
-                <Button variant="ghost" size="icon" onClick={() => handleDelete(listing.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TableCell>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Owner</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead>Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredListings.map((listing) => (
+              <TableRow key={listing.id}>
+                <TableCell>{listing.name}</TableCell>
+                <TableCell>{listing.username}</TableCell>
+                <TableCell>{listing.category_name}</TableCell>
+                <TableCell>${listing.price}/day</TableCell>
+                <TableCell>
+                  <Badge variant={listing.status === 'active' ? 'default' : 'secondary'}>
+                    {listing.status}
+                  </Badge>
+                </TableCell>
+                <TableCell>{new Date(listing.created_at).toLocaleDateString()}</TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link href={`/listings/${listing.id}`}>
+                        <Eye className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(listing.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Card>
     </div>
   )

@@ -2,9 +2,15 @@ import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
+type Props = {
+  params: {
+    listingId: string
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { listingId: string } }
+  props: Props
 ): Promise<Response | NextResponse> {
   try {
     const { userId } = await auth()
@@ -16,7 +22,7 @@ export async function DELETE(
     const { rows } = await sql`
       SELECT user_id 
       FROM listings 
-      WHERE id = ${params.listingId}
+      WHERE id = ${props.params.listingId}
     `
 
     if (rows.length === 0) {
@@ -30,7 +36,7 @@ export async function DELETE(
     // Delete the listing
     await sql`
       DELETE FROM listings 
-      WHERE id = ${params.listingId} 
+      WHERE id = ${props.params.listingId} 
       AND user_id = ${userId}
     `
 

@@ -16,7 +16,7 @@ interface CategoryParams {
 }
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }> | { id: string }
   searchParams?: Omit<CategoryParams, 'id'>
 }
 
@@ -94,8 +94,9 @@ async function getCategoryListings({ id, ...params }: CategoryParams) {
 }
 
 export default async function CategoryPage({ params, searchParams = {} }: PageProps) {
+  const resolvedParams = await Promise.resolve(params)
   const { listings, categoryName } = await getCategoryListings({ 
-    id: params.id,
+    id: resolvedParams.id,
     ...searchParams 
   })
 

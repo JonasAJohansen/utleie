@@ -11,6 +11,14 @@ import { toast } from "@/components/ui/use-toast"
 import { useUser } from "@clerk/nextjs"
 import { CategorySelect } from '@/components/CategorySelect'
 import Image from 'next/image'
+import { X, ImagePlus } from 'lucide-react'
+
+interface ListingPhoto {
+  file: File
+  description: string
+  previewUrl: string
+  isMain: boolean
+}
 
 export default function AddListing() {
   const router = useRouter()
@@ -21,8 +29,7 @@ export default function AddListing() {
     price: '',
     categoryId: '',
   })
-  const [selectedImage, setSelectedImage] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [photos, setPhotos] = useState<ListingPhoto[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -33,14 +40,43 @@ export default function AddListing() {
     setListing({ ...listing, categoryId: value })
   }
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setSelectedImage(file)
-      // Create a preview URL for the selected image
-      const url = URL.createObjectURL(file)
-      setPreviewUrl(url)
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0 && photos.length < 4) {
+      const file = files[0]
+      const previewUrl = URL.createObjectURL(file)
+      const isMain = photos.length === 0 // First photo is main by default
+      
+      setPhotos([...photos, {
+        file,
+        description: '',
+        previewUrl,
+        isMain
+      }])
     }
+  }
+
+  const handlePhotoDescriptionChange = (index: number, description: string) => {
+    const newPhotos = [...photos]
+    newPhotos[index].description = description
+    setPhotos(newPhotos)
+  }
+
+  const handleSetMainPhoto = (index: number) => {
+    const newPhotos = photos.map((photo, i) => ({
+      ...photo,
+      isMain: i === index
+    }))
+    setPhotos(newPhotos)
+  }
+
+  const handleRemovePhoto = (index: number) => {
+    const newPhotos = photos.filter((_, i) => i !== index)
+    // If we removed the main photo, make the first remaining photo the main one
+    if (photos[index].isMain && newPhotos.length > 0) {
+      newPhotos[0].isMain = true
+    }
+    setPhotos(newPhotos)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,12 +84,10 @@ export default function AddListing() {
     setIsSubmitting(true)
 
     try {
-      let imageUrl = ''
-      
-      if (selectedImage) {
-        // First, get a presigned URL for the upload
+      // Upload all photos
+      const uploadedPhotos = await Promise.all(photos.map(async (photo, index) => {
         const formData = new FormData()
-        formData.append('file', selectedImage)
+        formData.append('file', photo.file)
 
         const response = await fetch('/api/upload', {
           method: 'POST',
@@ -61,14 +95,19 @@ export default function AddListing() {
         })
 
         if (!response.ok) {
-          throw new Error('Failed to get upload URL')
+          throw new Error('Failed to upload image')
         }
 
         const { url } = await response.json()
-        imageUrl = url
-      }
+        return {
+          url,
+          description: photo.description,
+          isMain: photo.isMain,
+          displayOrder: index
+        }
+      }))
 
-      // Create the listing with the image URL
+      // Create the listing with photos
       const listingResponse = await fetch('/api/listings', {
         method: 'POST',
         headers: {
@@ -76,7 +115,7 @@ export default function AddListing() {
         },
         body: JSON.stringify({
           ...listing,
-          image: imageUrl,
+          photos: uploadedPhotos,
         }),
       })
 
@@ -158,30 +197,61 @@ export default function AddListing() {
               />
             </div>
             <div>
-              <Label htmlFor="image">Image</Label>
-              <Input
-                id="image"
-                name="image"
-                type="file"
-                accept="image/*"
-                onChange={handleImageChange}
-                required
-              />
-              {previewUrl && (
-                <div className="mt-4">
-                  <Label>Preview</Label>
-                  <div className="relative w-full h-48 mt-2 rounded-lg overflow-hidden">
-                    <Image
-                      src={previewUrl}
-                      alt="Preview"
-                      fill
-                      className="object-cover"
-                    />
+              <Label>Photos (Max 4)</Label>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                {photos.map((photo, index) => (
+                  <div key={index} className="relative">
+                    <div className="relative w-full h-48 rounded-lg overflow-hidden">
+                      <Image
+                        src={photo.previewUrl}
+                        alt={`Photo ${index + 1}`}
+                        fill
+                        className="object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(index)}
+                        className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-2 space-y-2">
+                      <Input
+                        placeholder="Add a description"
+                        value={photo.description}
+                        onChange={(e) => handlePhotoDescriptionChange(index, e.target.value)}
+                      />
+                      <Button
+                        type="button"
+                        variant={photo.isMain ? "default" : "outline"}
+                        className="w-full"
+                        onClick={() => handleSetMainPhoto(index)}
+                      >
+                        {photo.isMain ? 'Main Photo' : 'Set as Main'}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+                {photos.length < 4 && (
+                  <div className="relative w-full h-48 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <div className="text-center">
+                      <ImagePlus className="mx-auto h-8 w-8 text-gray-400" />
+                      <span className="mt-2 block text-sm text-gray-600">
+                        Add Photo
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="w-full" disabled={isSubmitting || photos.length === 0}>
               {isSubmitting ? 'Creating...' : 'Create Listing'}
             </Button>
           </form>

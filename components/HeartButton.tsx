@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Heart } from 'lucide-react'
 
 interface HeartButtonProps {
-  itemId: number
+  itemId: string
   initialLiked?: boolean
 }
 

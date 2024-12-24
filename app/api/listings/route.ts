@@ -22,7 +22,19 @@ export async function GET(request: Request) {
       SELECT 
         l.*,
         COALESCE(AVG(r.rating), 0) as rating,
-        COUNT(r.id) as review_count
+        COUNT(r.id) as review_count,
+        (
+          SELECT json_agg(json_build_object(
+            'id', lp.id,
+            'url', lp.url,
+            'description', lp.description,
+            'isMain', lp.is_main,
+            'displayOrder', lp.display_order
+          ))
+          FROM listing_photos lp
+          WHERE lp.listing_id = l.id
+          ORDER BY lp.display_order
+        ) as photos
       FROM listings l
       LEFT JOIN reviews r ON l.id = r.listing_id
       WHERE l.user_id = ${userId}
@@ -46,10 +58,18 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { name, description, price, image, categoryId } = body
+    const { name, description, price, photos, categoryId } = body
 
     if (!categoryId) {
       return new NextResponse('Category is required', { status: 400 })
+    }
+
+    if (!photos || photos.length === 0) {
+      return new NextResponse('At least one photo is required', { status: 400 })
+    }
+
+    if (photos.length > 4) {
+      return new NextResponse('Maximum 4 photos allowed', { status: 400 })
     }
 
     // Get the user's data from Clerk
@@ -74,14 +94,35 @@ export async function POST(request: Request) {
       `
     }
 
-    // Now create the listing with category
-    const result = await sql`
-      INSERT INTO listings (name, description, price, image, user_id, category_id)
-      VALUES (${name}, ${description}, ${price}, ${image}, ${userId}, ${categoryId})
+    // Create the listing
+    const listingResult = await sql`
+      INSERT INTO listings (name, description, price, user_id, category_id)
+      VALUES (${name}, ${description}, ${price}, ${userId}, ${categoryId})
       RETURNING id
     `
 
-    return NextResponse.json(result.rows[0])
+    const listingId = listingResult.rows[0].id
+
+    // Insert the photos
+    await Promise.all(photos.map(async (photo: any) => {
+      await sql`
+        INSERT INTO listing_photos (
+          listing_id,
+          url,
+          description,
+          is_main,
+          display_order
+        ) VALUES (
+          ${listingId},
+          ${photo.url},
+          ${photo.description},
+          ${photo.isMain},
+          ${photo.displayOrder}
+        )
+      `
+    }))
+
+    return NextResponse.json({ id: listingId })
   } catch (error) {
     console.error('Error creating listing:', error)
     return new NextResponse('Error creating listing', { status: 500 })

@@ -36,13 +36,26 @@ CREATE TABLE IF NOT EXISTS listings (
   name VARCHAR(255) NOT NULL,
   description TEXT,
   price DECIMAL(10, 2) NOT NULL,
-  image TEXT,
   category_id VARCHAR(255),
   subcategory_id VARCHAR(255),
   location VARCHAR(255),
   status VARCHAR(50) DEFAULT 'active',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create listing_photos table
+CREATE TABLE IF NOT EXISTS listing_photos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  listing_id UUID NOT NULL REFERENCES listings(id),
+  url TEXT NOT NULL,
+  description TEXT,
+  is_main BOOLEAN DEFAULT false,
+  display_order INT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT max_photos_per_listing UNIQUE (listing_id, display_order),
+  CONSTRAINT max_display_order CHECK (display_order >= 0 AND display_order < 4)
 );
 
 -- Create rental_requests table
@@ -138,4 +151,6 @@ CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id ON saved_searches(user_id)
 CREATE INDEX IF NOT EXISTS idx_conversations_users ON conversations(user1_id, user2_id);
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_listing_photos_listing_id ON listing_photos(listing_id);
+CREATE INDEX IF NOT EXISTS idx_listing_photos_main ON listing_photos(listing_id) WHERE is_main = true;
 

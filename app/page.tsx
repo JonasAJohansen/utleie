@@ -8,7 +8,24 @@ import { SearchBar } from '@/components/SearchBar'
 async function getLatestListings() {
   try {
     const result = await sql`
-      SELECT l.*, u.username
+      SELECT 
+        l.*,
+        u.username,
+        COALESCE(
+          (
+            SELECT lp.url
+            FROM listing_photos lp
+            WHERE lp.listing_id = l.id AND lp.is_main = true
+            LIMIT 1
+          ),
+          (
+            SELECT lp.url
+            FROM listing_photos lp
+            WHERE lp.listing_id = l.id
+            ORDER BY lp.display_order
+            LIMIT 1
+          )
+        ) as image
       FROM listings l
       JOIN users u ON l.user_id = u.id
       ORDER BY l.created_at DESC
@@ -126,10 +143,12 @@ export default async function Home() {
               <div className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:scale-105">
                 <div className="relative h-48">
                   <Image
-                    src={listing.image || '/placeholder.svg?height=200&width=300'}
+                    src={listing.image || '/placeholder.svg'}
                     alt={listing.name}
                     fill
                     className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    priority={true}
                   />
                 </div>
                 <div className="p-4">

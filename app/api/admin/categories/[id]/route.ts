@@ -2,10 +2,7 @@ import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest) {
   const { userId } = await auth()
   const user = await currentUser()
 
@@ -20,7 +17,9 @@ export async function PUT(
   }
 
   try {
-    const { name, description, icon } = await req.json()
+    // Get the ID from the URL
+    const id = request.url.split('/').pop()
+    const { name, description, icon } = await request.json()
 
     const result = await sql`
       UPDATE categories
@@ -29,7 +28,7 @@ export async function PUT(
         description = ${description},
         icon = ${icon},
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${params.id}::uuid
+      WHERE id = ${id}::uuid
       RETURNING *
     `
 
@@ -44,10 +43,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   const { userId } = await auth()
   const user = await currentUser()
 
@@ -62,9 +58,12 @@ export async function DELETE(
   }
 
   try {
+    // Get the ID from the URL
+    const id = request.url.split('/').pop()
+
     // First check if there are any listings using this category
     const listingsCheck = await sql`
-      SELECT COUNT(*) FROM listings WHERE category_id = ${params.id}::uuid
+      SELECT COUNT(*) FROM listings WHERE category_id = ${id}::uuid
     `
 
     if (parseInt(listingsCheck.rows[0].count) > 0) {
@@ -76,7 +75,7 @@ export async function DELETE(
 
     const result = await sql`
       DELETE FROM categories
-      WHERE id = ${params.id}::uuid
+      WHERE id = ${id}::uuid
       RETURNING id
     `
 

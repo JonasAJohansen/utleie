@@ -1,9 +1,9 @@
 import { sql } from '@vercel/postgres'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 
 export async function PUT(
-  request: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const { userId } = await auth()
@@ -20,7 +20,7 @@ export async function PUT(
   }
 
   try {
-    const { name, description, icon } = await request.json()
+    const { name, description, icon } = await req.json()
 
     const result = await sql`
       UPDATE categories
@@ -45,7 +45,7 @@ export async function PUT(
 }
 
 export async function DELETE(
-  request: Request,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const { userId } = await auth()

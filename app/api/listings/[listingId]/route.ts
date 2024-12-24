@@ -2,21 +2,21 @@ import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: { listingId: string } }
-) {
+export async function DELETE(request: NextRequest) {
   try {
     const { userId } = await auth()
     if (!userId) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
+    // Get the ID from the URL
+    const listingId = request.url.split('/').pop()
+
     // Verify the user owns this listing
     const { rows } = await sql`
       SELECT user_id 
       FROM listings 
-      WHERE id = ${params.listingId}
+      WHERE id = ${listingId}
     `
 
     if (rows.length === 0) {
@@ -30,7 +30,7 @@ export async function DELETE(
     // Delete the listing
     await sql`
       DELETE FROM listings 
-      WHERE id = ${params.listingId} 
+      WHERE id = ${listingId} 
       AND user_id = ${userId}
     `
 

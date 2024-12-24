@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from "./ui/input"
 import { Button } from "./ui/button"
@@ -12,7 +12,7 @@ interface SearchBarProps {
   initialQuery?: string
 }
 
-export function SearchBar({ initialQuery = '' }: SearchBarProps) {
+function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -114,6 +114,30 @@ export function SearchBar({ initialQuery = '' }: SearchBarProps) {
         )}
       </div>
     </form>
+  )
+}
+
+export function SearchBar(props: SearchBarProps) {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center max-w-3xl mx-auto">
+        <Input
+          type="text"
+          placeholder="Loading..."
+          disabled
+          className="w-full pl-12 h-14 bg-white/90 backdrop-blur-sm text-black placeholder:text-gray-500 text-lg rounded-l-full rounded-r-none border-2 border-r-0 border-white/20"
+        />
+        <Button 
+          disabled
+          size="lg"
+          className="h-14 px-8 rounded-none bg-yellow-400 text-black font-semibold text-lg"
+        >
+          Search
+        </Button>
+      </div>
+    }>
+      <SearchBarContent {...props} />
+    </Suspense>
   )
 }
 

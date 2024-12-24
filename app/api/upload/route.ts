@@ -23,13 +23,13 @@ export async function POST(request: Request) {
     // Convert the file to a buffer/blob for upload
     const buffer = await file.arrayBuffer()
 
-    // Get the presigned URL for upload
-    const { url, uploadUrl } = await put(uniqueFilename, buffer, {
+    // Upload directly to Vercel Blob
+    const { url } = await put(uniqueFilename, buffer, {
       access: 'public',
       contentType: file.type,
     })
 
-    return NextResponse.json({ url, uploadUrl })
+    return NextResponse.json({ url })
   } catch (error) {
     console.error('Error in upload route:', error)
     return new NextResponse('Internal Server Error', { status: 500 })

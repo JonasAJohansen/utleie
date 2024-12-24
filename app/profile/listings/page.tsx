@@ -13,7 +13,7 @@ interface Listing {
   name: string
   price: number
   image: string
-  rating: number
+  rating: number | null
   location: string
   created_at: string
 }
@@ -79,7 +79,9 @@ export default function MyListingsPage() {
                   <p className="text-gray-600 mb-2">${listing.price}/day</p>
                   <div className="flex items-center mb-2">
                     <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                    <span className="ml-1">{listing.rating?.toFixed(1) || 'N/A'}</span>
+                    <span className="ml-1">
+                      {typeof listing.rating === 'number' ? listing.rating.toFixed(1) : 'N/A'}
+                    </span>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <MapPin className="h-4 w-4 mr-1" />

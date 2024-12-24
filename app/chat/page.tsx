@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useUser } from "@clerk/nextjs"
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
@@ -57,7 +57,7 @@ const formatDate = (dateString: string) => {
   }
 };
 
-export default function ChatPage() {
+function ChatContent() {
   const { user } = useUser()
   const searchParams = useSearchParams()
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -489,6 +489,14 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+      <ChatContent />
+    </Suspense>
   )
 }
 

@@ -12,7 +12,8 @@ const nextConfig = {
         'utfs.io',
         'x.com',
         'pbs.twimg.com',
-        'abs.twimg.com'
+        'abs.twimg.com',
+        '1wwlyedsoyiqsvkw.public.blob.vercel-storage.com'
       ],
     },
   }

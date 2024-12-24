@@ -1,11 +1,8 @@
 import { sql } from '@vercel/postgres'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest) {
   const { userId } = await auth()
   const user = await currentUser()
 
@@ -20,6 +17,8 @@ export async function PATCH(
   }
 
   try {
+    // Get the ID from the URL
+    const id = request.url.split('/').slice(-2)[0]
     const { status } = await request.json()
 
     if (!['active', 'banned'].includes(status)) {
@@ -29,7 +28,7 @@ export async function PATCH(
     const result = await sql`
       UPDATE users
       SET status = ${status}
-      WHERE id = ${params.id}
+      WHERE id = ${id}
       RETURNING id, username, email, created_at, status, image_url
     `
 

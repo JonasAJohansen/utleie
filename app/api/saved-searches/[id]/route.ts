@@ -1,41 +1,33 @@
 import { sql } from '@vercel/postgres'
-import { auth } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
+  const { userId } = await auth()
+  const user = await currentUser()
+
+  if (!userId || !user) {
+    return new NextResponse('Unauthorized', { status: 401 })
+  }
+
   try {
-    const { userId } = await auth()
+    // Get the ID from the URL
+    const id = request.url.split('/').pop()
 
-    if (!userId) {
-      return new NextResponse('Unauthorized', { status: 401 })
-    }
-
-    // Verify the saved search belongs to the user
-    const savedSearch = await sql`
-      SELECT user_id 
-      FROM saved_searches 
-      WHERE id = ${params.id}::uuid
+    // Delete the saved search, but only if it belongs to the user
+    const result = await sql`
+      DELETE FROM saved_searches
+      WHERE id = ${id}::uuid AND user_id = ${userId}
+      RETURNING id
     `
 
-    if (savedSearch.rows.length === 0) {
+    if (result.rows.length === 0) {
       return new NextResponse('Saved search not found', { status: 404 })
     }
 
-    if (savedSearch.rows[0].user_id !== userId) {
-      return new NextResponse('Unauthorized', { status: 401 })
-    }
-
-    await sql`
-      DELETE FROM saved_searches 
-      WHERE id = ${params.id}::uuid
-    `
-
     return new NextResponse(null, { status: 204 })
   } catch (error) {
-    console.error('Error deleting saved search:', error)
+    console.error('Database Error:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 } 

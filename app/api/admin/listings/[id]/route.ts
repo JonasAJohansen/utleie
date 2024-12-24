@@ -1,11 +1,8 @@
 import { sql } from '@vercel/postgres'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth, currentUser } from '@clerk/nextjs/server'
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   const { userId } = await auth()
   const user = await currentUser()
 
@@ -20,10 +17,13 @@ export async function DELETE(
   }
 
   try {
+    // Get the ID from the URL
+    const id = request.url.split('/').pop()
+
     // Delete the listing
     const result = await sql`
       DELETE FROM listings
-      WHERE id = ${params.id}
+      WHERE id = ${id}::uuid
       RETURNING id
     `
 

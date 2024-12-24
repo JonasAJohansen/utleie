@@ -17,7 +17,7 @@ interface CategoryParams {
 
 interface PageProps {
   params: Promise<any> | undefined
-  searchParams?: Omit<CategoryParams, 'id'>
+  searchParams: Promise<any> | undefined
 }
 
 async function getCategoryListings({ id, ...params }: CategoryParams) {
@@ -93,11 +93,13 @@ async function getCategoryListings({ id, ...params }: CategoryParams) {
   }
 }
 
-export default async function CategoryPage({ params, searchParams = {} }: PageProps) {
-  const resolvedParams = await Promise.resolve(params || {})
+export default async function CategoryPage({ params, searchParams }: PageProps) {
+  const resolvedParams = await Promise.resolve(params)
+  const resolvedSearchParams = await Promise.resolve(searchParams)
+
   const { listings, categoryName } = await getCategoryListings({ 
-    id: resolvedParams.id,
-    ...searchParams 
+    id: resolvedParams?.id,
+    ...(resolvedSearchParams || {})
   })
 
   return (

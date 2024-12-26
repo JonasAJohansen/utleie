@@ -20,7 +20,7 @@ export async function GET(req: Request) {
           end_date as "endDate"
         FROM rental_requests
         WHERE listing_id = ${listingId}
-        AND status = 'APPROVED'
+        AND status = 'approved'
       `
       return NextResponse.json(result.rows)
     }
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
         ${userId},
         ${startDate},
         ${endDate},
-        'PENDING',
+        'pending',
         ${totalPrice}
       )
       RETURNING id

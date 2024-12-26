@@ -23,7 +23,7 @@ interface RentalRequest {
   renterImage?: string
   startDate: string
   endDate: string
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  status: 'pending' | 'approved' | 'rejected'
   createdAt: string
   totalPrice: number
   type: 'incoming' | 'outgoing'
@@ -65,7 +65,7 @@ export function RentalRequestsList({ userId }: RentalRequestsListProps) {
     }
   }
 
-  const handleRequest = async (requestId: string, status: 'APPROVED' | 'REJECTED') => {
+  const handleRequest = async (requestId: string, status: 'approved' | 'rejected') => {
     try {
       const response = await fetch(`/api/rental-requests/${requestId}`, {
         method: 'PATCH',
@@ -78,8 +78,8 @@ export function RentalRequestsList({ userId }: RentalRequestsListProps) {
           request.id === requestId ? { ...request, status } : request
         ))
         toast({
-          title: `Request ${status.toLowerCase()}`,
-          description: `The rental request has been ${status.toLowerCase()}`,
+          title: `Request ${status}`,
+          description: `The rental request has been ${status}`,
         })
       } else {
         throw new Error('Failed to update request')
@@ -141,28 +141,28 @@ export function RentalRequestsList({ userId }: RentalRequestsListProps) {
             >
               <MessageCircle className="h-5 w-5" />
             </Button>
-            {request.type === 'incoming' && request.status === 'PENDING' && (
+            {request.type === 'incoming' && request.status === 'pending' && (
               <>
                 <Button
                   variant="outline"
-                  onClick={() => handleRequest(request.id, 'REJECTED')}
+                  onClick={() => handleRequest(request.id, 'rejected')}
                 >
                   Reject
                 </Button>
                 <Button
-                  onClick={() => handleRequest(request.id, 'APPROVED')}
+                  onClick={() => handleRequest(request.id, 'approved')}
                 >
                   Approve
                 </Button>
               </>
             )}
-            {request.status === 'PENDING' && request.type === 'outgoing' && (
+            {request.status === 'pending' && request.type === 'outgoing' && (
               <Badge>Pending</Badge>
             )}
-            {request.status === 'APPROVED' && (
+            {request.status === 'approved' && (
               <Badge variant="secondary">Approved</Badge>
             )}
-            {request.status === 'REJECTED' && (
+            {request.status === 'rejected' && (
               <Badge variant="destructive">Rejected</Badge>
             )}
           </div>

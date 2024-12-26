@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,52 +11,97 @@ import { ItemGrid } from '@/components/ItemGrid'
 import { Wishlist } from '@/components/Wishlist'
 import { ReportDialog } from '@/components/ReportDialog'
 
-// This would typically come from a database or API
-const userData = {
-  username: 'johndoe',
-  name: 'John Doe',
-  avatar: '/placeholder.svg?height=200&width=200',
-  location: 'New York, NY',
-  bio: 'Avid traveler and outdoor enthusiast. Always looking for new adventures and gear to try out!',
-  joinDate: '2022-03-15',
-  rating: 4.8,
-  totalRentals: 37,
+interface UserProfile {
+  id: string
+  username: string
+  image_url: string | null
+  bio: string | null
+  location: string | null
+  joinDate: string
+  totalListings: number
+  totalRentals: number
+  rating: number
 }
 
-const userListings = [
-  { id: 1, name: 'Mountain Bike', price: 25, image: '/placeholder.svg?height=200&width=300', rating: 4.5, location: 'New York, NY', priceType: 'day', features: ['21-speed', 'Front suspension'] },
-  { id: 2, name: 'Camping Tent', price: 30, image: '/placeholder.svg?height=200&width=300', rating: 4.2, location: 'New York, NY', priceType: 'day', features: ['4-person', 'Waterproof'] },
-  { id: 3, name: 'Surfboard', price: 35, image: '/placeholder.svg?height=200&width=300', rating: 4.7, location: 'New York, NY', priceType: 'day', features: ['8 ft', 'Beginner-friendly'] },
-]
+interface UserListing {
+  id: string
+  name: string
+  price: number
+  image: string | null
+  rating: number
+  review_count: number
+  location: string | null
+}
 
 export default function UserProfile() {
   const params = useParams()
   const [activeTab, setActiveTab] = useState('listings')
   const [showReportDialog, setShowReportDialog] = useState(false)
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [listings, setListings] = useState<UserListing[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  // In a real application, you would fetch the user data based on the username
+  useEffect(() => {
+    async function fetchUserData() {
+      try {
+        const [profileResponse, listingsResponse] = await Promise.all([
+          fetch(`/api/users/${params.username}`),
+          fetch(`/api/users/${params.username}/listings`)
+        ])
+
+        if (profileResponse.ok && listingsResponse.ok) {
+          const [profileData, listingsData] = await Promise.all([
+            profileResponse.json(),
+            listingsResponse.json()
+          ])
+
+          setProfile(profileData)
+          setListings(listingsData)
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    if (params.username) {
+      fetchUserData()
+    }
+  }, [params.username])
+
+  if (isLoading) {
+    return <div>Loading...</div>
+  }
+
+  if (!profile) {
+    return <div>User not found</div>
+  }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardContent className="flex flex-col md:flex-row items-center gap-6 py-6">
           <Avatar className="w-32 h-32">
-            <AvatarImage src={userData.avatar} alt={userData.name} />
-            <AvatarFallback>{userData.name[0]}</AvatarFallback>
+            <AvatarImage src={profile.image_url || '/placeholder.svg?height=200&width=200'} alt={profile.username} />
+            <AvatarFallback>{profile.username[0]}</AvatarFallback>
           </Avatar>
           <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold">{userData.name}</h1>
-            <p className="text-gray-500">@{params.username as string}</p>
-            <div className="flex items-center justify-center md:justify-start mt-2">
-              <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-              <span className="text-gray-500">{userData.location}</span>
-            </div>
+            <h1 className="text-3xl font-bold">{profile.username}</h1>
+            {profile.location && (
+              <div className="flex items-center justify-center md:justify-start mt-2">
+                <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                <span className="text-gray-500">{profile.location}</span>
+              </div>
+            )}
             <div className="flex items-center justify-center md:justify-start mt-2">
               <Star className="h-5 w-5 text-yellow-400 fill-current" />
-              <span className="ml-1 font-semibold">{userData.rating.toFixed(1)}</span>
-              <span className="ml-2 text-gray-600">({userData.totalRentals} rentals)</span>
+              <span className="ml-1 font-semibold">{profile.rating.toFixed(1)}</span>
+              <span className="ml-2 text-gray-600">({profile.totalRentals} rentals)</span>
             </div>
-            <p className="mt-4 text-gray-700">{userData.bio.replace(/'/g, "&apos;")}</p>
+            {profile.bio && (
+              <p className="mt-4 text-gray-700">{profile.bio}</p>
+            )}
             <div className="mt-4 flex justify-center md:justify-start space-x-4">
               <Button>
                 <MessageCircle className="mr-2 h-4 w-4" /> Message
@@ -71,16 +116,29 @@ export default function UserProfile() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
-          <TabsTrigger value="listings">Listings</TabsTrigger>
+          <TabsTrigger value="listings">Listings ({profile.totalListings})</TabsTrigger>
           <TabsTrigger value="wishlist">Wishlist</TabsTrigger>
         </TabsList>
         <TabsContent value="listings">
           <Card>
             <CardHeader>
-              <CardTitle>{`${userData.name}s Listings`}</CardTitle>
+              <CardTitle>{profile.username}'s Listings</CardTitle>
             </CardHeader>
             <CardContent>
-              <ItemGrid items={userListings} />
+              {listings.length === 0 ? (
+                <p className="text-center text-gray-500">No listings yet</p>
+              ) : (
+                <ItemGrid items={listings.map(listing => ({
+                  id: listing.id,
+                  name: listing.name,
+                  price: Number(listing.price),
+                  image: listing.image || '/placeholder.svg?height=200&width=300',
+                  rating: Number(listing.rating),
+                  location: listing.location || 'Location not specified',
+                  priceType: 'day',
+                  features: []
+                }))} />
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -93,8 +151,8 @@ export default function UserProfile() {
         open={showReportDialog}
         onOpenChange={setShowReportDialog}
         reportType="user"
-        reportedItemId={userData.username}
-        reportedItemName={userData.name}
+        reportedItemId={profile.id}
+        reportedItemName={profile.username}
       />
     </div>
   )

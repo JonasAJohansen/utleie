@@ -19,26 +19,38 @@ export async function GET(request: Request) {
     }
 
     const result = await sql`
+      WITH listing_photos_agg AS (
+        SELECT 
+          listing_id,
+          json_agg(
+            json_build_object(
+              'id', id,
+              'url', url,
+              'description', description,
+              'isMain', is_main,
+              'displayOrder', display_order
+            ) ORDER BY display_order
+          ) as photos
+        FROM listing_photos
+        GROUP BY listing_id
+      ),
+      listing_reviews AS (
+        SELECT 
+          listing_id,
+          COALESCE(AVG(rating), 0) as avg_rating,
+          COUNT(id) as review_count
+        FROM reviews
+        GROUP BY listing_id
+      )
       SELECT 
         l.*,
-        COALESCE(AVG(r.rating), 0) as rating,
-        COUNT(r.id) as review_count,
-        (
-          SELECT json_agg(json_build_object(
-            'id', lp.id,
-            'url', lp.url,
-            'description', lp.description,
-            'isMain', lp.is_main,
-            'displayOrder', lp.display_order
-          ))
-          FROM listing_photos lp
-          WHERE lp.listing_id = l.id
-          ORDER BY lp.display_order
-        ) as photos
+        COALESCE(lr.avg_rating, 0) as rating,
+        COALESCE(lr.review_count, 0) as review_count,
+        lp.photos
       FROM listings l
-      LEFT JOIN reviews r ON l.id = r.listing_id
+      LEFT JOIN listing_reviews lr ON l.id = lr.listing_id
+      LEFT JOIN listing_photos_agg lp ON l.id = lp.listing_id
       WHERE l.user_id = ${userId}
-      GROUP BY l.id
       ORDER BY l.created_at DESC
     `
 

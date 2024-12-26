@@ -19,12 +19,19 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { HeartButton } from "@/components/HeartButton"
 
 interface Listing {
   id: string
   name: string
   price: number
-  image: string
+  photos: Array<{
+    id: string
+    url: string
+    description: string
+    isMain: boolean
+    displayOrder: number
+  }> | null
   rating: number | null
   location: string
   created_at: string
@@ -110,7 +117,7 @@ export default function MyListingsPage() {
               <div key={listing.id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="relative">
                   <Image 
-                    src={listing.image || '/placeholder.svg?height=200&width=300'} 
+                    src={listing.photos?.[0]?.url || '/placeholder.svg?height=200&width=300'} 
                     alt={listing.name} 
                     width={300} 
                     height={200} 
@@ -157,7 +164,10 @@ export default function MyListingsPage() {
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2">{listing.name}</h3>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-semibold text-lg">{listing.name}</h3>
+                    <HeartButton itemId={listing.id} />
+                  </div>
                   <p className="text-gray-600 mb-2">${listing.price}/day</p>
                   <div className="flex items-center mb-2">
                     <Star className="h-5 w-5 text-yellow-400 fill-current" />

@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { listingId: string } }
+  { params }: { params: Promise<{ listingId: string }> }
 ) {
   const { userId } = await auth()
   if (!userId) {
@@ -12,7 +12,7 @@ export async function DELETE(
   }
 
   try {
-    const { listingId } = params
+    const { listingId } = await params
 
     const result = await sql`
       DELETE FROM favorites

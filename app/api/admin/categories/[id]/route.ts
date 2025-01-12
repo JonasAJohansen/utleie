@@ -43,12 +43,16 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextRequest) {
   try {
-    const name = params.id
+    // Get the ID from the URL
+    const name = request.url.split('/').pop()
+    if (!name) {
+      return NextResponse.json(
+        { error: 'Mangler kategori navn' },
+        { status: 400 }
+      )
+    }
     
     // Check if category has any listings
     const { rows: listings } = await sql`

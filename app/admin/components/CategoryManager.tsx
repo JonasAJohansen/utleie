@@ -16,6 +16,8 @@ import {
 interface Category {
   name: string
   is_active: boolean
+  icon?: string
+  description?: string
 }
 
 export function CategoryManager() {

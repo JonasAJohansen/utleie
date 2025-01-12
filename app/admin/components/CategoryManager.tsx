@@ -1,3 +1,23 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/components/ui/use-toast'
+import { Loader2, Trash2 } from 'lucide-react'
+import { locations } from '@/components/ui/location-selector'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+
+interface Category {
+  name: string
+  is_active: boolean
+}
+
 export function CategoryManager() {
   const [categories, setCategories] = useState<Category[]>([])
   const [isLoading, setIsLoading] = useState(true)

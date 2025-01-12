@@ -43,50 +43,45 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-export async function DELETE(request: NextRequest) {
-  const { userId } = await auth()
-  const user = await currentUser()
-
-  if (!userId || !user) {
-    return new NextResponse('Unauthorized', { status: 401 })
-  }
-
-  // Check if user has admin role
-  const userRole = user.privateMetadata.role
-  if (userRole !== 'org:admin') {
-    return new NextResponse('Forbidden', { status: 403 })
-  }
-
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    // Get the ID from the URL
-    const id = request.url.split('/').pop()
-
-    // First check if there are any listings using this category
-    const listingsCheck = await sql`
+    const name = params.id
+    
+    // Check if category has any listings
+    const { rows: listings } = await sql`
       SELECT COUNT(*) FROM listings 
-      WHERE category_id::uuid = ${id}::uuid
+      WHERE category_id = ${name}
     `
-
-    if (parseInt(listingsCheck.rows[0].count) > 0) {
-      return new NextResponse(
-        'Cannot delete category that has listings. Please remove or reassign the listings first.',
+    
+    if (parseInt(listings[0].count) > 0) {
+      return NextResponse.json(
+        { error: 'Kan ikke slette kategori som har annonser' },
         { status: 400 }
       )
     }
 
-    const result = await sql`
-      DELETE FROM categories
-      WHERE id = ${id}::uuid
-      RETURNING id
+    const { rows } = await sql`
+      DELETE FROM categories 
+      WHERE name = ${name}
+      RETURNING *
     `
 
-    if (result.rows.length === 0) {
-      return new NextResponse('Category not found', { status: 404 })
+    if (rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Kategori ikke funnet' },
+        { status: 404 }
+      )
     }
 
-    return new NextResponse(null, { status: 204 })
+    return NextResponse.json(rows[0])
   } catch (error) {
-    console.error('Database Error:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    console.error('Error deleting category:', error)
+    return NextResponse.json(
+      { error: 'Kunne ikke slette kategori' },
+      { status: 500 }
+    )
   }
 } 

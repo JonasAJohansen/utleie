@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/use-toast"
 import { Loader2 } from 'lucide-react'
+import { locations } from "@/components/ui/location-selector"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Category {
   id: string
@@ -47,10 +49,16 @@ export function CategoryManager() {
     setIsSubmitting(true)
 
     try {
+      // Find the location object that matches the selected value
+      const selectedLocation = locations.find(loc => loc.value === newCategoryName)
+      if (!selectedLocation) {
+        throw new Error('Ugyldig lokasjon valgt')
+      }
+
       const response = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newCategoryName }),
+        body: JSON.stringify({ name: selectedLocation.label }),
       })
 
       if (!response.ok) throw new Error('Kunne ikke legge til kategori')
@@ -146,13 +154,23 @@ export function CategoryManager() {
           </DialogHeader>
           <form onSubmit={handleAddCategory} className="space-y-4">
             <div>
-              <Label htmlFor="name">Kategorinavn</Label>
-              <Input
-                id="name"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                required
-              />
+              <Label htmlFor="name">Velg lokasjon</Label>
+              <Select value={newCategoryName} onValueChange={setNewCategoryName}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Velg sted" />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((location) => (
+                    <SelectItem 
+                      key={location.value} 
+                      value={location.value}
+                      className="cursor-pointer"
+                    >
+                      {location.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Legger til..." : "Legg til"}

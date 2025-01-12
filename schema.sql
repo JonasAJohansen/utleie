@@ -112,16 +112,18 @@ CREATE TABLE IF NOT EXISTS saved_searches (
 
 -- Create categories table
 CREATE TABLE IF NOT EXISTS categories (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name VARCHAR(255) NOT NULL,
+  name VARCHAR(255) PRIMARY KEY,
   description TEXT,
   icon VARCHAR(255),
+  is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Add category_id to listings table
-ALTER TABLE listings ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES categories(id);
+-- Update listings table to reference category name
+ALTER TABLE listings DROP CONSTRAINT IF EXISTS listings_category_id_fkey;
+ALTER TABLE listings DROP COLUMN IF EXISTS category_id;
+ALTER TABLE listings ADD COLUMN category_id VARCHAR(255) REFERENCES categories(name);
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/components/ui/use-toast'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Loader2, Trash2, Plus } from 'lucide-react'
 import { locations } from '@/components/ui/location-selector'
 import {
   Select,

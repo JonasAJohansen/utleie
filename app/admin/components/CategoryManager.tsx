@@ -14,8 +14,11 @@ import {
 } from '@/components/ui/select'
 
 interface Category {
+  id: string
   name: string
   is_active: boolean
+  is_popular?: boolean
+  is_featured?: boolean
   icon?: string
   description?: string
 }
@@ -26,6 +29,85 @@ export function CategoryManager() {
   const [isAddingCategory, setIsAddingCategory] = useState(false)
   const [newCategory, setNewCategory] = useState({ name: '', icon: '', description: '' })
   const { toast } = useToast()
+
+  const handleTogglePopular = async (category: Category) => {
+    try {
+      // TODO: Implement API call to toggle popular status
+      const updatedCategory = { ...category, is_popular: !category.is_popular }
+      setCategories(categories.map(c => c.id === category.id ? updatedCategory : c))
+      toast({
+        title: updatedCategory.is_popular ? 'Lagt til i populære' : 'Fjernet fra populære',
+        description: `${category.name} har blitt ${updatedCategory.is_popular ? 'lagt til i' : 'fjernet fra'} populære kategorier.`
+      })
+    } catch (error) {
+      toast({
+        title: 'Feil',
+        description: 'Kunne ikke oppdatere kategori status.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleToggleFeatured = async (category: Category) => {
+    try {
+      // TODO: Implement API call to toggle featured status
+      const updatedCategory = { ...category, is_featured: !category.is_featured }
+      setCategories(categories.map(c => c.id === category.id ? updatedCategory : c))
+      toast({
+        title: updatedCategory.is_featured ? 'Lagt til i utvalgte' : 'Fjernet fra utvalgte',
+        description: `${category.name} har blitt ${updatedCategory.is_featured ? 'lagt til i' : 'fjernet fra'} utvalgte kategorier.`
+      })
+    } catch (error) {
+      toast({
+        title: 'Feil',
+        description: 'Kunne ikke oppdatere kategori status.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleDeleteCategory = async (categoryId: string) => {
+    try {
+      // TODO: Implement API call to delete category
+      setCategories(categories.filter(c => c.id !== categoryId))
+      toast({
+        title: 'Kategori slettet',
+        description: 'Kategorien har blitt slettet.'
+      })
+    } catch (error) {
+      toast({
+        title: 'Feil',
+        description: 'Kunne ikke slette kategorien.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleAddCategory = async () => {
+    try {
+      // TODO: Implement API call to add new category
+      const newCategoryWithId = {
+        id: Date.now().toString(), // Temporary ID generation
+        ...newCategory,
+        is_active: true,
+        is_popular: false,
+        is_featured: false
+      }
+      setCategories([...categories, newCategoryWithId])
+      setIsAddingCategory(false)
+      setNewCategory({ name: '', icon: '', description: '' })
+      toast({
+        title: 'Kategori opprettet',
+        description: 'Ny kategori har blitt lagt til.'
+      })
+    } catch (error) {
+      toast({
+        title: 'Feil',
+        description: 'Kunne ikke opprette ny kategori.',
+        variant: 'destructive'
+      })
+    }
+  }
 
   return (
     <div className="space-y-4">

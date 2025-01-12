@@ -80,8 +80,8 @@ export default async function Home() {
       <section className="relative bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-24 rounded-2xl overflow-hidden">
         <div className="absolute inset-0 bg-black opacity-50"></div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-4">
-          <h1 className="text-5xl font-bold mb-6 leading-tight">Discover, Rent, and Experience</h1>
-          <p className="text-xl mb-10 max-w-2xl mx-auto">Find unique items to rent for your next adventure, project, or special occasion. Join our community of sharers today!</p>
+          <h1 className="text-5xl font-bold mb-6 leading-tight">Oppdag, Lei og Opplev</h1>
+          <p className="text-xl mb-10 max-w-2xl mx-auto">Finn unike gjenstander å leie til ditt neste eventyr, prosjekt eller spesielle anledning. Bli med i vårt fellesskap i dag!</p>
           <div className="mt-8">
             <SearchBar initialQuery="" />
           </div>
@@ -90,8 +90,8 @@ export default async function Home() {
 
       {popularCategories.length > 0 && (
         <section>
-          <h2 className="text-3xl font-bold mb-8 text-center">Popular Categories</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
+          <h2 className="text-3xl font-bold mb-8 text-center">Populære Kategorier</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
             {popularCategories.map((category) => (
               <Link 
                 key={category.id} 
@@ -108,7 +108,7 @@ export default async function Home() {
 
       {featuredCategories.length > 0 && (
         <section>
-          <h2 className="text-3xl font-bold mb-8 text-center">Featured Categories</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center">Utvalgte Kategorier</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {featuredCategories.map((category) => (
               <Link 
@@ -136,7 +136,7 @@ export default async function Home() {
       )}
 
       <section>
-        <h2 className="text-3xl font-bold mb-8">Latest Listings</h2>
+        <h2 className="text-3xl font-bold mb-8">Nyeste Annonser</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {latestListings.map((listing) => (
             <Link href={`/listings/${listing.id}`} key={listing.id} className="block">
@@ -153,16 +153,16 @@ export default async function Home() {
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold text-lg mb-2">{listing.name}</h3>
-                  <p className="text-gray-600 mb-2">${listing.price}/day</p>
+                  <p className="text-gray-600 mb-2">{listing.price} kr/dag</p>
                   <div className="flex items-center mb-2">
                     <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                    <span className="ml-1">{listing.rating ? listing.rating.toFixed(1) : 'N/A'}</span>
+                    <span className="ml-1">{listing.rating ? listing.rating.toFixed(1) : 'Ingen'}</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
                     <MapPin className="h-4 w-4 mr-1" />
-                    <span>{listing.location || 'Location not specified'}</span>
+                    <span>{listing.location || 'Sted ikke spesifisert'}</span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-2">Listed by {listing.username}</p>
+                  <p className="text-sm text-gray-500 mt-2">Lagt ut av {listing.username}</p>
                 </div>
               </div>
             </Link>
@@ -170,34 +170,34 @@ export default async function Home() {
         </div>
         <div className="mt-8 text-center">
           <Button asChild>
-            <Link href="/listings">View All Listings</Link>
+            <Link href="/listings">Se Alle Annonser</Link>
           </Button>
         </div>
       </section>
 
       <section className="bg-gradient-to-r from-green-400 to-blue-500 text-white py-20 rounded-2xl">
         <div className="max-w-5xl mx-auto text-center px-4">
-          <h2 className="text-4xl font-bold mb-10">How It Works</h2>
+          <h2 className="text-4xl font-bold mb-10">Hvordan Det Fungerer</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <div className="bg-white bg-opacity-20 p-8 rounded-xl">
               <div className="text-5xl mb-6">🔍</div>
-              <h3 className="font-semibold text-2xl mb-4">1. Find an Item</h3>
-              <p className="text-lg">Browse our extensive selection of items available for rent in your area.</p>
+              <h3 className="font-semibold text-2xl mb-4">1. Finn en Gjenstand</h3>
+              <p className="text-lg">Utforsk vårt store utvalg av gjenstander tilgjengelig for utleie i ditt område.</p>
             </div>
             <div className="bg-white bg-opacity-20 p-8 rounded-xl">
               <div className="text-5xl mb-6">💬</div>
-              <h3 className="font-semibold text-2xl mb-4">2. Request to Rent</h3>
-              <p className="text-lg">Send a request to the owner and agree on rental terms and conditions.</p>
+              <h3 className="font-semibold text-2xl mb-4">2. Send Forespørsel</h3>
+              <p className="text-lg">Send en forespørsel til eieren og bli enige om leiebetingelser.</p>
             </div>
             <div className="bg-white bg-opacity-20 p-8 rounded-xl">
               <div className="text-5xl mb-6">🎉</div>
-              <h3 className="font-semibold text-2xl mb-4">3. Enjoy and Return</h3>
-              <p className="text-lg">Use the item for your needs and return it in the agreed-upon condition.</p>
+              <h3 className="font-semibold text-2xl mb-4">3. Nyt og Returner</h3>
+              <p className="text-lg">Bruk gjenstanden til ditt formål og returner den i avtalt stand.</p>
             </div>
           </div>
           <Button asChild className="mt-12 bg-white text-blue-600 hover:bg-blue-50" size="lg">
             <Link href="/listings">
-              Start Renting Now
+              Start å Leie Nå
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
@@ -205,11 +205,11 @@ export default async function Home() {
       </section>
 
       <section className="text-center">
-        <h2 className="text-3xl font-bold mb-6">Ready to Start Renting?</h2>
-        <p className="text-xl mb-8 max-w-2xl mx-auto">Join our community today and start discovering amazing items to rent.</p>
+        <h2 className="text-3xl font-bold mb-6">Klar til å Begynne å Leie?</h2>
+        <p className="text-xl mb-8 max-w-2xl mx-auto">Bli med i vårt fellesskap i dag og begynn å oppdage fantastiske gjenstander for utleie.</p>
         <Button asChild size="lg">
           <Link href="/sign-up">
-            Sign Up Now
+            Registrer Deg Nå
             <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
         </Button>

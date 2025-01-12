@@ -22,19 +22,20 @@ interface ListingDetailsProps {
     username: string
     user_image: string | null
   }
-  userId: string
+  userId: string | null
 }
 
 export function ListingDetails({ item, userId }: ListingDetailsProps) {
   const rating = parseFloat(item.rating.toString())
   const hasRating = !isNaN(rating) && item.review_count > 0
+  const isLoggedIn = !!userId
 
   return (
     <div className="space-y-8">
       <div>
         <div className="flex justify-between items-start mb-4">
           <h1 className="text-3xl font-bold">{item.name}</h1>
-          <HeartButton itemId={item.id} />
+          {isLoggedIn && <HeartButton itemId={item.id} />}
         </div>
         <div className="flex items-center mb-4">
           <Star className="h-5 w-5 text-yellow-400 fill-current" />
@@ -53,20 +54,28 @@ export function ListingDetails({ item, userId }: ListingDetailsProps) {
         </div>
         <p className="text-gray-700 mb-6">{item.description}</p>
         <div className="flex space-x-4">
-          <RentalRequest 
-            itemId={item.id} 
-            itemName={item.name} 
-            pricePerDay={item.price}
-            unavailableDates={[]}
-          />
-          <Button asChild>
-            <Link href={`/chat?userId=${item.user_id}&listingId=${item.id}&listingName=${encodeURIComponent(item.name)}`}>
-              <MessageCircle className="mr-2 h-4 w-4" /> Chat with Owner
-            </Link>
-          </Button>
-          <Button variant="outline">
-            <Flag className="mr-2 h-4 w-4" /> Report Listing
-          </Button>
+          {isLoggedIn ? (
+            <>
+              <RentalRequest 
+                itemId={item.id} 
+                itemName={item.name} 
+                pricePerDay={item.price}
+                unavailableDates={[]}
+              />
+              <Button asChild>
+                <Link href={`/chat?userId=${item.user_id}&listingId=${item.id}&listingName=${encodeURIComponent(item.name)}`}>
+                  <MessageCircle className="mr-2 h-4 w-4" /> Chat with Owner
+                </Link>
+              </Button>
+              <Button variant="outline">
+                <Flag className="mr-2 h-4 w-4" /> Report Listing
+              </Button>
+            </>
+          ) : (
+            <Button asChild>
+              <Link href="/sign-in">Sign in to rent or contact owner</Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -77,11 +86,12 @@ export function ListingDetails({ item, userId }: ListingDetailsProps) {
         <CardContent>
           <div className="flex items-center">
             <Image 
-              src={item.user_image || '/placeholder.svg?height=100&width=100'} 
+              src={item.user_image || '/placeholder.svg'} 
               alt={item.username} 
               width={64} 
               height={64} 
-              className="rounded-full" 
+              className="rounded-full object-cover aspect-square"
+              style={{ width: '64px', height: '64px' }}
             />
             <div className="ml-4">
               <Link href={`/profile/${item.user_id}`} className="text-xl font-semibold hover:underline">

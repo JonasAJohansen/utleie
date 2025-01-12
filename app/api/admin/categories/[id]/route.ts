@@ -63,7 +63,8 @@ export async function DELETE(request: NextRequest) {
 
     // First check if there are any listings using this category
     const listingsCheck = await sql`
-      SELECT COUNT(*) FROM listings WHERE category_id = ${id}::uuid
+      SELECT COUNT(*) FROM listings 
+      WHERE category_id::uuid = ${id}::uuid
     `
 
     if (parseInt(listingsCheck.rows[0].count) > 0) {

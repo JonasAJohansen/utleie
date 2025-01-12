@@ -43,7 +43,7 @@ export async function GET(request: Request) {
     const category = searchParams.get('category')
     if (category && category !== 'All Categories') {
       paramCount++
-      whereConditions.push(`c.name = $${paramCount}`)
+      whereConditions.push(`l.category_id = $${paramCount}::uuid`)
       values.push(category)
     }
 
@@ -70,7 +70,6 @@ export async function GET(request: Request) {
         l.name, 
         l.description, 
         l.price, 
-        l.image, 
         l.location, 
         l.created_at,
         u.username,
@@ -103,16 +102,16 @@ export async function GET(request: Request) {
 
     // Get total count first
     const countQuery = `
-      SELECT COUNT(*) OVER () as total_count
+      SELECT COUNT(DISTINCT l.id) as total_count
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      JOIN categories c ON l.category_id = c.id
-      LEFT JOIN reviews r ON l.id = r.listing_id
+      LEFT JOIN categories c ON l.category_id::uuid = c.id
+      LEFT JOIN reviews r ON r.listing_id = l.id
       WHERE ${whereConditions.join(' AND ')}
-      ${groupByClause}
-      ${havingClause}
-      LIMIT 1
     `
+
+    console.log('Count Query:', countQuery)
+    console.log('Values:', values)
 
     const countResult = await sql.query(countQuery, values)
     const totalCount = parseInt(countResult.rows[0]?.total_count || '0')
@@ -126,11 +125,18 @@ export async function GET(request: Request) {
         u.image_url as user_image,
         c.name as category_name,
         COALESCE(AVG(r.rating), 0) as avg_rating,
-        COUNT(r.id) as review_count
+        COUNT(r.id) as review_count,
+        (
+          SELECT lp.url
+          FROM listing_photos lp
+          WHERE lp.listing_id = l.id
+          AND lp.is_main = true
+          LIMIT 1
+        ) as image
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      JOIN categories c ON l.category_id = c.id
-      LEFT JOIN reviews r ON l.id = r.listing_id
+      LEFT JOIN categories c ON l.category_id::uuid = c.id
+      LEFT JOIN reviews r ON r.listing_id = l.id
       WHERE ${whereConditions.join(' AND ')}
       ${groupByClause}
       ${havingClause}
@@ -138,6 +144,9 @@ export async function GET(request: Request) {
       LIMIT ${ITEMS_PER_PAGE}
       OFFSET ${offset}
     `
+
+    console.log('Main Query:', query)
+    console.log('Values:', values)
 
     const result = await sql.query(query, values)
 
@@ -147,11 +156,13 @@ export async function GET(request: Request) {
       name: listing.name,
       description: listing.description,
       price: listing.price,
-      image: listing.image,
+      image: listing.image || '/placeholder.svg',
       location: listing.location,
       category: listing.category_name,
       username: listing.username,
-      userImage: listing.user_image,
+      userImage: listing.user_image?.startsWith('https://img.clerk.com') ? 
+        listing.user_image.replace('img.clerk.com', 'images.clerk.dev') : 
+        listing.user_image || '/placeholder.svg',
       rating: Number(listing.avg_rating),
       reviewCount: Number(listing.review_count),
       features: listing.features || [],

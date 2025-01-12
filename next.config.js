@@ -8,6 +8,7 @@ const nextConfig = {
       domains: [
         'images.unsplash.com',
         'img.clerk.com',
+        'images.clerk.dev',
         'uploadthing.com',
         'utfs.io',
         'x.com',

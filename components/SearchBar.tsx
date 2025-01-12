@@ -7,6 +7,7 @@ import { Button } from "./ui/button"
 import { Search, Bookmark } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@clerk/nextjs"
+import { LocationSelector } from "./ui/location-selector"
 
 interface SearchBarProps {
   initialQuery?: string
@@ -14,6 +15,7 @@ interface SearchBarProps {
 
 function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
+  const [location, setLocation] = useState('')
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -21,23 +23,32 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
 
   useEffect(() => {
     const query = searchParams.get('q')
+    const loc = searchParams.get('location')
     if (query) {
       setSearchQuery(query)
+    }
+    if (loc) {
+      setLocation(loc)
     }
   }, [searchParams])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      const params = new URLSearchParams()
+      params.set('q', searchQuery.trim())
+      if (location) {
+        params.set('location', location)
+      }
+      router.push(`/search?${params.toString()}`)
     }
   }
 
   const handleSaveSearch = async () => {
     if (!user) {
       toast({
-        title: "Sign in required",
-        description: "Please sign in to save searches",
+        title: "Innlogging kreves",
+        description: "Vennligst logg inn for å lagre søk",
         variant: "destructive",
       })
       return
@@ -62,55 +73,60 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
 
       if (response.ok) {
         toast({
-          title: "Search saved",
-          description: "You can access your saved searches in your profile",
+          title: "Søk lagret",
+          description: "Du kan finne dine lagrede søk i profilen din",
         })
       } else {
         throw new Error('Failed to save search')
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to save search. Please try again.",
+        title: "Feil",
+        description: "Kunne ikke lagre søket. Vennligst prøv igjen.",
         variant: "destructive",
       })
     }
   }
 
   return (
-    <form onSubmit={handleSearch} className="flex items-center max-w-3xl mx-auto">
-      <div className="flex-grow">
-        <div className="relative">
+    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-center gap-4 max-w-3xl mx-auto">
+      <div className="flex-grow flex items-center w-full">
+        <div className="relative flex-grow">
           <Input
             type="text"
-            placeholder="What would you like to rent?"
+            placeholder="Hva ønsker du å leie?"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-12 h-14 bg-white/90 backdrop-blur-sm text-black placeholder:text-gray-500 text-lg rounded-l-full rounded-r-none border-2 border-r-0 border-white/20 focus:border-white/40 transition-colors"
           />
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
         </div>
+        <div className="w-48">
+          <LocationSelector 
+            value={location} 
+            onChange={setLocation}
+          />
+        </div>
       </div>
-      <div className="flex transition-transform duration-300 ease-in-out">
+      <div className="flex gap-2 shrink-0">
         <Button 
           type="submit" 
           size="lg"
-          className="h-14 px-8 rounded-none bg-yellow-400 hover:bg-yellow-500 text-black font-semibold text-lg transition-colors"
+          className="h-14 px-8 rounded-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold text-lg transition-colors shadow-md hover:shadow-lg"
         >
-          Search
+          <Search className="h-5 w-5 mr-2" />
+          Søk
         </Button>
         {searchParams.size > 0 && (
-          <div className="transition-all duration-300 ease-in-out">
-            <Button
-              type="button"
-              size="lg"
-              variant="outline"
-              onClick={handleSaveSearch}
-              className="h-14 px-4 rounded-l-none rounded-r-full border-2 border-l-0 border-white/20 transition-colors"
-            >
-              <Bookmark className="h-5 w-5" />
-            </Button>
-          </div>
+          <Button
+            type="button"
+            size="lg"
+            variant="outline"
+            onClick={handleSaveSearch}
+            className="h-14 px-4 rounded-full border-2 border-white/20 transition-colors hover:bg-white/5"
+          >
+            <Bookmark className="h-5 w-5" />
+          </Button>
         )}
       </div>
     </form>
@@ -120,20 +136,35 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
 export function SearchBar(props: SearchBarProps) {
   return (
     <Suspense fallback={
-      <div className="flex items-center max-w-3xl mx-auto">
-        <Input
-          type="text"
-          placeholder="Loading..."
-          disabled
-          className="w-full pl-12 h-14 bg-white/90 backdrop-blur-sm text-black placeholder:text-gray-500 text-lg rounded-l-full rounded-r-none border-2 border-r-0 border-white/20"
-        />
-        <Button 
-          disabled
-          size="lg"
-          className="h-14 px-8 rounded-none bg-yellow-400 text-black font-semibold text-lg"
-        >
-          Search
-        </Button>
+      <div className="flex flex-col sm:flex-row items-center gap-4 max-w-3xl mx-auto">
+        <div className="flex-grow flex items-center w-full">
+          <div className="relative flex-grow">
+            <Input
+              type="text"
+              placeholder="Loading..."
+              disabled
+              className="w-full pl-12 h-14 bg-white/90 backdrop-blur-sm text-black placeholder:text-gray-500 text-lg rounded-l-full rounded-r-none border-2 border-r-0 border-white/20"
+            />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+          </div>
+          <div className="w-48">
+            <Input
+              disabled
+              className="h-14 rounded-r-full border-l-0"
+              placeholder="Location..."
+            />
+          </div>
+        </div>
+        <div className="shrink-0">
+          <Button 
+            disabled
+            size="lg"
+            className="h-14 px-8 rounded-full bg-yellow-400 text-black font-semibold text-lg shadow-md"
+          >
+            <Search className="h-5 w-5 mr-2" />
+            Search
+          </Button>
+        </div>
       </div>
     }>
       <SearchBarContent {...props} />

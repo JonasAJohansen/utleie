@@ -69,17 +69,27 @@ async function getCategoryListings({ id, ...params }: CategoryParams) {
       SELECT 
         l.*,
         u.username,
-        u.image_url as user_image,
         c.name as category_name,
-        COALESCE(AVG(r.rating), 0) as avg_rating,
-        COUNT(r.id) as review_count
+        COALESCE(
+          (
+            SELECT lp.url
+            FROM listing_photos lp
+            WHERE lp.listing_id = l.id AND lp.is_main = true
+            LIMIT 1
+          ),
+          (
+            SELECT lp.url
+            FROM listing_photos lp
+            WHERE lp.listing_id = l.id
+            ORDER BY lp.display_order
+            LIMIT 1
+          )
+        ) as image
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      JOIN categories c ON l.category_id = c.id
-      LEFT JOIN reviews r ON l.id = r.listing_id
-      WHERE ${whereConditions}
-      ${groupByClause}
-      ORDER BY ${orderByClause}
+      JOIN categories c ON l.category_id::uuid = c.id::uuid
+      WHERE l.category_id::uuid = $1::uuid
+      ORDER BY l.created_at DESC
     `
 
     const result = await sql.query(query, values)

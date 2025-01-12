@@ -97,10 +97,6 @@ export default async function ItemListing({ params }: PageProps) {
     notFound()
   }
 
-  if (!userId) {
-    redirect('/sign-in')
-  }
-
   const listingDetails = {
     id: item.id,
     name: item.name,
@@ -118,7 +114,7 @@ export default async function ItemListing({ params }: PageProps) {
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <ListingGallery photos={item.photos} />
-        <ListingDetails item={listingDetails} userId={userId} />
+        <ListingDetails item={listingDetails} userId={userId || null} />
       </div>
     </div>
   )

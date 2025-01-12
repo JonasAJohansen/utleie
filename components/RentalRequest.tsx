@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label"
 import { DateRange } from "react-day-picker"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
+import { CalendarDays } from "lucide-react"
 
 interface RentalRequestProps {
   itemId: string
@@ -60,8 +61,10 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
   }, [itemId])
 
   useEffect(() => {
-    if (selectedRange?.from && selectedRange?.to) {
-      const days = differenceInDays(selectedRange.to, selectedRange.from) + 1
+    if (selectedRange?.from) {
+      // If only start date is selected, use it for both start and end
+      const endDate = selectedRange.to || selectedRange.from
+      const days = differenceInDays(endDate, selectedRange.from) + 1
       setTotalPrice(days * pricePerDay)
     } else {
       setTotalPrice(0)
@@ -69,11 +72,19 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
   }, [selectedRange, pricePerDay])
 
   const handleDateSelect = (range: DateRange | undefined) => {
-    setSelectedRange(range)
+    if (range?.from && !range.to) {
+      // When only start date is selected, allow it to be a single-day rental
+      setSelectedRange({ from: range.from, to: range.from })
+    } else {
+      setSelectedRange(range)
+    }
   }
 
   const handleRequest = async () => {
-    if (!selectedRange?.from || !selectedRange?.to) return
+    if (!selectedRange?.from) return
+
+    // Use the same date for both start and end if no end date is selected
+    const endDate = selectedRange.to || selectedRange.from
 
     setIsLoading(true)
     try {
@@ -85,7 +96,7 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
         body: JSON.stringify({
           listingId: itemId,
           startDate: format(selectedRange.from, 'yyyy-MM-dd'),
-          endDate: format(selectedRange.to, 'yyyy-MM-dd'),
+          endDate: format(endDate, 'yyyy-MM-dd'),
           totalPrice
         }),
       })
@@ -121,67 +132,44 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
-        <Button>Check Availability</Button>
+        <Button variant="default" className="w-full">
+          <CalendarDays className="mr-2 h-4 w-4" />
+          Send Leieforespørsel
+        </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader className="space-y-2">
-          <DialogTitle>Request to Rent: {itemName}</DialogTitle>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Leieforespørsel</DialogTitle>
           <DialogDescription>
-            Select your rental dates. The owner will review your request.
+            Velg datoer for leie. Prisen er {pricePerDay} kr per dag.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4">
-          <Label className="block text-center mb-4">
-            Select Start and End Dates
-          </Label>
-          <Calendar
-            mode="range"
-            selected={selectedRange}
-            onSelect={handleDateSelect}
-            numberOfMonths={1}
-            disabled={(date) => 
-              date < new Date() || isDateUnavailable(date)
-            }
-            modifiers={{
-              booked: [...unavailableDates, ...bookedDates]
-            }}
-            modifiersStyles={{
-              booked: { textDecoration: 'line-through', color: 'red' }
-            }}
-            className="mx-auto"
-            styles={{
-              month: { width: '100%' },
-              caption: { marginBottom: '1rem' },
-              head_cell: { width: '100%', textAlign: 'center' },
-              cell: { width: '100%', textAlign: 'center' },
-              nav_button_previous: { width: '2rem', height: '2rem' },
-              nav_button_next: { width: '2rem', height: '2rem' },
-              table: { width: '100%' }
-            }}
-          />
-          {selectedRange?.from && !selectedRange.to && (
-            <p className="text-center mt-4 text-muted-foreground">
-              Select an end date to see total price
-            </p>
-          )}
-          {selectedRange?.from && selectedRange.to && (
-            <div className="text-center mt-4 space-y-1">
-              <p>
-                Selected dates: {format(selectedRange.from, 'PP')} to {format(selectedRange.to, 'PP')}
-              </p>
-              <p className="font-bold">
-                Total Price: ${totalPrice}
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label>Velg dato(er)</Label>
+            <Calendar
+              mode="single"
+              selected={selectedRange}
+              onSelect={handleDateSelect}
+              className="rounded-md border"
+              disabled={(date) => date < new Date() || isDateUnavailable(date)}
+            />
+          </div>
+          {selectedRange?.from && (
+            <div className="grid gap-2">
+              <Label>Total pris</Label>
+              <div className="text-2xl font-bold">
+                {totalPrice} kr
+              </div>
+              <p className="text-sm text-gray-500">
+                For 1 dag
               </p>
             </div>
           )}
         </div>
         <DialogFooter>
-          <Button 
-            onClick={handleRequest} 
-            disabled={!selectedRange?.from || !selectedRange?.to || isLoading}
-            className="w-full"
-          >
-            {isLoading ? "Sending..." : "Send Request"}
+          <Button type="submit" onClick={handleRequest} disabled={!selectedRange?.from || isLoading}>
+            {isLoading ? "Sending..." : "Send Forespørsel"}
           </Button>
         </DialogFooter>
       </DialogContent>

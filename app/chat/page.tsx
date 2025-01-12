@@ -4,16 +4,17 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useUser } from "@clerk/nextjs"
 import { useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Camera, Send, Smile, X, Search } from 'lucide-react'
+import { Camera, Send, Smile, X, Search, Loader2, MessageCircle, MessageSquare } from 'lucide-react'
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
-import Pusher from 'pusher-js'
 import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 type Message = {
   id: string;
@@ -29,7 +30,7 @@ type Message = {
 
 type Conversation = {
   id: string;
-  userId: string;
+  user_id: string;
   username: string;
   avatar: string;
   lastMessage: string | null;
@@ -40,59 +41,83 @@ type Conversation = {
 }
 
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5;
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (isNaN(date.getTime())) return ''
+  
+  const now = new Date()
+  const diffInHours = Math.abs(now.getTime() - date.getTime()) / 36e5
 
   if (diffInHours < 24) {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   } else if (diffInHours < 48) {
-    return 'Yesterday';
+    return 'Yesterday'
   } else {
     return date.toLocaleDateString([], { 
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    });
+    })
   }
-};
+}
 
 function ChatContent() {
-  const { user } = useUser()
+  const { user, isLoaded } = useUser()
   const searchParams = useSearchParams()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConversation, setActiveConversation] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
   const { toast } = useToast()
   const [isTyping, setIsTyping] = useState<boolean>(false)
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({})
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [initialLoad, setInitialLoad] = useState(true)
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
+      const scrollArea = scrollAreaRef.current
+      setTimeout(() => {
+        scrollArea.scrollTop = scrollArea.scrollHeight
+      }, 100)
     }
   }
 
+  // Scroll when messages change (new message received or loaded)
   useEffect(() => {
     if (messages.length > 0) {
       scrollToBottom()
     }
   }, [messages])
 
+  // Scroll when switching conversations
   useEffect(() => {
+    if (activeConversation) {
+      setInitialLoad(true)
+      fetchMessages(activeConversation.id)
+      const messagesInterval = setInterval(() => {
+        fetchMessages(activeConversation.id)
+        fetchTypingStatus()
+      }, 3000)
+      return () => clearInterval(messagesInterval)
+    }
+  }, [activeConversation])
+
+  useEffect(() => {
+    if (!isLoaded) return
+    if (!user) return
+
     const otherUserId = searchParams.get('userId')
     const listingId = searchParams.get('listingId')
     const listingName = searchParams.get('listingName')
     
-    if (otherUserId && user) {
+    if (otherUserId) {
       createOrFetchConversation(otherUserId, listingId, listingName)
     }
-  }, [searchParams, user])
+  }, [searchParams, user, isLoaded])
 
   const createOrFetchConversation = async (otherUserId: string, listingId?: string | null, listingName?: string | null) => {
     try {
@@ -135,32 +160,31 @@ function ChatContent() {
   }
 
   useEffect(() => {
-    if (user) {
-      fetchConversations()
-      // Poll for new conversations every 10 seconds
-      const conversationsInterval = setInterval(fetchConversations, 10000)
-      return () => clearInterval(conversationsInterval)
-    }
-  }, [user])
+    if (!isLoaded) return
+    if (!user) return
 
-  useEffect(() => {
-    if (activeConversation) {
-      fetchMessages(activeConversation.id)
-      // Poll for new messages and typing status every 3 seconds
-      const messagesInterval = setInterval(() => {
-        fetchMessages(activeConversation.id)
-        fetchTypingStatus()
-      }, 3000)
-      return () => clearInterval(messagesInterval)
-    }
-  }, [activeConversation])
+    fetchConversations()
+    const conversationsInterval = setInterval(fetchConversations, 10000)
+    return () => clearInterval(conversationsInterval)
+  }, [user, isLoaded])
 
   const fetchConversations = async () => {
     try {
       const response = await fetch('/api/conversations')
       if (response.ok) {
         const data = await response.json()
-        setConversations(data)
+        // Sort conversations by last message time, most recent first
+        const sortedData = data.sort((a: Conversation, b: Conversation) => {
+          if (!a.lastMessageTime && !b.lastMessageTime) return 0
+          if (!a.lastMessageTime) return 1
+          if (!b.lastMessageTime) return -1
+          return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime()
+        })
+        // Only update if there are actual changes
+        setConversations(prev => {
+          const hasChanges = JSON.stringify(prev) !== JSON.stringify(sortedData)
+          return hasChanges ? sortedData : prev
+        })
       }
     } catch (error) {
       console.error('Error fetching conversations:', error)
@@ -168,6 +192,24 @@ function ChatContent() {
   }
 
   const fetchMessages = async (conversationId: string) => {
+    if (!initialLoad) {
+      // Don't show loading for periodic updates
+      try {
+        const response = await fetch(`/api/messages?conversationId=${conversationId}`)
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Error fetching messages:', errorText)
+          return
+        }
+        const data = await response.json()
+        setMessages(data)
+      } catch (error) {
+        console.error('Error fetching messages:', error)
+      }
+      return
+    }
+
+    setIsLoadingMessages(true)
     try {
       const response = await fetch(`/api/messages?conversationId=${conversationId}`)
       if (!response.ok) {
@@ -179,6 +221,11 @@ function ChatContent() {
       setMessages(data)
     } catch (error) {
       console.error('Error fetching messages:', error)
+    } finally {
+      setIsLoadingMessages(false)
+      setInitialLoad(false)
+      // Scroll after loading is complete and messages are rendered
+      setTimeout(scrollToBottom, 200)
     }
   }
 
@@ -207,7 +254,6 @@ function ChatContent() {
         setNewMessage('')
         setSelectedImage(null)
 
-        // Update last message in conversations list
         setConversations(conversations.map(conv => 
           conv.id === activeConversation.id 
             ? { ...conv, lastMessage: messageContent, lastMessageTime: new Date().toISOString() } 
@@ -252,18 +298,11 @@ function ChatContent() {
     }
   }
 
-  // Update typing status
-  const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setNewMessage(e.target.value)
+  const handleTyping = async () => {
+    if (!activeConversation) return
     
-    if (activeConversation) {
-      // Clear existing timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current)
-      }
-
-      // Send typing status to server
-      fetch('/api/typing-status', {
+    try {
+      await fetch('/api/typing-status', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -272,221 +311,249 @@ function ChatContent() {
           conversationId: activeConversation.id,
           isTyping: true,
         }),
-      }).catch(error => {
-        console.error('Error updating typing status:', error)
       })
-
-      // Clear typing status after 2 seconds
-      typingTimeoutRef.current = setTimeout(() => {
-        fetch('/api/typing-status', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            conversationId: activeConversation.id,
-            isTyping: false,
-          }),
-        }).catch(error => {
-          console.error('Error updating typing status:', error)
-        })
-      }, 2000)
+    } catch (error) {
+      console.error('Error updating typing status:', error)
     }
   }
 
   const fetchTypingStatus = async () => {
+    if (!activeConversation) return
+
     try {
-      const response = await fetch('/api/typing-status')
-      if (!response.ok) {
-        const errorText = await response.text()
-        console.error('Error fetching typing status:', errorText)
-        return
+      const response = await fetch(`/api/typing-status?conversationId=${activeConversation.id}`)
+      if (response.ok) {
+        const data = await response.json()
+        setTypingUsers(data)
       }
-      const data = await response.json()
-      setTypingUsers(data)
     } catch (error) {
       console.error('Error fetching typing status:', error)
     }
   }
 
+  if (!isLoaded) return null
   if (!user) {
-    return <div className="flex items-center justify-center h-screen bg-gray-100">Please sign in to access the chat.</div>
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Please sign in to access the chat.</h2>
+          <p className="text-gray-600">You need to be signed in to view and send messages.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="flex justify-center items-start min-h-screen p-4 pt-8">
-      <div className="flex w-full max-w-6xl h-[46rem] bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="w-1/3 border-r border-gray-200">
-          <div className="p-4">
-            <h2 className="text-xl font-semibold mb-4">Conversations</h2>
-            <div className="relative">
-              <Input
-                placeholder="Search conversations..."
-                className="pl-10 bg-gray-100 border-none rounded-full"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            </div>
+    <div className="flex h-[calc(90vh-10rem)] mx-4 rounded-2xl overflow-hidden border">
+      {/* Conversations List */}
+      <div className="w-80 border-r bg-white">
+        <div className="p-4">
+          <div className="relative">
+            <Input
+              placeholder="Search conversations..."
+              className="pl-8"
+            />
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
           </div>
-          <ScrollArea className="h-[calc(36rem-5rem)]">
-            {conversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                className={`p-4 cursor-pointer hover:bg-gray-50 transition-all duration-200 ${
-                  activeConversation?.id === conversation.id ? 'bg-gray-100' : ''
-                }`}
-                onClick={() => setActiveConversation(conversation)}
-              >
-                <div className="flex items-center">
-                  <Avatar className="h-10 w-10 mr-3">
-                    <AvatarImage src={conversation.avatar} alt={conversation.username} />
+        </div>
+        <ScrollArea className="h-[calc(100vh-12rem)]">
+          {conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center p-4">
+              <MessageCircle className="h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Ingen meldinger ennå</h3>
+              <p className="text-gray-500">Start en samtale ved å klikke på "Send melding" på en brukers profil</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {conversations.map((conversation) => (
+                <button
+                  key={conversation.id}
+                  onClick={() => setActiveConversation(conversation)}
+                  className={cn(
+                    "w-full p-4 flex items-start gap-4 hover:bg-gray-100 transition-colors",
+                    activeConversation?.id === conversation.id && "bg-gray-100"
+                  )}
+                >
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={conversation.avatar || '/placeholder.svg'} />
                     <AvatarFallback>{conversation.username[0]}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">{conversation.username}</h3>
-                    {conversation.listingName && (
-                      <p className="text-xs text-gray-500 truncate">Re: {conversation.listingName}</p>
-                    )}
+                  <div className="flex-1 text-left">
+                    <p className="font-medium">{conversation.username}</p>
                     <p className="text-sm text-gray-500 truncate">
-                      {typingUsers[conversation.id] ? (
-                        <span className="text-green-500 animate-pulse">typing...</span>
-                      ) : (
-                        conversation.lastMessage || 'No messages yet'
-                      )}
+                      {conversation.lastMessage || 'Start en samtale'}
                     </p>
                   </div>
-                  {conversation.lastMessageTime && !typingUsers[conversation.id] && (
-                    <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
+                  {conversation.lastMessageTime && (
+                    <time className="text-xs text-gray-500">
                       {formatDate(conversation.lastMessageTime)}
-                    </span>
+                    </time>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </div>
+
+      {/* Chat Area */}
+      <div className="flex-1 flex flex-col bg-white">
+        {activeConversation ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b bg-white">
+              <div className="flex items-center space-x-3">
+                <Avatar>
+                  <AvatarImage src={activeConversation.avatar} />
+                  <AvatarFallback>{activeConversation.username[0]}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <Link 
+                    href={`/profile/${activeConversation.user_id}`}
+                    className="font-semibold hover:text-blue-500 transition-colors inline-block"
+                  >
+                    {activeConversation.username}
+                  </Link>
+                  {activeConversation.listingName && (
+                    <p className="text-sm text-gray-500">
+                      Discussing: {activeConversation.listingName}
+                    </p>
                   )}
                 </div>
               </div>
-            ))}
-          </ScrollArea>
-        </div>
+            </div>
 
-        <div className="flex-1 flex flex-col">
-          {activeConversation ? (
-            <>
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                <div className="flex items-center">
-                  <Avatar className="h-8 w-8 mr-2">
-                    <AvatarImage src={activeConversation.avatar} alt={activeConversation.username} />
-                    <AvatarFallback>{activeConversation.username[0]}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h2 className="font-medium text-gray-900">{activeConversation.username}</h2>
-                    {activeConversation.listingName && (
-                      <p className="text-xs text-gray-500">Re: {activeConversation.listingName}</p>
-                    )}
-                  </div>
+            {/* Messages */}
+            <ScrollArea 
+              ref={scrollAreaRef}
+              className="flex-1 p-4 bg-gray-50"
+            >
+              {initialLoad && isLoadingMessages ? (
+                <div className="flex justify-center items-center h-full">
+                  <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => closeConversation(activeConversation.id)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-              <ScrollArea 
-                ref={scrollAreaRef}
-                className="flex-grow px-4 py-2"
-              >
-                {messages.map((message) => {
-                  const isCurrentUser = message.sender_id === user?.id
-                  return (
+              ) : (
+                <>
+                  {messages.map((message) => (
                     <div
                       key={message.id}
-                      className={`flex mb-4 ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                      className={`flex mb-4 ${
+                        message.sender_id === user.id ? 'justify-end' : 'justify-start'
+                      }`}
                     >
-                      <div className={`flex ${isCurrentUser ? 'flex-row-reverse' : 'flex-row'} items-end`}>
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage 
-                            src={message.sender_avatar || (isCurrentUser ? user.imageUrl : activeConversation.avatar)}
-                            alt={message.sender_username} 
-                          />
+                      {message.sender_id !== user.id && (
+                        <Avatar className="h-8 w-8 mr-2">
+                          <AvatarImage src={message.sender_avatar} />
                           <AvatarFallback>{message.sender_username[0]}</AvatarFallback>
                         </Avatar>
-                        <div 
-                          className={`max-w-xs mx-2 p-3 rounded-2xl ${
-                            isCurrentUser 
-                              ? 'bg-blue-500 text-white' 
-                              : 'bg-gray-200 text-gray-800'
+                      )}
+                      <div
+                        className={`max-w-[70%] ${
+                          message.sender_id === user.id
+                            ? 'bg-blue-500 text-white rounded-2xl rounded-br-none'
+                            : 'bg-gray-100 rounded-2xl rounded-bl-none'
+                        } p-3`}
+                      >
+                        {message.type === 'image' ? (
+                          <Image
+                            src={message.content}
+                            alt="Shared image"
+                            width={300}
+                            height={200}
+                            className="rounded-lg"
+                          />
+                        ) : (
+                          <p>{message.content}</p>
+                        )}
+                        <p
+                          className={`text-xs mt-1 ${
+                            message.sender_id === user.id ? 'text-blue-100' : 'text-gray-500'
                           }`}
                         >
-                          {message.type === 'image' ? (
-                            <Image
-                              src={message.content}
-                              alt="Shared image"
-                              width={200}
-                              height={200}
-                              className="rounded-lg"
-                            />
-                          ) : (
-                            <p className="text-sm">{message.content}</p>
-                          )}
-                          <div className={`text-xs mt-1 ${
-                            isCurrentUser ? 'text-blue-200' : 'text-gray-500'
-                          }`}>
-                            {formatDate(message.timestamp)}
-                          </div>
-                        </div>
+                          {formatDate(message.created_at)}
+                        </p>
                       </div>
                     </div>
-                  )
-                })}
-                <div ref={messagesEndRef} />
-              </ScrollArea>
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center space-x-2">
-                  <Input
-                    type="text"
-                    value={newMessage}
-                    onChange={handleTyping}
-                    placeholder="Type your message..."
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    className="flex-grow rounded-full border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  ))}
+                  {Object.entries(typingUsers).map(([userId, isTyping]) => (
+                    isTyping && userId !== user.id && (
+                      <div key={userId} className="flex items-center space-x-2 text-muted-foreground text-sm italic">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={conversations.find(c => c.user_id === userId)?.avatar} />
+                          <AvatarFallback>{conversations.find(c => c.user_id === userId)?.username[0]}</AvatarFallback>
+                        </Avatar>
+                        <span>{conversations.find(c => c.user_id === userId)?.username} is typing...</span>
+                      </div>
+                    )
+                  ))}
+                </>
+              )}
+            </ScrollArea>
+
+            {/* Message Input */}
+            <div className="p-4 border-t bg-white">
+              {selectedImage && (
+                <div className="mb-2 relative inline-block">
+                  <Image
+                    src={selectedImage}
+                    alt="Selected image"
+                    width={100}
+                    height={100}
+                    className="rounded-lg"
                   />
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" size="icon" className="rounded-full">
-                        <Smile className="h-5 w-5 text-gray-500" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <Picker data={data} onEmojiSelect={handleEmojiSelect} />
-                    </PopoverContent>
-                  </Popover>
-                  <Button variant="outline" size="icon" className="rounded-full" onClick={() => document.getElementById('image-upload')?.click()}>
-                    <Camera className="h-5 w-5 text-gray-500" />
-                  </Button>
+                  <button
+                    onClick={() => setSelectedImage(null)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-center space-x-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value)
+                    handleTyping()
+                  }}
+                  placeholder="Type a message..."
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Smile className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0">
+                    <Picker
+                      data={data}
+                      onEmojiSelect={handleEmojiSelect}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button variant="outline" size="icon" className="relative">
                   <input
-                    id="image-upload"
                     type="file"
                     accept="image/*"
                     onChange={handleImageUpload}
-                    className="hidden"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   />
-                  <Button onClick={handleSendMessage} className="rounded-full bg-blue-500 hover:bg-blue-600 text-white">
-                    <Send className="h-5 w-5" />
-                  </Button>
-                </div>
-                {selectedImage && (
-                  <div className="mt-2">
-                    <Image src={selectedImage} alt="Selected image" width={100} height={100} className="rounded-lg" />
-                  </div>
-                )}
+                  <Camera className="h-4 w-4" />
+                </Button>
+                <Button onClick={handleSendMessage}>
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full">
-              <div className="text-6xl mb-4">💬</div>
-              <p className="text-xl text-gray-500 font-light">Select a conversation to start chatting</p>
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center h-full text-center p-4">
+            <MessageSquare className="h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Velg en samtale</h3>
+            <p className="text-gray-500">Velg en samtale fra listen til venstre for å starte meldingsutveksling</p>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -494,9 +561,9 @@ function ChatContent() {
 
 export default function ChatPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+    <div className="container mx-auto py-6">
       <ChatContent />
-    </Suspense>
+    </div>
   )
 }
 

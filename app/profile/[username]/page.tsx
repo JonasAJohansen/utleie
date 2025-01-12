@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,6 +10,7 @@ import { Star, MapPin, MessageCircle } from 'lucide-react'
 import { ItemGrid } from '@/components/ItemGrid'
 import { Wishlist } from '@/components/Wishlist'
 import { ReportDialog } from '@/components/ReportDialog'
+import { useUser } from "@clerk/nextjs"
 
 interface UserProfile {
   id: string
@@ -35,6 +36,8 @@ interface UserListing {
 
 export default function UserProfile() {
   const params = useParams()
+  const router = useRouter()
+  const { user } = useUser()
   const [activeTab, setActiveTab] = useState('listings')
   const [showReportDialog, setShowReportDialog] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -70,6 +73,11 @@ export default function UserProfile() {
     }
   }, [params.username])
 
+  const handleMessageClick = () => {
+    if (!profile) return
+    router.push(`/chat?userId=${profile.id}`)
+  }
+
   if (isLoading) {
     return <div>Loading...</div>
   }
@@ -78,13 +86,18 @@ export default function UserProfile() {
     return <div>User not found</div>
   }
 
+  const isOwnProfile = user?.id === profile.id
+
   return (
     <div className="space-y-6">
       <Card>
         <CardContent className="flex flex-col md:flex-row items-center gap-6 py-6">
           <Avatar className="w-32 h-32">
-            <AvatarImage src={profile.image_url || '/placeholder.svg?height=200&width=200'} alt={profile.username} />
-            <AvatarFallback>{profile.username[0]}</AvatarFallback>
+            <AvatarImage 
+              src={profile.image_url || '/placeholder.svg'} 
+              alt={profile.username}
+            />
+            <AvatarFallback>{profile.username[0].toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold">{profile.username}</h1>
@@ -103,9 +116,11 @@ export default function UserProfile() {
               <p className="mt-4 text-gray-700">{profile.bio}</p>
             )}
             <div className="mt-4 flex justify-center md:justify-start space-x-4">
-              <Button>
-                <MessageCircle className="mr-2 h-4 w-4" /> Message
-              </Button>
+              {!isOwnProfile && (
+                <Button onClick={handleMessageClick}>
+                  <MessageCircle className="mr-2 h-4 w-4" /> Message
+                </Button>
+              )}
               <Button variant="outline" onClick={() => setShowReportDialog(true)}>
                 Report User
               </Button>

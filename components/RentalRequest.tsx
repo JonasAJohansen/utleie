@@ -27,7 +27,7 @@ interface RentalRequestProps {
 }
 
 export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates = [] }: RentalRequestProps) {
-  const [selectedRange, setSelectedRange] = useState<DateRange | undefined>(undefined)
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [totalPrice, setTotalPrice] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
@@ -61,30 +61,19 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
   }, [itemId])
 
   useEffect(() => {
-    if (selectedRange?.from) {
-      // If only start date is selected, use it for both start and end
-      const endDate = selectedRange.to || selectedRange.from
-      const days = differenceInDays(endDate, selectedRange.from) + 1
-      setTotalPrice(days * pricePerDay)
+    if (selectedDate) {
+      setTotalPrice(pricePerDay) // Single day rental
     } else {
       setTotalPrice(0)
     }
-  }, [selectedRange, pricePerDay])
+  }, [selectedDate, pricePerDay])
 
-  const handleDateSelect = (range: DateRange | undefined) => {
-    if (range?.from && !range.to) {
-      // When only start date is selected, allow it to be a single-day rental
-      setSelectedRange({ from: range.from, to: range.from })
-    } else {
-      setSelectedRange(range)
-    }
+  const handleDateSelect = (date: Date | undefined) => {
+    setSelectedDate(date)
   }
 
   const handleRequest = async () => {
-    if (!selectedRange?.from) return
-
-    // Use the same date for both start and end if no end date is selected
-    const endDate = selectedRange.to || selectedRange.from
+    if (!selectedDate) return
 
     setIsLoading(true)
     try {
@@ -95,8 +84,8 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
         },
         body: JSON.stringify({
           listingId: itemId,
-          startDate: format(selectedRange.from, 'yyyy-MM-dd'),
-          endDate: format(endDate, 'yyyy-MM-dd'),
+          startDate: format(selectedDate, 'yyyy-MM-dd'),
+          endDate: format(selectedDate, 'yyyy-MM-dd'), // Same date for single-day rental
           totalPrice
         }),
       })
@@ -107,15 +96,15 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
       }
 
       toast({
-        title: "Request sent!",
-        description: "The owner will review your request soon.",
+        title: "Forespørsel sendt!",
+        description: "Eieren vil se på forespørselen din snart.",
       })
       setIsDialogOpen(false)
-      setSelectedRange(undefined)
+      setSelectedDate(undefined)
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send request",
+        title: "Feil",
+        description: error instanceof Error ? error.message : "Kunne ikke sende forespørsel",
         variant: "destructive",
       })
     } finally {
@@ -141,35 +130,33 @@ export function RentalRequest({ itemId, itemName, pricePerDay, unavailableDates 
         <DialogHeader>
           <DialogTitle>Leieforespørsel</DialogTitle>
           <DialogDescription>
-            Velg datoer for leie. Prisen er {pricePerDay} kr per dag.
+            Velg dato for leie. Prisen er {pricePerDay} kr per dag.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label>Velg dato(er)</Label>
+            <Label>Velg dato</Label>
             <Calendar
               mode="single"
-              selected={selectedRange}
+              selected={selectedDate}
               onSelect={handleDateSelect}
               className="rounded-md border"
               disabled={(date) => date < new Date() || isDateUnavailable(date)}
             />
           </div>
-          {selectedRange?.from && (
+          {selectedDate && (
             <div className="grid gap-2">
               <Label>Total pris</Label>
-              <div className="text-2xl font-bold">
-                {totalPrice} kr
-              </div>
+              <p className="text-2xl font-bold">{totalPrice} kr</p>
               <p className="text-sm text-gray-500">
-                For 1 dag
+                For {format(selectedDate, 'dd.MM.yyyy')}
               </p>
             </div>
           )}
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleRequest} disabled={!selectedRange?.from || isLoading}>
-            {isLoading ? "Sending..." : "Send Forespørsel"}
+          <Button onClick={handleRequest} disabled={!selectedDate || isLoading}>
+            {isLoading ? "Sender..." : "Send forespørsel"}
           </Button>
         </DialogFooter>
       </DialogContent>

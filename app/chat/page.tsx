@@ -77,6 +77,46 @@ function ChatContent() {
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({})
   const [initialLoad, setInitialLoad] = useState(true)
 
+  const createOrFetchConversation = async (otherUserId: string, listingId?: string | null, listingName?: string | null) => {
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          otherUserId,
+          listingId,
+          listingName
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        toast({
+          title: "Feil",
+          description: errorText || "Kunne ikke starte samtalen",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const conversation = await response.json()
+      setConversations(prev => {
+        const exists = prev.some(conv => conv.id === conversation.id)
+        return exists ? prev : [...prev, conversation]
+      })
+      setActiveConversation(conversation)
+    } catch (error) {
+      console.error('Error creating/fetching conversation:', error)
+      toast({
+        title: "Feil",
+        description: "Kunne ikke starte samtalen. Prøv igjen senere.",
+        variant: "destructive",
+      })
+    }
+  }
+
   useEffect(() => {
     if (!user) return
 

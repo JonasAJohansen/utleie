@@ -11,6 +11,7 @@ import { toast } from "@/components/ui/use-toast"
 import { useUser } from "@clerk/nextjs"
 import { CategorySelect } from '@/components/CategorySelect'
 import { LocationSelector } from '@/components/ui/location-selector'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Image from 'next/image'
 import { X, ImagePlus } from 'lucide-react'
 
@@ -24,6 +25,14 @@ interface ListingPhoto {
   isMain: boolean
 }
 
+// Define item conditions
+const itemConditions = [
+  { value: 'helt_ny', label: 'Helt ny' },
+  { value: 'som_ny', label: 'Som ny' },
+  { value: 'pent_brukt', label: 'Pent brukt' },
+  { value: 'godt_brukt', label: 'Godt brukt' },
+]
+
 export default function AddListing() {
   const router = useRouter()
   const { user } = useUser()
@@ -33,6 +42,7 @@ export default function AddListing() {
     price: '',
     categoryId: '',
     location: '',
+    condition: '',
   })
   const [photos, setPhotos] = useState<ListingPhoto[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -47,6 +57,10 @@ export default function AddListing() {
 
   const handleLocationChange = (value: string) => {
     setListing({ ...listing, location: value })
+  }
+
+  const handleConditionChange = (value: string) => {
+    setListing({ ...listing, condition: value })
   }
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,6 +194,24 @@ export default function AddListing() {
                 value={listing.categoryId}
                 onChange={handleCategoryChange}
               />
+            </div>
+            <div>
+              <Label htmlFor="condition">Tilstand</Label>
+              <Select value={listing.condition} onValueChange={handleConditionChange} required>
+                <SelectTrigger>
+                  <SelectValue placeholder="Velg tilstand" />
+                </SelectTrigger>
+                <SelectContent>
+                  {itemConditions.map((condition) => (
+                    <SelectItem 
+                      key={condition.value} 
+                      value={condition.value}
+                    >
+                      {condition.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="location">Sted</Label>

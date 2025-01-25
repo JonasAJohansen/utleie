@@ -9,14 +9,14 @@ import { useToast } from '@/hooks/use-toast'
 
 interface HeartButtonProps {
   itemId: string
-  className?: string
+  onHeartChange?: (isHearted: boolean) => void
 }
 
-export function HeartButton({ itemId, className }: HeartButtonProps) {
+export function HeartButton({ itemId, onHeartChange }: HeartButtonProps) {
   const { user, isSignedIn } = useUser()
   const router = useRouter()
   const { toast } = useToast()
-  const [isFavorite, setIsFavorite] = useState(false)
+  const [isHearted, setIsHearted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -29,10 +29,10 @@ export function HeartButton({ itemId, className }: HeartButtonProps) {
 
   const checkIfFavorite = async () => {
     try {
-      const response = await fetch(`/api/favorites`)
+      const response = await fetch(`/api/favorites/${itemId}`)
       if (response.ok) {
-        const favorites = await response.json()
-        setIsFavorite(favorites.some((fav: any) => fav.listing_id === itemId))
+        const data = await response.json()
+        setIsHearted(data.isFavorite)
       }
     } catch (error) {
       console.error('Error checking favorite status:', error)
@@ -41,7 +41,7 @@ export function HeartButton({ itemId, className }: HeartButtonProps) {
     }
   }
 
-  const toggleFavorite = async () => {
+  const toggleHeart = async () => {
     if (!isSignedIn) {
       toast({
         title: "Sign in required",
@@ -53,38 +53,30 @@ export function HeartButton({ itemId, className }: HeartButtonProps) {
 
     try {
       setIsLoading(true)
-      if (isFavorite) {
-        const response = await fetch(`/api/favorites/${itemId}`, {
-          method: 'DELETE',
-        })
-        if (response.ok) {
-          setIsFavorite(false)
-          toast({
-            title: "Success",
-            description: "Item removed from wishlist",
-          })
-        }
-      } else {
-        const response = await fetch('/api/favorites', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ listingId: itemId }),
-        })
-        if (response.ok) {
-          setIsFavorite(true)
-          toast({
-            title: "Success",
-            description: "Item added to wishlist",
-          })
-        }
+      const response = await fetch('/api/favorites', {
+        method: isHearted ? 'DELETE' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ listingId: itemId }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update favorite status')
       }
+
+      setIsHearted(!isHearted)
+      onHeartChange?.(!isHearted)
+
+      toast({
+        title: isHearted ? "Removed from favorites" : "Added to favorites",
+        description: isHearted ? "Item removed from your favorites" : "Item added to your favorites",
+      })
     } catch (error) {
-      console.error('Error toggling favorite:', error)
+      console.error('Error toggling heart:', error)
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: "Failed to update favorite status. Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -94,15 +86,13 @@ export function HeartButton({ itemId, className }: HeartButtonProps) {
 
   return (
     <Button
-      onClick={toggleFavorite}
-      disabled={isLoading}
       variant="ghost"
       size="icon"
-      className={className}
+      onClick={toggleHeart}
+      disabled={isLoading}
+      className={isHearted ? 'text-red-500 hover:text-red-600' : 'text-gray-500 hover:text-gray-600'}
     >
-      <Heart
-        className={`h-6 w-6 ${isFavorite ? 'fill-current text-red-500' : 'text-gray-500'}`}
-      />
+      <Heart className={`h-5 w-5 ${isHearted ? 'fill-current' : ''}`} />
     </Button>
   )
 }

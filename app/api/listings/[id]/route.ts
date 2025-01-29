@@ -2,18 +2,12 @@ import { sql } from '@vercel/postgres'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
-type Props = {
-  params: {
-    id: string
-  }
-}
-
 export async function DELETE(
-  _req: Request,
-  props: Props
+  request: Request,
+  { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   const { userId } = await auth()
-  const listingId = props.params.id
+  const listingId = params.id
 
   if (!userId) {
     return new NextResponse('Unauthorized', { status: 401 })
@@ -77,9 +71,9 @@ export async function DELETE(
 }
 
 export async function GET(
-  _req: Request,
-  props: Props
+  request: Request,
+  { params }: { params: { id: string } }
 ): Promise<NextResponse> {
-  const listingId = props.params.id
+  const listingId = params.id
   return NextResponse.json({ id: listingId })
 } 

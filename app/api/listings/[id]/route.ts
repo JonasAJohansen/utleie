@@ -2,9 +2,15 @@ import { sql } from '@vercel/postgres'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 
+interface RouteParams {
+  params: {
+    id: string
+  }
+}
+
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
   const { userId } = await auth()
   const listingId = params.id
@@ -72,7 +78,7 @@ export async function DELETE(
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: RouteParams
 ) {
   const listingId = params.id
 } 

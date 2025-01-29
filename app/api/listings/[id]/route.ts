@@ -68,4 +68,11 @@ export async function DELETE(
     console.error('Error deleting listing:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
+}
+
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const listingId = params.id
 } 

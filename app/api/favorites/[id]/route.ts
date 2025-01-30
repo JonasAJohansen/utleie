@@ -1,24 +1,18 @@
 import { sql } from '@vercel/postgres'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-type Context = {
-  params: {
-    id: string
-  }
-}
-
 export async function DELETE(
-  request: Request,
-  context: Context
-): Promise<NextResponse> {
+  req: NextRequest,
+  { params }: { params: { id: string } }
+): Promise<Response> {
   const { userId } = await auth()
   if (!userId) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
   try {
-    const listingId = context.params.id
+    const listingId = params.id
 
     const result = await sql`
       DELETE FROM favorites

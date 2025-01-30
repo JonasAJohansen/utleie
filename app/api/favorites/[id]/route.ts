@@ -3,16 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<Response> {
+  request: Request,
+  context: { params: { id: string } }
+) {
   const { userId } = await auth()
   if (!userId) {
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
   try {
-    const listingId = params.id
+    const listingId = context.params.id
 
     const result = await sql`
       DELETE FROM favorites

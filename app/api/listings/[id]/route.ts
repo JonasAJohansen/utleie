@@ -3,11 +3,11 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<Response> {
+  request: Request,
+  context: { params: { id: string } }
+) {
   const { userId } = await auth()
-  const listingId = params.id
+  const listingId = context.params.id
 
   if (!userId) {
     return new NextResponse('Unauthorized', { status: 401 })
@@ -71,9 +71,9 @@ export async function DELETE(
 }
 
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-): Promise<Response> {
-  const listingId = params.id
+  request: Request,
+  context: { params: { id: string } }
+) {
+  const listingId = context.params.id
   return NextResponse.json({ id: listingId })
 } 

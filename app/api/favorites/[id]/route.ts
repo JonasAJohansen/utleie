@@ -2,15 +2,9 @@ import { sql } from '@vercel/postgres'
 import { NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-interface RouteContext {
-  params: {
-    id: string
-  }
-}
-
 export async function DELETE(
-  _req: Request,
-  { params }: RouteContext
+  request: Request,
+  context: { params: { id: string } }
 ) {
   const { userId } = await auth()
   if (!userId) {
@@ -18,7 +12,7 @@ export async function DELETE(
   }
 
   try {
-    const listingId = params.id
+    const listingId = context.params.id
 
     const result = await sql`
       DELETE FROM favorites

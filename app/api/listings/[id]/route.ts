@@ -24,12 +24,6 @@ export async function DELETE(
         WHERE listing_id = ${listingId}::uuid
       `
 
-      // Delete any favorites
-      await sql`
-        DELETE FROM favorites 
-        WHERE listing_id = ${listingId}::uuid
-      `
-
       // Delete any reviews
       await sql`
         DELETE FROM reviews 

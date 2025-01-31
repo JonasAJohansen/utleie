@@ -4,11 +4,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Star, MessageCircle, MapPin, DollarSign, Flag, Heart } from 'lucide-react'
+import { Star, MessageCircle, MapPin, DollarSign, Flag } from 'lucide-react'
 import { RentalRequest } from '@/components/RentalRequest'
 import { ReportDialog } from '@/components/ReportDialog'
-import { HeartButton } from '@/components/HeartButton'
-import { useState, useEffect } from 'react'
 
 interface ListingDetailsProps {
   item: {
@@ -22,7 +20,7 @@ interface ListingDetailsProps {
     user_id: string
     username: string
     user_image: string | null
-    condition?: string // Add condition field
+    condition?: string
   }
   userId: string | null
 }
@@ -38,39 +36,12 @@ export function ListingDetails({ item, userId }: ListingDetailsProps) {
   const rating = parseFloat(item.rating.toString())
   const hasRating = !isNaN(rating) && item.review_count > 0
   const isLoggedIn = !!userId
-  const [heartCount, setHeartCount] = useState(0)
-
-  useEffect(() => {
-    // Fetch heart count when component mounts
-    const fetchHeartCount = async () => {
-      try {
-        const response = await fetch(`/api/listings/${item.id}/hearts`)
-        if (response.ok) {
-          const data = await response.json()
-          setHeartCount(data.count)
-        }
-      } catch (error) {
-        console.error('Error fetching heart count:', error)
-      }
-    }
-
-    fetchHeartCount()
-  }, [item.id])
-
-  // Callback function to update heart count when heart status changes
-  const onHeartChange = (isHearted: boolean) => {
-    setHeartCount(prev => isHearted ? prev + 1 : prev - 1)
-  }
 
   return (
     <div className="space-y-8">
       <div>
         <div className="flex justify-between items-start mb-4">
           <h1 className="text-3xl font-bold">{item.name}</h1>
-          <div className="flex items-center gap-2">
-            {isLoggedIn && <HeartButton itemId={item.id} onHeartChange={onHeartChange} />}
-            <span className="text-gray-500 text-sm">{heartCount}</span>
-          </div>
         </div>
         <div className="flex items-center mb-4">
           <Star className="h-5 w-5 text-yellow-400 fill-current" />

@@ -1,13 +1,17 @@
 import { sql } from '@vercel/postgres'
 import { auth } from '@clerk/nextjs/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+
+type RouteContext = {
+  params: Promise<{ id: string }>
+}
 
 export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
   const { userId } = await auth()
-  const listingId = context.params.id
+  const { id: listingId } = await context.params
 
   if (!userId) {
     return new NextResponse('Unauthorized', { status: 401 })
@@ -65,9 +69,33 @@ export async function DELETE(
 }
 
 export async function GET(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  context: RouteContext
 ) {
-  const listingId = context.params.id
-  return NextResponse.json({ id: listingId })
+  try {
+    const { id: listingId } = await context.params
+    
+    const result = await sql`
+      SELECT 
+        l.*,
+        u.username,
+        u.image_url as user_image,
+        COALESCE(AVG(r.rating)::numeric, 0)::numeric(10,2) as rating,
+        COUNT(r.id) as review_count
+      FROM listings l
+      JOIN users u ON l.user_id = u.id
+      LEFT JOIN reviews r ON l.id = r.listing_id
+      WHERE l.id = ${listingId}::uuid
+      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, u.username, u.image_url
+    `
+
+    if (result.rows.length === 0) {
+      return new NextResponse('Listing not found', { status: 404 })
+    }
+
+    return NextResponse.json(result.rows[0])
+  } catch (error) {
+    console.error('Error fetching listing:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
 } 

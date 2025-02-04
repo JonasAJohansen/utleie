@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Star, MapPin } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
-import { FavoriteButton } from '@/components/ui/favorite-button'
+import { FavoriteButton } from '@/app/components/ui/favorite-button'
 
 interface ListingCardProps {
   data: {

@@ -63,6 +63,23 @@ export default function AddListing() {
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
 
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to load categories. Please try again.',
+        variant: 'destructive',
+      })
+    }
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setListing({ ...listing, [e.target.name]: e.target.value })
   }

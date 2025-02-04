@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import { sql } from '@vercel/postgres'
-import ListingCard from '@/components/ListingCard'
+import ListingCard from '@/app/components/ListingCard'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Suspense } from 'react'

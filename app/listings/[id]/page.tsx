@@ -120,7 +120,7 @@ export default async function ItemListing({ params }: PageProps) {
     user_id: item.user_id,
     username: item.username,
     user_image: item.user_image,
-    condition: item.condition
+    condition: item.condition || undefined
   }
 
   return (

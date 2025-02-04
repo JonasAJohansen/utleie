@@ -56,4 +56,26 @@ export async function PATCH(request: Request) {
     console.error('Error marking notification as read:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
+}
+
+export async function PUT(request: Request) {
+  const { userId } = await auth()
+
+  if (!userId) {
+    return new NextResponse('Unauthorized', { status: 401 })
+  }
+
+  try {
+    await sql`
+      UPDATE notifications
+      SET is_read = true
+      WHERE user_id = ${userId}
+      AND is_read = false
+    `
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
 } 

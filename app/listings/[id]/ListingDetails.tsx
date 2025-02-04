@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Star, MessageCircle, MapPin, DollarSign, Flag } from 'lucide-react'
 import { RentalRequest } from '@/components/RentalRequest'
 import { ReportDialog } from '@/components/ReportDialog'
+import { FavoriteButton } from '../../components/ui/favorite-button'
 
 interface ListingDetailsProps {
   item: {
@@ -23,6 +24,7 @@ interface ListingDetailsProps {
     condition?: string
   }
   userId: string | null
+  isFavorited?: boolean
 }
 
 const conditionLabels: Record<string, string> = {
@@ -32,16 +34,26 @@ const conditionLabels: Record<string, string> = {
   'godt_brukt': 'Godt brukt'
 }
 
-export function ListingDetails({ item, userId }: ListingDetailsProps) {
+export function ListingDetails({ item, userId, isFavorited = false }: ListingDetailsProps) {
   const rating = parseFloat(item.rating.toString())
   const hasRating = !isNaN(rating) && item.review_count > 0
   const isLoggedIn = !!userId
+
+  console.log('ListingDetails - Full item data:', JSON.stringify(item, null, 2))
+  console.log('ListingDetails - condition value:', item.condition)
+  console.log('ListingDetails - condition label:', item.condition ? conditionLabels[item.condition] : 'No condition')
 
   return (
     <div className="space-y-8">
       <div>
         <div className="flex justify-between items-start mb-4">
           <h1 className="text-3xl font-bold">{item.name}</h1>
+          {isLoggedIn && (
+            <FavoriteButton
+              listingId={item.id}
+              initialIsFavorited={isFavorited}
+            />
+          )}
         </div>
         <div className="flex items-center mb-4">
           <Star className="h-5 w-5 text-yellow-400 fill-current" />

@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { name, description, price, photos, categoryId, location } = body
+    const { name, description, price, photos, categoryId, location, condition, brandId } = body
 
     if (!categoryId) {
       return new NextResponse('Category is required', { status: 400 })
@@ -108,8 +108,26 @@ export async function POST(request: Request) {
 
     // Create the listing
     const listingResult = await sql`
-      INSERT INTO listings (name, description, price, user_id, category_id, location)
-      VALUES (${name}, ${description}, ${price}, ${userId}, ${categoryId}, ${location})
+      INSERT INTO listings (
+        name, 
+        description, 
+        price, 
+        user_id, 
+        category_id, 
+        location, 
+        condition,
+        brand_id
+      )
+      VALUES (
+        ${name}, 
+        ${description}, 
+        ${price}, 
+        ${userId}, 
+        ${categoryId}, 
+        ${location}, 
+        ${condition || null},
+        ${brandId || null}
+      )
       RETURNING id
     `
 

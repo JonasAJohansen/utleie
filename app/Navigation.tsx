@@ -72,6 +72,27 @@ export default function Navigation() {
     }
   }
 
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/notifications', {
+        method: 'PUT',
+      })
+
+      if (response.ok) {
+        setNotifications(notifications.map(n => ({ ...n, read: true })))
+        setUnreadCount(0)
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
+    }
+  }
+
+  const handleDropdownOpenChange = async (open: boolean) => {
+    if (open && unreadCount > 0) {
+      await markAllAsRead()
+    }
+  }
+
   const handleNotificationClick = async (notification: Notification) => {
     if (!notification.read) {
       await markAsRead(notification.id)
@@ -159,7 +180,7 @@ export default function Navigation() {
           <div className="hidden md:flex items-center space-x-4">
             {user && (
               <>
-                <DropdownMenu>
+                <DropdownMenu onOpenChange={handleDropdownOpenChange}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="relative">
                       <Bell className="h-5 w-5" />
@@ -174,6 +195,19 @@ export default function Navigation() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-80">
+                    <div className="flex items-center justify-between px-4 py-2 border-b">
+                      <DropdownMenuLabel className="py-0">Notifications</DropdownMenuLabel>
+                      {notifications.length > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={markAllAsRead}
+                          className="h-8 text-xs"
+                        >
+                          Mark all as read
+                        </Button>
+                      )}
+                    </div>
                     {notifications.length === 0 ? (
                       <div className="p-4 text-center text-sm text-gray-500">
                         No notifications

@@ -86,7 +86,7 @@ export async function GET(
       JOIN users u ON l.user_id = u.id
       LEFT JOIN reviews r ON l.id = r.listing_id
       WHERE l.id = ${listingId}::uuid
-      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, u.username, u.image_url
+      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, l.condition, u.username, u.image_url
     `
 
     if (result.rows.length === 0) {

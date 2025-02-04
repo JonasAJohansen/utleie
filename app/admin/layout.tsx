@@ -1,6 +1,9 @@
 import { auth } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import ClientSideAdminLayout from './ClientSideAdminLayout'
+import Link from 'next/link'
+import { cn } from '@/lib/utils'
+import { buttonVariants } from '@/components/ui/button'
+import { LayoutGrid, Tags, Settings } from 'lucide-react'
 
 export default async function AdminLayout({
   children,
@@ -16,6 +19,84 @@ export default async function AdminLayout({
   // The middleware will handle the admin role check
   // If we get here, the user is already verified as an admin
 
-  return <ClientSideAdminLayout>{children}</ClientSideAdminLayout>
+  return (
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-50 border-r hidden md:block">
+        <div className="p-6">
+          <h2 className="text-lg font-semibold mb-6">Admin Dashboard</h2>
+          <nav className="space-y-2">
+            <Link 
+              href="/admin/dashboard" 
+              className={cn(
+                buttonVariants({ variant: "ghost" }), 
+                "w-full justify-start"
+              )}
+            >
+              <LayoutGrid className="mr-2 h-4 w-4" />
+              Dashboard
+            </Link>
+            <Link 
+              href="/admin/categories" 
+              className={cn(
+                buttonVariants({ variant: "ghost" }), 
+                "w-full justify-start"
+              )}
+            >
+              <Tags className="mr-2 h-4 w-4" />
+              Categories
+            </Link>
+            <Link 
+              href="/admin/brands" 
+              className={cn(
+                buttonVariants({ variant: "ghost" }), 
+                "w-full justify-start"
+              )}
+            >
+              <Settings className="mr-2 h-4 w-4" />
+              Brands
+            </Link>
+          </nav>
+        </div>
+      </aside>
+
+      {/* Mobile navigation */}
+      <div className="md:hidden w-full bg-gray-50 border-b p-4">
+        <nav className="flex justify-around">
+          <Link 
+            href="/admin/dashboard" 
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" })
+            )}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Link>
+          <Link 
+            href="/admin/categories" 
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" })
+            )}
+          >
+            <Tags className="h-4 w-4" />
+          </Link>
+          <Link 
+            href="/admin/brands" 
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" })
+            )}
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
+        </nav>
+      </div>
+
+      {/* Main content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="container mx-auto p-6">
+          {children}
+        </div>
+      </main>
+    </div>
+  )
 }
 

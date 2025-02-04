@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,9 +43,12 @@ export default function AddListing() {
     categoryId: '',
     location: '',
     condition: '',
+    brandId: '',
   })
   const [photos, setPhotos] = useState<ListingPhoto[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [brands, setBrands] = useState<Brand[]>([])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setListing({ ...listing, [e.target.name]: e.target.value })
@@ -165,6 +168,38 @@ export default function AddListing() {
     }
   }
 
+  useEffect(() => {
+    fetchCategories()
+  }, [])
+
+  useEffect(() => {
+    if (listing.categoryId) {
+      fetchBrands()
+    }
+  }, [listing.categoryId])
+
+  const fetchBrands = async () => {
+    try {
+      const response = await fetch('/api/brands')
+      if (!response.ok) throw new Error('Failed to fetch brands')
+      const data = await response.json()
+      // Filter brands by selected category
+      const filteredBrands = data.filter((brand: any) => brand.category_id === listing.categoryId)
+      setBrands(filteredBrands)
+    } catch (error) {
+      console.error('Error:', error)
+      toast({
+        title: "Error",
+        description: "Failed to fetch brands",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleBrandChange = (value: string) => {
+    setListing({ ...listing, brandId: value })
+  }
+
   if (!user) {
     return <div>Vennligst logg inn for å opprette en annonse.</div>
   }
@@ -195,6 +230,23 @@ export default function AddListing() {
                 onChange={handleCategoryChange}
               />
             </div>
+            {listing.categoryId && brands.length > 0 && (
+              <div>
+                <Label htmlFor="brand">Merke</Label>
+                <Select value={listing.brandId} onValueChange={handleBrandChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Velg merke" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {brands.map((brand) => (
+                      <SelectItem key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label htmlFor="condition">Tilstand</Label>
               <Select value={listing.condition} onValueChange={handleConditionChange} required>

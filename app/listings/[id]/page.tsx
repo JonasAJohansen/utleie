@@ -25,6 +25,7 @@ interface ListingData extends QueryResultRow {
   username: string
   user_image: string | null
   photos: ListingPhoto[]
+  condition: string | null
 }
 
 interface PageProps {
@@ -57,6 +58,7 @@ async function getListingData(id: string): Promise<ListingData | null> {
         l.user_id,
         l.status,
         l.created_at,
+        l.condition,
         u.username,
         u.image_url as user_image,
         COALESCE(AVG(r.rating)::numeric, 0)::numeric(10,2) as rating,
@@ -65,7 +67,7 @@ async function getListingData(id: string): Promise<ListingData | null> {
       JOIN users u ON l.user_id = u.id
       LEFT JOIN reviews r ON l.id = r.listing_id
       WHERE l.id = ${id}::uuid
-      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, u.username, u.image_url
+      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, l.condition, u.username, u.image_url
     `
 
     if (result.rows.length === 0) {
@@ -83,6 +85,14 @@ async function getListingData(id: string): Promise<ListingData | null> {
   }
 }
 
+async function checkIsFavorited(listingId: string, userId: string) {
+  const result = await sql`
+    SELECT id FROM favorites
+    WHERE listing_id = ${listingId} AND user_id = ${userId}
+  `
+  return result.rows.length > 0
+}
+
 export default async function ItemListing({ params }: PageProps) {
   const resolvedParams = await Promise.resolve(params)
   const { userId } = await auth()
@@ -97,6 +107,8 @@ export default async function ItemListing({ params }: PageProps) {
     notFound()
   }
 
+  const isFavorited = userId ? await checkIsFavorited(resolvedParams.id, userId) : false
+
   const listingDetails = {
     id: item.id,
     name: item.name,
@@ -107,14 +119,15 @@ export default async function ItemListing({ params }: PageProps) {
     location: item.location,
     user_id: item.user_id,
     username: item.username,
-    user_image: item.user_image
+    user_image: item.user_image,
+    condition: item.condition
   }
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <ListingGallery photos={item.photos} />
-        <ListingDetails item={listingDetails} userId={userId || null} />
+        <ListingDetails item={listingDetails} userId={userId || null} isFavorited={isFavorited} />
       </div>
     </div>
   )

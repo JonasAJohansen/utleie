@@ -1,10 +1,9 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+import { clerkClient, clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { sql } from '@vercel/postgres'
-import { clerkClient } from '@clerk/nextjs/server'
 
-const isAdminRoute = createRouteMatcher(['/admin', '/admin/(.*)'])
+const isAdminRoute = createRouteMatcher(['/admin(.*)'])
 
 export default clerkMiddleware(async (auth, req) => {
   const { userId } = await auth()
@@ -41,23 +40,19 @@ export default clerkMiddleware(async (auth, req) => {
 
   if (isAdminRoute(req)) {
     if (!userId) {
-      console.log('Middleware - No user ID')
-      return new Response('Unauthorized', { status: 401 })
+      return NextResponse.redirect(new URL('/sign-in', req.url))
     }
 
-    // Check if user has admin role
     try {
       const client = await clerkClient()
       const user = await client.users.getUser(userId)
-      console.log('User metadata:', user.privateMetadata)
       
       if (!user.privateMetadata?.role || user.privateMetadata.role !== 'org:admin') {
-        console.log('Middleware - Not admin')
-        return new Response('Not authorized', { status: 403 })
+        return NextResponse.redirect(new URL('/', req.url))
       }
     } catch (error) {
-      console.log('Middleware - Error checking admin status:', error)
-      return new Response('Internal Server Error', { status: 500 })
+      console.error('Error checking admin status:', error)
+      return NextResponse.redirect(new URL('/', req.url))
     }
   }
   
@@ -66,9 +61,15 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    '/admin',
-    '/admin/(.*)',
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+    '/api/:path*'
+  ]
 }
 

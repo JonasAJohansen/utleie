@@ -25,6 +25,19 @@ interface ListingPhoto {
   isMain: boolean
 }
 
+interface Category {
+  id: string
+  name: string
+  description?: string
+  parent_id?: string | null
+}
+
+interface Brand {
+  id: string
+  name: string
+  category_id: string
+}
+
 // Define item conditions
 const itemConditions = [
   { value: 'helt_ny', label: 'Helt ny' },

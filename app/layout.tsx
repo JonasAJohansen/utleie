@@ -16,48 +16,42 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={inter.className}>
-          <ScrollToTop />
-          <div className="flex flex-col min-h-screen">
-            <div className="fixed inset-0 -z-10 bg-gradient-to-br from-indigo-50 via-white to-cyan-100" />
-            <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px]" />
-            <header>
-              <Navigation />
-            </header>
-            <div className="flex-1">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {children}
-              </div>
-            </div>
-            <footer className="bg-gray-100">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <body className={`${inter.className} bg-white overflow-y-auto`}>
+          <div className="flex min-h-screen flex-col">
+            <ScrollToTop />
+            <Navigation />
+            <main className="flex-1 mt-16">
+              {children}
+            </main>
+            <footer className="border-t border-gray-100">
+              <div className="max-w-screen-xl mx-auto px-4 py-8">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">About Us</h3>
+                    <h3 className="text-lg font-semibold mb-4">Om oss</h3>
                     <ul className="space-y-2">
-                      <li><Link href="/about" className="text-gray-600 hover:text-gray-900">Our Story</Link></li>
-                      <li><Link href="/team" className="text-gray-600 hover:text-gray-900">Our Team</Link></li>
-                      <li><Link href="/careers" className="text-gray-600 hover:text-gray-900">Careers</Link></li>
+                      <li><Link href="/about" className="text-gray-600 hover:text-gray-900">Vår historie</Link></li>
+                      <li><Link href="/team" className="text-gray-600 hover:text-gray-900">Vårt team</Link></li>
+                      <li><Link href="/careers" className="text-gray-600 hover:text-gray-900">Karriere</Link></li>
                     </ul>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Support</h3>
+                    <h3 className="text-lg font-semibold mb-4">Hjelp</h3>
                     <ul className="space-y-2">
                       <li><Link href="/faq" className="text-gray-600 hover:text-gray-900">FAQ</Link></li>
-                      <li><Link href="/contact" className="text-gray-600 hover:text-gray-900">Contact Us</Link></li>
-                      <li><Link href="/help" className="text-gray-600 hover:text-gray-900">Help Center</Link></li>
+                      <li><Link href="/contact" className="text-gray-600 hover:text-gray-900">Kontakt oss</Link></li>
+                      <li><Link href="/help" className="text-gray-600 hover:text-gray-900">Hjelpesenter</Link></li>
                     </ul>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Legal</h3>
+                    <h3 className="text-lg font-semibold mb-4">Juridisk</h3>
                     <ul className="space-y-2">
-                      <li><Link href="/terms" className="text-gray-600 hover:text-gray-900">Terms of Service</Link></li>
-                      <li><Link href="/privacy" className="text-gray-600 hover:text-gray-900">Privacy Policy</Link></li>
-                      <li><Link href="/cookies" className="text-gray-600 hover:text-gray-900">Cookie Policy</Link></li>
+                      <li><Link href="/terms" className="text-gray-600 hover:text-gray-900">Vilkår</Link></li>
+                      <li><Link href="/privacy" className="text-gray-600 hover:text-gray-900">Personvern</Link></li>
+                      <li><Link href="/cookies" className="text-gray-600 hover:text-gray-900">Cookies</Link></li>
                     </ul>
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold mb-4">Follow Us</h3>
+                    <h3 className="text-lg font-semibold mb-4">Følg oss</h3>
                     <div className="flex space-x-4">
                       <a href="#" className="text-gray-400 hover:text-gray-900">
                         <span className="sr-only">Facebook</span>

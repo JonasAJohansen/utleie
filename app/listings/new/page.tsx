@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "@/components/ui/use-toast"
 import { useUser } from "@clerk/nextjs"
 import { CategorySelect } from '@/components/CategorySelect'
 import { LocationSelector } from '@/components/ui/location-selector'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Image from 'next/image'
-import { X, ImagePlus } from 'lucide-react'
+import { MultiStepForm } from '@/components/ui/multi-step-form'
+import { PhotoUpload } from '@/components/ui/photo-upload'
+import { AlertCircle, HelpCircle, Loader2 } from 'lucide-react'
+import { ListingPreview } from '@/components/ui/listing-preview'
 
 // Import locations from location selector
 import { locations } from '@/components/ui/location-selector'
@@ -49,6 +50,7 @@ const itemConditions = [
 export default function AddListing() {
   const router = useRouter()
   const { user } = useUser()
+  const [currentStep, setCurrentStep] = useState(0)
   const [listing, setListing] = useState({
     name: '',
     description: '',
@@ -62,6 +64,37 @@ export default function AddListing() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
+  const [isFetchingBrands, setIsFetchingBrands] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+
+  const steps = [
+    {
+      title: 'Grunnleggende info',
+      description: 'Navn, kategori og tilstand',
+      isCompleted: !!listing.name && !!listing.categoryId && !!listing.condition
+    },
+    {
+      title: 'Bilder',
+      description: 'Last opp bilder',
+      isCompleted: photos.length > 0
+    },
+    {
+      title: 'Detaljer',
+      description: 'Beskrivelse og pris',
+      isCompleted: !!listing.description && !!listing.price
+    },
+    {
+      title: 'Lokasjon',
+      description: 'Hvor er gjenstanden?',
+      isCompleted: !!listing.location
+    },
+    {
+      title: 'Forhåndsvisning',
+      description: 'Se over og publiser',
+      isCompleted: false
+    }
+  ]
 
   const fetchCategories = async () => {
     try {
@@ -85,6 +118,8 @@ export default function AddListing() {
   }
 
   const handleCategoryChange = (value: string) => {
+    const category = categories.find(c => c.id === value)
+    setSelectedCategory(category || null)
     setListing({ ...listing, categoryId: value })
   }
 
@@ -96,47 +131,7 @@ export default function AddListing() {
     setListing({ ...listing, condition: value })
   }
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files && files.length > 0 && photos.length < 4) {
-      const file = files[0]
-      const previewUrl = URL.createObjectURL(file)
-      const isMain = photos.length === 0 // First photo is main by default
-      
-      setPhotos([...photos, {
-        file,
-        description: '',
-        previewUrl,
-        isMain
-      }])
-    }
-  }
-
-  const handlePhotoDescriptionChange = (index: number, description: string) => {
-    const newPhotos = [...photos]
-    newPhotos[index].description = description
-    setPhotos(newPhotos)
-  }
-
-  const handleSetMainPhoto = (index: number) => {
-    const newPhotos = photos.map((photo, i) => ({
-      ...photo,
-      isMain: i === index
-    }))
-    setPhotos(newPhotos)
-  }
-
-  const handleRemovePhoto = (index: number) => {
-    const newPhotos = photos.filter((_, i) => i !== index)
-    // If we removed the main photo, make the first remaining photo the main one
-    if (photos[index].isMain && newPhotos.length > 0) {
-      newPhotos[0].isMain = true
-    }
-    setPhotos(newPhotos)
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     setIsSubmitting(true)
 
     try {
@@ -210,10 +205,10 @@ export default function AddListing() {
 
   const fetchBrands = async () => {
     try {
+      setIsFetchingBrands(true)
       const response = await fetch('/api/brands')
       if (!response.ok) throw new Error('Failed to fetch brands')
       const data = await response.json()
-      // Filter brands by selected category
       const filteredBrands = data.filter((brand: any) => brand.category_id === listing.categoryId)
       setBrands(filteredBrands)
     } catch (error) {
@@ -223,11 +218,38 @@ export default function AddListing() {
         description: "Failed to fetch brands",
         variant: "destructive",
       })
+    } finally {
+      setIsFetchingBrands(false)
     }
   }
 
   const handleBrandChange = (value: string) => {
+    const brand = brands.find(b => b.id === value)
+    setSelectedBrand(brand || null)
     setListing({ ...listing, brandId: value })
+  }
+
+  const handleStepChange = (step: number) => {
+    // Allow going back to any step
+    if (step < currentStep) {
+      setCurrentStep(step)
+      return
+    }
+
+    // Check if current step is completed before proceeding
+    if (!steps[currentStep].isCompleted) {
+      toast({
+        title: "Fullfør dette steget",
+        description: "Vennligst fyll ut all nødvendig informasjon før du går videre.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // If all previous steps are completed, proceed
+    if (steps.slice(0, step).every(s => s.isCompleted)) {
+      setCurrentStep(step)
+    }
   }
 
   if (!user) {
@@ -235,49 +257,99 @@ export default function AddListing() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Legg ut ny annonse</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Annonseinformasjon</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+    <div className="container max-w-3xl mx-auto py-8">
+      <h1 className="text-3xl font-bold mb-8">Legg ut ny annonse</h1>
+
+      <MultiStepForm
+        steps={steps}
+        currentStep={currentStep}
+        onStepChange={handleStepChange}
+      >
+        {currentStep === 0 && (
+          <div className="space-y-6">
+            <div className="space-y-2">
               <Label htmlFor="name">Gjenstandens navn</Label>
               <Input
                 id="name"
                 name="name"
                 value={listing.name}
                 onChange={handleChange}
+                placeholder="F.eks. 'Sony PlayStation 5' eller 'Bosch Drill'"
                 required
               />
+              <p className="text-sm text-muted-foreground">
+                Gi en kort og beskrivende tittel som hjelper folk å finne gjenstanden din.
+              </p>
             </div>
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="category">Kategori</Label>
               <CategorySelect
                 value={listing.categoryId}
                 onChange={handleCategoryChange}
               />
+              <p className="text-sm text-muted-foreground">
+                Velg en kategori som best beskriver gjenstanden din.
+              </p>
             </div>
-            {listing.categoryId && brands.length > 0 && (
-              <div>
+
+            {listing.categoryId && (
+              <div className="space-y-2">
                 <Label htmlFor="brand">Merke</Label>
-                <Select value={listing.brandId} onValueChange={handleBrandChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Velg merke" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {brands.map((brand) => (
-                      <SelectItem key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                {isFetchingBrands ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Henter merker...</span>
+                  </div>
+                ) : brands.length > 0 ? (
+                  <>
+                    <Select value={listing.brandId} onValueChange={handleBrandChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Velg merke" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {brands.map((brand) => (
+                          <SelectItem key={brand.id} value={brand.id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      Velg merket på gjenstanden din. Dette hjelper potensielle leietakere med å finne det de leter etter.
+                    </p>
+                  </>
+                ) : (
+                  <div className="rounded-md bg-muted p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-muted-foreground mt-0.5" />
+                      <div className="space-y-2">
+                        <p className="text-sm font-medium">Ingen merker funnet for denne kategorien</p>
+                        <p className="text-sm text-muted-foreground">
+                          Vi har ikke registrert noen merker for denne kategorien ennå. 
+                          Du kan fortsette uten å velge merke, eller kontakte oss for å få lagt til et nytt merke.
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // TODO: Implement brand request functionality
+                            toast({
+                              title: "Kommer snart",
+                              description: "Muligheten for å foreslå nye merker kommer snart.",
+                            })
+                          }}
+                        >
+                          Foreslå nytt merke
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-            <div>
+
+            <div className="space-y-2">
               <Label htmlFor="condition">Tilstand</Label>
               <Select value={listing.condition} onValueChange={handleConditionChange} required>
                 <SelectTrigger>
@@ -285,23 +357,31 @@ export default function AddListing() {
                 </SelectTrigger>
                 <SelectContent>
                   {itemConditions.map((condition) => (
-                    <SelectItem 
-                      key={condition.value} 
-                      value={condition.value}
-                    >
+                    <SelectItem key={condition.value} value={condition.value}>
                       {condition.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-sm text-muted-foreground">
+                Velg tilstanden som best beskriver gjenstanden din. Vær ærlig - dette bygger tillit med leietakere.
+              </p>
             </div>
-            <div>
-              <Label htmlFor="location">Sted</Label>
-              <LocationSelector
-                value={listing.location}
-                onChange={handleLocationChange}
-              />
-            </div>
+          </div>
+        )}
+
+        {currentStep === 1 && (
+          <div className="space-y-6">
+            <PhotoUpload
+              photos={photos}
+              onPhotosChange={setPhotos}
+              maxPhotos={4}
+            />
+          </div>
+        )}
+
+        {currentStep === 2 && (
+          <div className="space-y-6">
             <div>
               <Label htmlFor="description">Beskrivelse</Label>
               <Textarea
@@ -309,10 +389,12 @@ export default function AddListing() {
                 name="description"
                 value={listing.description}
                 onChange={handleChange}
-                rows={4}
+                placeholder="Beskriv gjenstanden din i detalj. Inkluder relevant informasjon som størrelse, farge, tilstand, etc."
+                rows={6}
                 required
               />
             </div>
+
             <div>
               <Label htmlFor="price">Pris per dag (NOK)</Label>
               <div className="relative">
@@ -329,68 +411,45 @@ export default function AddListing() {
                 />
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">kr</span>
               </div>
-            </div>
-            <div>
-              <Label>Bilder (Maks 4)</Label>
-              <div className="grid grid-cols-2 gap-4 mt-2">
-                {photos.map((photo, index) => (
-                  <div key={index} className="relative">
-                    <div className="relative w-full h-48 rounded-lg overflow-hidden">
-                      <Image
-                        src={photo.previewUrl}
-                        alt={`Bilde ${index + 1}`}
-                        fill
-                        className="object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(index)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white hover:bg-red-600"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="mt-2 space-y-2">
-                      <Input
-                        placeholder="Legg til beskrivelse"
-                        value={photo.description}
-                        onChange={(e) => handlePhotoDescriptionChange(index, e.target.value)}
-                      />
-                      <Button
-                        type="button"
-                        variant={photo.isMain ? "default" : "outline"}
-                        className="w-full"
-                        onClick={() => handleSetMainPhoto(index)}
-                      >
-                        {photo.isMain ? 'Hovedbilde' : 'Sett som hovedbilde'}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {photos.length < 4 && (
-                  <label className="relative w-full h-48 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 cursor-pointer flex items-center justify-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handlePhotoChange}
-                      className="hidden"
-                    />
-                    <div className="text-center">
-                      <ImagePlus className="mx-auto h-12 w-12 text-gray-400" />
-                      <span className="mt-2 block text-sm text-gray-600">
-                        Last opp bilde
-                      </span>
-                    </div>
-                  </label>
-                )}
+              <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
+                <HelpCircle className="h-4 w-4 mt-0.5" />
+                <p>
+                  Sett en konkurransedyktig pris. Du kan sjekke lignende annonser for å få en idé om prisnivået.
+                </p>
               </div>
             </div>
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "Oppretter annonse..." : "Opprett annonse"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+        )}
+
+        {currentStep === 3 && (
+          <div className="space-y-6">
+            <div>
+              <Label htmlFor="location">Sted</Label>
+              <LocationSelector
+                value={listing.location}
+                onChange={handleLocationChange}
+              />
+              <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
+                <AlertCircle className="h-4 w-4 mt-0.5" />
+                <p>
+                  Velg stedet hvor gjenstanden kan hentes og leveres. Dette hjelper potensielle leietakere med å planlegge.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 4 && (
+          <ListingPreview
+            listing={listing}
+            photos={photos}
+            categoryName={selectedCategory?.name}
+            brandName={selectedBrand?.name}
+            onEdit={handleStepChange}
+            onPublish={handleSubmit}
+          />
+        )}
+      </MultiStepForm>
     </div>
   )
 }

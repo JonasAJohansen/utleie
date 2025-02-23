@@ -4,18 +4,34 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Input } from "./ui/input"
 import { Button } from "./ui/button"
-import { Search, Bookmark } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@clerk/nextjs"
-import { LocationSelector } from "./ui/location-selector"
+import { SearchDropdown } from "@/components/ui/search-dropdown"
 
 interface SearchBarProps {
   initialQuery?: string
 }
 
+const categories = [
+  { value: "all", label: "Alle kategorier" },
+  { value: "electronics", label: "Elektronikk" },
+  { value: "tools", label: "Verktøy" },
+  { value: "sports", label: "Sport" },
+  { value: "camping", label: "Camping" },
+]
+
+const locations = [
+  { value: "oslo", label: "Oslo" },
+  { value: "bergen", label: "Bergen" },
+  { value: "trondheim", label: "Trondheim" },
+  { value: "stavanger", label: "Stavanger" },
+]
+
 function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
   const [searchQuery, setSearchQuery] = useState(initialQuery)
   const [location, setLocation] = useState('')
+  const [category, setCategory] = useState('all')
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
@@ -24,11 +40,15 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
   useEffect(() => {
     const query = searchParams.get('q')
     const loc = searchParams.get('location')
+    const cat = searchParams.get('category')
     if (query) {
       setSearchQuery(query)
     }
     if (loc) {
       setLocation(loc)
+    }
+    if (cat) {
+      setCategory(cat)
     }
   }, [searchParams])
 
@@ -39,6 +59,9 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
       params.set('q', searchQuery.trim())
       if (location) {
         params.set('location', location)
+      }
+      if (category && category !== 'all') {
+        params.set('category', category)
       }
       router.push(`/search?${params.toString()}`)
     }
@@ -55,7 +78,6 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
     }
 
     try {
-      // Get all current search parameters
       const searchQueryObj: Record<string, string> = {}
       searchParams.forEach((value, key) => {
         searchQueryObj[key] = value
@@ -89,46 +111,52 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
   }
 
   return (
-    <form onSubmit={handleSearch} className="flex flex-col sm:flex-row items-center gap-4 max-w-3xl mx-auto">
-      <div className="flex-grow flex items-center w-full">
-        <div className="relative flex-grow">
-          <Input
-            type="text"
-            placeholder="Hva ønsker du å leie?"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 h-14 bg-white/90 backdrop-blur-sm text-black placeholder:text-gray-500 text-lg rounded-l-full rounded-r-none border-2 border-r-0 border-white/20 focus:border-white/40 transition-colors"
-          />
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-        </div>
-        <div className="w-48">
-          <LocationSelector 
-            value={location} 
-            onChange={setLocation}
-          />
-        </div>
-      </div>
-      <div className="flex gap-2 shrink-0">
-        <Button 
-          type="submit" 
-          size="lg"
-          className="h-14 px-8 rounded-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold text-lg transition-colors shadow-md hover:shadow-lg"
+    <form onSubmit={handleSearch} className="flex items-center gap-4 bg-white px-4 py-2 rounded-full shadow-lg">
+      <SearchDropdown
+        value={category}
+        onValueChange={setCategory}
+        items={categories}
+        placeholder="Alle kategorier"
+        className="w-[180px]"
+      />
+
+      <Input
+        type="text"
+        placeholder="Hva vil du leie?"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="flex-1 border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+      />
+
+      <SearchDropdown
+        value={location}
+        onValueChange={setLocation}
+        items={locations}
+        placeholder="Velg sted"
+        className="w-[180px]"
+      />
+
+      <Button 
+        type="submit" 
+        size="icon" 
+        className="rounded-full bg-[#4CD964] hover:bg-[#3DAF50]"
+      >
+        <Search className="h-4 w-4" />
+        <span className="sr-only">Søk</span>
+      </Button>
+
+      {searchParams.size > 0 && (
+        <Button
+          type="button"
+          size="icon"
+          variant="outline"
+          onClick={handleSaveSearch}
+          className="rounded-full bg-white border-2 border-gray-200 hover:bg-gray-100"
         >
-          <Search className="h-5 w-5 mr-2" />
-          Søk
+          <Search className="h-4 w-4" />
+          <span className="sr-only">Lagre søk</span>
         </Button>
-        {searchParams.size > 0 && (
-          <Button
-            type="button"
-            size="lg"
-            variant="outline"
-            onClick={handleSaveSearch}
-            className="h-14 px-4 rounded-full border-2 border-white/20 transition-colors hover:bg-white/5"
-          >
-            <Bookmark className="h-5 w-5" />
-          </Button>
-        )}
-      </div>
+      )}
     </form>
   )
 }
@@ -136,35 +164,11 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
 export function SearchBar(props: SearchBarProps) {
   return (
     <Suspense fallback={
-      <div className="flex flex-col sm:flex-row items-center gap-4 max-w-3xl mx-auto">
-        <div className="flex-grow flex items-center w-full">
-          <div className="relative flex-grow">
-            <Input
-              type="text"
-              placeholder="Loading..."
-              disabled
-              className="w-full pl-12 h-14 bg-white/90 backdrop-blur-sm text-black placeholder:text-gray-500 text-lg rounded-l-full rounded-r-none border-2 border-r-0 border-white/20"
-            />
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-          </div>
-          <div className="w-48">
-            <Input
-              disabled
-              className="h-14 rounded-r-full border-l-0"
-              placeholder="Location..."
-            />
-          </div>
-        </div>
-        <div className="shrink-0">
-          <Button 
-            disabled
-            size="lg"
-            className="h-14 px-8 rounded-full bg-yellow-400 text-black font-semibold text-lg shadow-md"
-          >
-            <Search className="h-5 w-5 mr-2" />
-            Search
-          </Button>
-        </div>
+      <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg">
+        <div className="w-[180px] h-10 bg-gray-100 rounded-md animate-pulse" />
+        <div className="flex-1 h-10 bg-gray-100 rounded-md animate-pulse" />
+        <div className="w-[180px] h-10 bg-gray-100 rounded-md animate-pulse" />
+        <div className="w-10 h-10 bg-gray-100 rounded-full animate-pulse" />
       </div>
     }>
       <SearchBarContent {...props} />

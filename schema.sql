@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS messages (
   sender_id VARCHAR(255) NOT NULL REFERENCES users(id),
   content TEXT NOT NULL,
   type VARCHAR(50) DEFAULT 'text',
+  is_read BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -155,4 +156,5 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id
 CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_listing_photos_listing_id ON listing_photos(listing_id);
 CREATE INDEX IF NOT EXISTS idx_listing_photos_main ON listing_photos(listing_id) WHERE is_main = true;
+CREATE INDEX IF NOT EXISTS idx_messages_is_read ON messages(is_read) WHERE NOT is_read;
 

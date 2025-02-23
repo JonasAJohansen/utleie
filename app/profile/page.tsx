@@ -1,14 +1,25 @@
 'use client'
 
 import { useUser } from "@clerk/nextjs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ProfileHeader } from '@/components/profile/profile-header'
+import { ProfileTabs } from '@/components/profile/profile-tabs'
+import { SettingsForm } from '@/components/profile/settings-form'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
-import { Camera } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+
+// Temporary mock data - replace with real data from API
+const mockStats = {
+  totalListings: 12,
+  averageRating: 4.8,
+  responseRate: 98,
+  activeRentals: 3,
+  totalRentals: 45,
+  reviewCount: 32,
+}
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser()
@@ -18,19 +29,7 @@ export default function ProfilePage() {
 
   if (!isLoaded || !user) return null
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return
-
-    const file = e.target.files[0]
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: "Image must be less than 5MB",
-        variant: "destructive",
-      })
-      return
-    }
-
+  const handleImageUpload = async (file: File) => {
     try {
       setIsUpdating(true)
       // Update Clerk profile image
@@ -64,97 +63,71 @@ export default function ProfilePage() {
       // Force a reload of the page to update all components
       window.location.reload()
     } catch (error) {
-      console.error('Error updating profile photo:', error)
-      toast({
-        title: "Error",
-        description: "Failed to update profile photo. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUpdating(false)
+      throw error
     }
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={user.imageUrl} />
-                <AvatarFallback>{user.firstName?.[0] ?? user.username?.[0]}</AvatarFallback>
-              </Avatar>
-              <label 
-                htmlFor="photo-upload" 
-                className={`absolute bottom-0 right-0 p-1 bg-primary text-white rounded-full cursor-pointer hover:bg-primary/90 transition-colors ${isUpdating ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <Camera className="h-4 w-4" />
-                <input
-                  type="file"
-                  id="photo-upload"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  disabled={isUpdating}
-                />
-              </label>
-            </div>
-            <div className="text-center">
-              <h2 className="text-2xl font-bold">{user.fullName || user.username}</h2>
-              <p className="text-gray-500">{user.primaryEmailAddress?.emailAddress}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="container max-w-6xl mx-auto py-8 px-4 space-y-8">
+      <ProfileHeader
+        user={user}
+        stats={mockStats}
+        onImageUpload={handleImageUpload}
+        isOwnProfile={true}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Account Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={user.username || ''}
-                readOnly={!isEditing}
-                className="max-w-md"
-              />
+      <ProfileTabs defaultTab="listings" isOwnProfile={true}>
+        {{
+          listings: (
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Listings</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    You haven't created any listings yet.
+                  </p>
+                  <Button className="mt-4">
+                    Create Your First Listing
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                value={user.primaryEmailAddress?.emailAddress || ''}
-                readOnly
-                className="max-w-md"
-              />
+          ),
+          reviews: (
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Reviews</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    No reviews yet.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={user.fullName || ''}
-                readOnly={!isEditing}
-                className="max-w-md"
-              />
+          ),
+          activity: (
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Activity</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">
+                    No recent activity.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
-            <div className="pt-4">
-              <Button
-                type="button"
-                onClick={() => setIsEditing(!isEditing)}
-              >
-                {isEditing ? 'Save Changes' : 'Edit Profile'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          ),
+          settings: (
+            <SettingsForm user={user} />
+          ),
+        }}
+      </ProfileTabs>
     </div>
   )
 }

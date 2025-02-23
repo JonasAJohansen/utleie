@@ -113,69 +113,75 @@ function SearchContent() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <SearchBar initialQuery={searchParams.get('q') || ''} />
+    <div className="min-h-screen">
+      <div className="sticky top-16 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 border-b">
+        <div className="container mx-auto">
+          <div className="relative">
+            <SearchBar initialQuery={searchParams.get('q') || ''} />
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <aside className="md:col-span-1">
-          <AnimatedContainer isLoading={isLoading}>
-            {isLoading ? (
-              <FiltersSkeleton />
-            ) : (
-              <SearchFiltersComponent 
-                onFilterChange={handleFilterChange} 
-              />
-            )}
-          </AnimatedContainer>
-        </aside>
+      <div className="container mx-auto py-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <aside className="md:col-span-1 relative z-30">
+            <AnimatedContainer isLoading={isLoading}>
+              {isLoading ? (
+                <FiltersSkeleton />
+              ) : (
+                <SearchFiltersComponent 
+                  onFilterChange={handleFilterChange} 
+                />
+              )}
+            </AnimatedContainer>
+          </aside>
 
-        <main className="md:col-span-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Search Results</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AnimatedContainer isLoading={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Skeleton className="h-6 w-48 mb-6" />
-                    <SearchResultsGrid />
-                  </>
-                ) : searchResults?.items.length ? (
-                  <>
-                    <p className="mb-4 transition-opacity duration-300">
-                      {searchResults.pagination.totalItems} results found
-                      {searchResults.pagination.totalPages > 1 && 
-                        ` - Page ${searchResults.pagination.currentPage} of ${searchResults.pagination.totalPages}`
-                      }
-                    </p>
-                    <div className="transition-all duration-300">
-                      <ItemGrid items={searchResults.items} />
-                    </div>
-                    {searchResults.pagination.totalPages > 1 && (
-                      <div className="mt-6 transition-opacity duration-300">
-                        <Pagination
-                          currentPage={searchResults.pagination.currentPage}
-                          totalPages={searchResults.pagination.totalPages}
-                          onPageChange={handlePageChange}
-                        />
+          <main className="md:col-span-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Search Results</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <AnimatedContainer isLoading={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Skeleton className="h-6 w-48 mb-6" />
+                      <SearchResultsGrid />
+                    </>
+                  ) : searchResults?.items.length ? (
+                    <>
+                      <p className="mb-4 transition-opacity duration-300">
+                        {searchResults.pagination.totalItems} results found
+                        {searchResults.pagination.totalPages > 1 && 
+                          ` - Page ${searchResults.pagination.currentPage} of ${searchResults.pagination.totalPages}`
+                        }
+                      </p>
+                      <div className="transition-all duration-300">
+                        <ItemGrid items={searchResults.items} />
                       </div>
-                    )}
-                  </>
-                ) : (
-                  <div className="text-center py-12 transition-all duration-300">
-                    <h2 className="text-2xl font-semibold mb-4">No results found</h2>
-                    <p className="text-gray-600">
-                      Try adjusting your search criteria or filters to find what you're looking for.
-                    </p>
-                  </div>
-                )}
-              </AnimatedContainer>
-            </CardContent>
-          </Card>
-        </main>
+                      {searchResults.pagination.totalPages > 1 && (
+                        <div className="mt-6 transition-opacity duration-300">
+                          <Pagination
+                            currentPage={searchResults.pagination.currentPage}
+                            totalPages={searchResults.pagination.totalPages}
+                            onPageChange={handlePageChange}
+                          />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-12 transition-all duration-300">
+                      <h2 className="text-2xl font-semibold mb-4">No results found</h2>
+                      <p className="text-gray-600">
+                        Try adjusting your search criteria or filters to find what you're looking for.
+                      </p>
+                    </div>
+                  )}
+                </AnimatedContainer>
+              </CardContent>
+            </Card>
+          </main>
+        </div>
       </div>
     </div>
   )

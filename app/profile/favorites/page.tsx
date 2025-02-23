@@ -18,6 +18,13 @@ interface FavoriteItem {
   location: string
 }
 
+// Helper function to format rating
+function formatRating(rating: number | string | null | undefined): string {
+  if (!rating) return 'N/A'
+  const numericRating = typeof rating === 'string' ? parseFloat(rating) : rating
+  return isNaN(numericRating) ? 'N/A' : numericRating.toFixed(1)
+}
+
 export default function FavoritesPage() {
   const { user } = useUser()
   const [favorites, setFavorites] = useState<FavoriteItem[]>([])
@@ -91,7 +98,7 @@ export default function FavoritesPage() {
                     <p className="text-gray-600 mb-2">${item.price}/day</p>
                     <div className="flex items-center mb-2">
                       <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                      <span className="ml-1">{item.rating?.toFixed(1) || 'N/A'}</span>
+                      <span className="ml-1">{formatRating(item.rating)}</span>
                     </div>
                     <div className="flex items-center text-sm text-gray-500 mb-4">
                       <MapPin className="h-4 w-4 mr-1" />

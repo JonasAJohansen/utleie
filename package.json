@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.11.0",
+    "@clerk/nextjs": "^6.12.2",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@radix-ui/react-alert-dialog": "^1.1.4",
@@ -28,6 +28,7 @@
     "@radix-ui/react-tabs": "^1.1.2",
     "@radix-ui/react-toast": "^1.2.4",
     "@types/lodash": "^4.17.16",
+    "@types/react-datepicker": "^7.0.0",
     "@vercel/blob": "^0.27.0",
     "@vercel/postgres": "^0.10.0",
     "bufferutil": "^4.0.8",
@@ -42,6 +43,7 @@
     "next": "15.1.2",
     "radix-ui": "^1.0.1",
     "react": "^18.2.0",
+    "react-datepicker": "^8.1.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.2.0",
     "react-leaflet": "^4.2.1",

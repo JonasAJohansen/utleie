@@ -38,7 +38,7 @@ interface ListingData extends QueryResultRow {
 }
 
 interface PageProps {
-  params: { id: string }
+  params: Promise<{ id: string }> | { id: string }
 }
 
 async function getListingData(id: string): Promise<ListingData | null> {
@@ -107,18 +107,21 @@ async function checkIsFavorited(listingId: string, userId: string) {
 
 export default async function ItemListing({ params }: PageProps) {
   const { userId } = await auth()
-
-  if (!params?.id) {
+  
+  // Await params before accessing its properties
+  const resolvedParams = await params
+  
+  if (!resolvedParams?.id) {
     notFound()
   }
 
-  const item = await getListingData(params.id)
+  const item = await getListingData(resolvedParams.id)
 
   if (!item) {
     notFound()
   }
 
-  const isFavorited = userId ? await checkIsFavorited(params.id, userId) : false
+  const isFavorited = userId ? await checkIsFavorited(resolvedParams.id, userId) : false
 
   const listingDetails = {
     id: item.id,

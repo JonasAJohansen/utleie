@@ -527,7 +527,7 @@ export default function Navigation() {
                 Kart
               </Link>
               
-            {user && (
+              {user && (
                 <Link 
                   href="/rental-requests" 
                   className="text-base font-medium text-gray-700 hover:text-[#4CD964] px-3 py-2"

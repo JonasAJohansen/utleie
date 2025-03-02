@@ -1,5 +1,6 @@
+'use client';
+
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Pusher from 'pusher-js'
 
 type WebSocketEvent = {
   type: string
@@ -7,111 +8,149 @@ type WebSocketEvent = {
 }
 
 interface UseWebSocketOptions {
-  userId?: string | null
-  onMessage?: (event: WebSocketEvent) => void
-  onNotification?: (event: WebSocketEvent) => void
-  channels: string[]
+  onNewNotification?: (data: any) => void
+  onNewMessage?: (data: any) => void
+  onMessageRead?: (data: any) => void
   enabled?: boolean
 }
 
 export function useWebSocket({
-  userId,
-  onMessage,
-  onNotification,
-  channels,
+  onNewNotification,
+  onNewMessage,
+  onMessageRead,
   enabled = true
 }: UseWebSocketOptions) {
   const [isConnected, setIsConnected] = useState(false)
   const [lastEvent, setLastEvent] = useState<WebSocketEvent | null>(null)
-  const pusherRef = useRef<Pusher | null>(null)
+  const socketRef = useRef<WebSocket | null>(null)
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   
+  // Function to connect to WebSocket
   const connect = useCallback(() => {
-    if (!userId || !enabled) return
+    if (!enabled) return
     
     try {
-      if (pusherRef.current) {
-        // Already connected, clean up first
-        pusherRef.current.disconnect()
+      // Close existing connection if any
+      if (socketRef.current && socketRef.current.readyState !== WebSocket.CLOSED) {
+        socketRef.current.close()
       }
       
-      // Initialize Pusher
-      pusherRef.current = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
-        cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || 'eu',
-        authEndpoint: '/api/pusher/auth',
-        auth: {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        },
-      })
+      // Create new WebSocket connection
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+      const host = window.location.host
+      const wsUrl = `${protocol}//${host}/api/ws`
       
-      // Subscribe to channels
-      channels.forEach(channel => {
-        const pusherChannel = pusherRef.current!.subscribe(`private-${channel}-${userId}`)
+      socketRef.current = new WebSocket(wsUrl)
+      
+      // Connection opened
+      socketRef.current.onopen = () => {
+        console.log('WebSocket connected')
+        setIsConnected(true)
+      }
+      
+      // Listen for messages
+      socketRef.current.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          console.log('WebSocket message received:', data)
+          
+          if (data.type === 'ping') {
+            // Respond to ping with pong
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+              socketRef.current.send(JSON.stringify({ type: 'pong' }))
+            }
+            return
+          }
+          
+          // Route messages to appropriate handlers
+          if (data.type === 'notification') {
+            onNewNotification?.(data.data)
+          } else if (data.type === 'message') {
+            onNewMessage?.(data.data)
+          } else if (data.type === 'message_read') {
+            onMessageRead?.(data.data)
+          }
+          
+          setLastEvent({ type: data.type, data: data.data })
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error)
+        }
+      }
+      
+      // Connection closed
+      socketRef.current.onclose = (event) => {
+        console.log('WebSocket disconnected:', event.code, event.reason)
+        setIsConnected(false)
         
-        // Handle message events
-        pusherChannel.bind('message', (data: any) => {
-          const event = { type: 'message', data }
-          setLastEvent(event)
-          onMessage?.(event)
-        })
-        
-        // Handle notification events
-        pusherChannel.bind('notification', (data: any) => {
-          const event = { type: 'notification', data }
-          setLastEvent(event)
-          onNotification?.(event)
-        })
-        
-        // Connection states
-        pusherChannel.bind('pusher:subscription_succeeded', () => {
-          setIsConnected(true)
-        })
-        
-        pusherChannel.bind('pusher:subscription_error', () => {
-          setIsConnected(false)
-        })
-      })
+        // Attempt to reconnect after delay
+        if (enabled && reconnectTimeoutRef.current === null) {
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectTimeoutRef.current = null
+            connect()
+          }, 3000)
+        }
+      }
+      
+      // Handle errors - using Event type instead of Error
+      socketRef.current.onerror = (event: Event) => {
+        console.error('WebSocket error:', event)
+      }
       
     } catch (error) {
-      console.error('Error connecting to WebSocket:', error)
+      console.error('Error setting up WebSocket:', error)
       setIsConnected(false)
     }
     
+    // Cleanup function
     return () => {
-      if (pusherRef.current) {
-        channels.forEach(channel => {
-          pusherRef.current!.unsubscribe(`private-${channel}-${userId}`)
-        })
-        pusherRef.current.disconnect()
-        pusherRef.current = null
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current)
+        reconnectTimeoutRef.current = null
       }
+      
+      if (socketRef.current) {
+        socketRef.current.close()
+        socketRef.current = null
+      }
+      
       setIsConnected(false)
     }
-  }, [userId, channels, onMessage, onNotification, enabled])
+  }, [enabled, onNewMessage, onNewNotification, onMessageRead])
   
+  // Connect on component mount
   useEffect(() => {
     const cleanup = connect()
-    return cleanup
+    
+    // Add authentication when the user's session changes
+    const handleAuthChange = () => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({ type: 'auth_check' }))
+      }
+    }
+    
+    // Listen for auth changes (for example, from Clerk's session)
+    window.addEventListener('storage', (event) => {
+      if (event.key?.includes('clerk') || event.key?.includes('session')) {
+        handleAuthChange()
+      }
+    })
+    
+    return () => {
+      window.removeEventListener('storage', handleAuthChange)
+      cleanup?.()
+    }
   }, [connect])
   
-  const sendMessage = useCallback((channel: string, event: string, data: any) => {
-    if (!isConnected || !userId) return
+  // Send a message over WebSocket
+  const sendMessage = useCallback((type: string, data: any) => {
+    if (!isConnected || !socketRef.current) return
     
-    fetch('/api/pusher/trigger', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        channel: `private-${channel}-${userId}`,
-        event,
-        data,
-      }),
-    }).catch(error => {
+    try {
+      socketRef.current.send(JSON.stringify({ type, data }))
+    } catch (error) {
       console.error('Error sending WebSocket message:', error)
-    })
-  }, [isConnected, userId])
+    }
+  }, [isConnected])
   
   return {
     isConnected,

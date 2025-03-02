@@ -5,17 +5,24 @@ const nextConfig = {
       ignoreDuringBuilds: true,
     },
     images: {
-      domains: [
-        'images.unsplash.com',
-        'img.clerk.com',
-        'images.clerk.dev',
-        'uploadthing.com',
-        'utfs.io',
-        'x.com',
-        'pbs.twimg.com',
-        'abs.twimg.com',
-        '1wwlyedsoyiqsvkw.public.blob.vercel-storage.com'
+      remotePatterns: [
+        {
+          protocol: 'https',
+          hostname: '**',
+        },
       ],
+    },
+    serverExternalPackages: ['bufferutil', 'utf-8-validate'],
+    webpack: (config, { isServer }) => {
+      // This allows WebSocket connections to the API routes
+      if (isServer) {
+        config.externals.push({
+          bufferutil: 'bufferutil',
+          'utf-8-validate': 'utf-8-validate',
+        })
+      }
+      
+      return config
     },
   }
   

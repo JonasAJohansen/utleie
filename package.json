@@ -30,6 +30,7 @@
     "@types/lodash": "^4.17.16",
     "@vercel/blob": "^0.27.0",
     "@vercel/postgres": "^0.10.0",
+    "bufferutil": "^4.0.8",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.0.4",
@@ -39,8 +40,6 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.469.0",
     "next": "15.1.2",
-    "pusher": "^5.2.0",
-    "pusher-js": "^8.4.0-rc2",
     "radix-ui": "^1.0.1",
     "react": "^18.2.0",
     "react-day-picker": "^8.10.1",
@@ -49,6 +48,7 @@
     "switch": "^0.0.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
+    "utf-8-validate": "^6.0.3",
     "uuid": "^11.0.3"
   },
   "devDependencies": {
@@ -58,6 +58,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.5.10",
     "eslint": "^9",
     "eslint-config-next": "15.1.2",
     "postcss": "^8",

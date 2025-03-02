@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/components/ui/use-toast"
 import { useUser } from "@clerk/nextjs"
 import { CategorySelect } from '@/components/CategorySelect'
-import { LocationSelector } from '@/components/ui/location-selector'
+import { LocationSelector, getLocationByValue } from '@/components/ui/location-selector'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MultiStepForm } from '@/components/ui/multi-step-form'
 import { PhotoUpload } from '@/components/ui/photo-upload'
@@ -56,9 +56,12 @@ export default function AddListing() {
     description: '',
     price: '',
     categoryId: '',
-    location: '',
-    condition: '',
     brandId: '',
+    location: '',
+    latitude: '',
+    longitude: '',
+    radius: 2, // Default radius of 2km for privacy
+    condition: '',
   })
   const [photos, setPhotos] = useState<ListingPhoto[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -121,10 +124,41 @@ export default function AddListing() {
     const category = categories.find(c => c.id === value)
     setSelectedCategory(category || null)
     setListing({ ...listing, categoryId: value })
+    
+    // Reset brand when category changes
+    setSelectedBrand(null)
+    setListing(prev => ({ ...prev, brandId: '' }))
+    
+    if (value) {
+      fetchBrands(value)
+    }
   }
 
   const handleLocationChange = (value: string) => {
-    setListing({ ...listing, location: value })
+    // Get location data including coordinates
+    const locationData = getLocationByValue(value);
+    
+    if (locationData) {
+      // Add approximately 100-500m random offset for privacy
+      const randomOffsetLat = (Math.random() - 0.5) * 0.005;
+      const randomOffsetLng = (Math.random() - 0.5) * 0.005;
+      
+      setListing({
+        ...listing,
+        location: value,
+        latitude: (locationData.lat + randomOffsetLat).toString(),
+        longitude: (locationData.lng + randomOffsetLng).toString(),
+        radius: locationData.radius || 2
+      });
+    } else {
+      setListing({
+        ...listing,
+        location: value,
+        latitude: '',
+        longitude: '',
+        radius: 2
+      });
+    }
   }
 
   const handleConditionChange = (value: string) => {
@@ -132,60 +166,101 @@ export default function AddListing() {
   }
 
   const handleSubmit = async () => {
+    if (!user) {
+      toast({
+        title: "Ikke pålogget",
+        description: "Du må være pålogget for å legge ut en annonse.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    // Validate required fields
+    if (!listing.name || !listing.description || !listing.price || !listing.categoryId || !listing.location) {
+      toast({
+        title: "Manglende informasjon",
+        description: "Vennligst fyll ut alle påkrevde felt.",
+        variant: "destructive",
+      })
+      return
+    }
+    
+    // Validate photos
+    if (photos.length === 0) {
+      toast({
+        title: "Ingen bilder",
+        description: "Du må laste opp minst ett bilde av gjenstanden.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsSubmitting(true)
-
+    
     try {
-      // Upload all photos
-      const uploadedPhotos = await Promise.all(photos.map(async (photo, index) => {
-        const formData = new FormData()
-        formData.append('file', photo.file)
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to upload image')
-        }
-
-        const { url } = await response.json()
-        return {
-          url,
-          description: photo.description,
-          isMain: photo.isMain,
-          displayOrder: index
-        }
-      }))
-
-      // Create the listing with photos
+      // First create the listing
+      const listingData = {
+        name: listing.name,
+        description: listing.description,
+        price: parseFloat(listing.price),
+        categoryId: listing.categoryId,
+        brandId: listing.brandId || null,
+        condition: listing.condition,
+        location: listing.location,
+        latitude: listing.latitude,
+        longitude: listing.longitude,
+        radius: listing.radius
+      }
+      
       const listingResponse = await fetch('/api/listings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...listing,
-          photos: uploadedPhotos,
-        }),
+        body: JSON.stringify(listingData),
       })
-
+      
       if (!listingResponse.ok) {
         throw new Error('Failed to create listing')
       }
-
-      const newListing = await listingResponse.json()
+      
+      const { id: listingId } = await listingResponse.json()
+      
+      // Then upload photos
+      const uploadPromises = photos.map(async (photo) => {
+        const formData = new FormData()
+        formData.append('file', photo.file)
+        formData.append('listingId', listingId)
+        formData.append('description', photo.description)
+        formData.append('isMain', photo.isMain ? 'true' : 'false')
+        
+        const photoResponse = await fetch('/api/listings/photos', {
+          method: 'POST',
+          body: formData,
+        })
+        
+        if (!photoResponse.ok) {
+          throw new Error('Failed to upload photos')
+        }
+        
+        return photoResponse.json()
+      })
+      
+      await Promise.all(uploadPromises)
       
       toast({
-        title: "Annonsen er opprettet!",
-        description: "Din nye annonse er lagt ut.",
+        title: "Annonse publisert!",
+        description: "Din annonse er nå publisert og synlig for alle.",
       })
-      router.push(`/listings/${newListing.id}`)
+      
+      // Redirect to listing page
+      router.push(`/listings/${listingId}`)
+      
     } catch (error) {
       console.error('Error creating listing:', error)
       toast({
-        title: "Feil",
-        description: "Det oppstod en feil under oppretting av annonsen. Vennligst prøv igjen.",
+        title: "Feil ved publisering",
+        description: "Det oppstod en feil ved publisering av annonsen. Vennligst prøv igjen.",
         variant: "destructive",
       })
     } finally {

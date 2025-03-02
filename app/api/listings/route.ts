@@ -70,18 +70,23 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json()
-    const { name, description, price, photos, categoryId, location, condition, brandId } = body
+    const { 
+      name, 
+      description, 
+      price, 
+      photos, 
+      categoryId, 
+      location, 
+      condition, 
+      brandId,
+      latitude,
+      longitude,
+      radius 
+    } = body
 
-    if (!categoryId) {
-      return new NextResponse('Category is required', { status: 400 })
-    }
-
-    if (!photos || photos.length === 0) {
-      return new NextResponse('At least one photo is required', { status: 400 })
-    }
-
-    if (photos.length > 4) {
-      return new NextResponse('Maximum 4 photos allowed', { status: 400 })
+    // Validate required fields
+    if (!name || !description || !price || !categoryId) {
+      return new NextResponse('Name, description, price, and category are required', { status: 400 })
     }
 
     // Get the user's data from Clerk
@@ -106,7 +111,7 @@ export async function POST(request: Request) {
       `
     }
 
-    // Create the listing
+    // Create the listing with location coordinates
     const listingResult = await sql`
       INSERT INTO listings (
         name, 
@@ -116,7 +121,10 @@ export async function POST(request: Request) {
         category_id, 
         location, 
         condition,
-        brand_id
+        brand_id,
+        latitude,
+        longitude,
+        radius
       )
       VALUES (
         ${name}, 
@@ -126,31 +134,40 @@ export async function POST(request: Request) {
         ${categoryId}, 
         ${location}, 
         ${condition || null},
-        ${brandId || null}
+        ${brandId || null},
+        ${latitude || null},
+        ${longitude || null},
+        ${radius || 2.0}
       )
       RETURNING id
     `
 
     const listingId = listingResult.rows[0].id
 
-    // Insert the photos
-    await Promise.all(photos.map(async (photo: any) => {
-      await sql`
-        INSERT INTO listing_photos (
-          listing_id,
-          url,
-          description,
-          is_main,
-          display_order
-        ) VALUES (
-          ${listingId},
-          ${photo.url},
-          ${photo.description},
-          ${photo.isMain},
-          ${photo.displayOrder}
-        )
-      `
-    }))
+    // If photos are provided, insert them
+    if (photos && photos.length > 0) {
+      if (photos.length > 4) {
+        return new NextResponse('Maximum 4 photos allowed', { status: 400 })
+      }
+
+      await Promise.all(photos.map(async (photo: any) => {
+        await sql`
+          INSERT INTO listing_photos (
+            listing_id,
+            url,
+            description,
+            is_main,
+            display_order
+          ) VALUES (
+            ${listingId},
+            ${photo.url},
+            ${photo.description || ''},
+            ${photo.isMain || false},
+            ${photo.displayOrder || 0}
+          )
+        `
+      }))
+    }
 
     return NextResponse.json({ id: listingId })
   } catch (error) {

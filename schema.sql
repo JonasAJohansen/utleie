@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS listings (
   category_id VARCHAR(255),
   subcategory_id VARCHAR(255),
   location VARCHAR(255),
+  latitude DECIMAL(10, 7),
+  longitude DECIMAL(10, 7),
+  radius DECIMAL(5, 2) DEFAULT 2.0,
   status VARCHAR(50) DEFAULT 'active',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -144,6 +147,8 @@ CREATE TRIGGER update_categories_updated_at
 CREATE INDEX IF NOT EXISTS idx_listings_user_id ON listings(user_id);
 CREATE INDEX IF NOT EXISTS idx_listings_category ON listings(category_id);
 CREATE INDEX IF NOT EXISTS idx_listings_subcategory ON listings(subcategory_id);
+CREATE INDEX IF NOT EXISTS idx_listings_location ON listings(location);
+CREATE INDEX IF NOT EXISTS idx_listings_coordinates ON listings(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_rental_requests_listing_id ON rental_requests(listing_id);
 CREATE INDEX IF NOT EXISTS idx_rental_requests_requester_id ON rental_requests(requester_id);
 CREATE INDEX IF NOT EXISTS idx_reviews_listing_id ON reviews(listing_id);

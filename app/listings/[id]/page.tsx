@@ -4,6 +4,13 @@ import { auth } from '@clerk/nextjs/server'
 import ListingGallery from './ListingGallery'
 import { ListingDetails } from './ListingDetails'
 import { QueryResultRow } from '@vercel/postgres'
+import { SimilarListings } from '@/components/listings/SimilarListings'
+import { SocialProof } from '@/components/listings/SocialProof'
+import { AvailabilityCalendar } from '@/components/listings/AvailabilityCalendar'
+import { ListingSchema } from '@/components/listings/ListingSchema'
+import { Suspense } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
+import { ListingPageClient } from './ListingPageClient'
 
 interface ListingPhoto {
   id: string
@@ -26,10 +33,12 @@ interface ListingData extends QueryResultRow {
   user_image: string | null
   photos: ListingPhoto[]
   condition: string | null
+  category_name?: string
+  category_id?: string
 }
 
 interface PageProps {
-  params: Promise<any> | undefined
+  params: { id: string }
 }
 
 async function getListingData(id: string): Promise<ListingData | null> {
@@ -59,15 +68,18 @@ async function getListingData(id: string): Promise<ListingData | null> {
         l.status,
         l.created_at,
         l.condition,
+        l.category_id,
+        c.name as category_name,
         u.username,
         u.image_url as user_image,
         COALESCE(AVG(r.rating)::numeric, 0)::numeric(10,2) as rating,
         COUNT(r.id) as review_count
       FROM listings l
       JOIN users u ON l.user_id = u.id
+      LEFT JOIN categories c ON l.category_id = c.id::text
       LEFT JOIN reviews r ON l.id = r.listing_id
       WHERE l.id = ${id}::uuid
-      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, l.condition, u.username, u.image_url
+      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, l.condition, l.category_id, c.name, u.username, u.image_url
     `
 
     if (result.rows.length === 0) {
@@ -94,20 +106,19 @@ async function checkIsFavorited(listingId: string, userId: string) {
 }
 
 export default async function ItemListing({ params }: PageProps) {
-  const resolvedParams = await Promise.resolve(params)
   const { userId } = await auth()
 
-  if (!resolvedParams?.id) {
+  if (!params?.id) {
     notFound()
   }
 
-  const item = await getListingData(resolvedParams.id)
+  const item = await getListingData(params.id)
 
   if (!item) {
     notFound()
   }
 
-  const isFavorited = userId ? await checkIsFavorited(resolvedParams.id, userId) : false
+  const isFavorited = userId ? await checkIsFavorited(params.id, userId) : false
 
   const listingDetails = {
     id: item.id,
@@ -123,12 +134,38 @@ export default async function ItemListing({ params }: PageProps) {
     condition: item.condition || undefined
   }
 
+  // Create images array for schema
+  const imageUrls = item.photos.map(photo => photo.url)
+  const mainImageUrl = item.photos.find(p => p.isMain)?.url || item.photos[0]?.url
+
+  // Prepare listing data for the client component
+  const listingData = {
+    ...listingDetails,
+    photos: item.photos,
+    userId: userId || null,
+    isFavorited,
+    mainImageUrl,
+    imageUrls,
+    categoryId: item.category_id || '',
+    categoryName: item.category_name
+  }
+
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <ListingGallery photos={item.photos} />
-        <ListingDetails item={listingDetails} userId={userId || null} isFavorited={isFavorited} />
-      </div>
+    <div className="container max-w-7xl mx-auto py-8 px-4">
+      {/* Structured data for SEO */}
+      <ListingSchema
+        item={{
+          ...listingDetails,
+          userId: item.user_id,
+          mainImage: mainImageUrl,
+          images: imageUrls,
+          categoryName: item.category_name,
+        }}
+        url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://rentease.no'}/listings/${item.id}`}
+      />
+
+      {/* Use a client component to handle the UI with animations */}
+      <ListingPageClient listingData={listingData} />
     </div>
   )
 }

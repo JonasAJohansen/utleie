@@ -11,7 +11,7 @@ interface AnimatedSearchCardProps {
     name: string
     price: number
     image: string
-    rating: number
+    rating: number | string | null
     location: string
     features: string[]
   }
@@ -19,6 +19,13 @@ interface AnimatedSearchCardProps {
 }
 
 export function AnimatedSearchCard({ item, index }: AnimatedSearchCardProps) {
+  // Function to safely format the rating
+  const formatRating = (rating: any): string => {
+    if (rating === null || rating === undefined) return 'N/A';
+    const numRating = Number(rating);
+    return !isNaN(numRating) ? numRating.toFixed(1) : 'N/A';
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -63,7 +70,7 @@ export function AnimatedSearchCard({ item, index }: AnimatedSearchCardProps) {
             <p className="text-gray-600 mb-2">${item.price}/day</p>
             <div className="flex items-center mb-2">
               <Star className="h-5 w-5 text-yellow-400 fill-current" />
-              <span className="ml-1">{item.rating?.toFixed(1) || 'N/A'}</span>
+              <span className="ml-1">{formatRating(item.rating)}</span>
             </div>
             <div className="flex items-center text-sm text-gray-500">
               <MapPin className="h-4 w-4 mr-1" />

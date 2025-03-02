@@ -20,10 +20,9 @@ export async function POST(request: Request) {
     `
     
     const conversations = conversationsResult.rows
-    const conversationIds = conversations.map(conv => conv.id)
     
     // Early return if no conversations found
-    if (conversationIds.length === 0) {
+    if (conversations.length === 0) {
       return NextResponse.json({ 
         success: true, 
         markedCount: 0,
@@ -31,25 +30,36 @@ export async function POST(request: Request) {
       })
     }
     
-    // Mark messages as read where the current user is the recipient
-    const result = await sql`
-      UPDATE messages
-      SET is_read = true
-      WHERE 
-        conversation_id = ANY(${conversationIds})
-        AND sender_id != ${userId}
-        AND is_read = false
-      RETURNING id, conversation_id, sender_id
-    `
+    // Handle batch updates for each conversation separately to avoid ANY operator issues
+    let totalMarkedCount = 0
+    const allUpdatedMessages = []
     
-    const markedCount = result.rowCount || 0
+    // Process each conversation separately
+    for (const conversation of conversations) {
+      const result = await sql`
+        UPDATE messages
+        SET is_read = true
+        WHERE 
+          conversation_id = ${conversation.id}
+          AND sender_id != ${userId}
+          AND is_read = false
+        RETURNING id, conversation_id, sender_id
+      `
+      
+      // Check if rowCount exists and is greater than 0
+      const rowCount = result?.rowCount || 0
+      if (rowCount > 0) {
+        totalMarkedCount += rowCount
+        allUpdatedMessages.push(...result.rows)
+      }
+    }
     
     // If any messages were marked as read, notify the senders
-    if (markedCount > 0) {
+    if (totalMarkedCount > 0) {
       // Map by sender to send a single notification per sender
       const updatesBySender = new Map<string, string[]>()
       
-      result.rows.forEach(row => {
+      allUpdatedMessages.forEach(row => {
         if (!updatesBySender.has(row.sender_id)) {
           updatesBySender.set(row.sender_id, [])
         }
@@ -72,8 +82,8 @@ export async function POST(request: Request) {
     // Return success response with count of marked messages
     return NextResponse.json({ 
       success: true, 
-      markedCount,
-      message: `Marked ${markedCount} messages as read`
+      markedCount: totalMarkedCount,
+      message: `Marked ${totalMarkedCount} messages as read`
     })
   } catch (error) {
     console.error('Error marking messages as read:', error)

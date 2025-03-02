@@ -2,11 +2,8 @@ import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-// Main GET handler function
-async function getRentalRequestHandler(
-  request: NextRequest,
-  { params }: { params: { requestId: string } }
-) {
+// Main GET handler function - keeps all the business logic
+async function getRentalRequestHandler(request: NextRequest, params: { requestId: string }) {
   try {
     // Get authenticated user
     const { userId } = await auth()
@@ -67,11 +64,8 @@ async function getRentalRequestHandler(
   }
 }
 
-// Main PATCH handler function
-async function updateRentalRequestHandler(
-  request: NextRequest,
-  { params }: { params: { requestId: string } }
-) {
+// Main PATCH handler function - keeps all the business logic
+async function updateRentalRequestHandler(request: NextRequest, params: { requestId: string }) {
   try {
     // Get authenticated user
     const { userId } = await auth()
@@ -159,9 +153,17 @@ async function updateRentalRequestHandler(
   }
 }
 
-// Export HTTP methods with explicit wrapper functions
-export const GET = (req: NextRequest, ctx: { params: { requestId: string } }) => 
-  getRentalRequestHandler(req, ctx);
+// Export HTTP methods with proper type annotations
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { requestId: string } }
+) {
+  return getRentalRequestHandler(req, params);
+}
 
-export const PATCH = (req: NextRequest, ctx: { params: { requestId: string } }) => 
-  updateRentalRequestHandler(req, ctx); 
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { requestId: string } }
+) {
+  return updateRentalRequestHandler(req, params);
+} 

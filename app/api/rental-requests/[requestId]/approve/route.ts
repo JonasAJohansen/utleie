@@ -3,11 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendNotification } from '@/lib/websocket'
 
-// Main handler function
-async function approveRequestHandler(
-  request: NextRequest,
-  { params }: { params: { requestId: string } }
-) {
+// Main handler function - keeps all the business logic
+async function approveRequestHandler(request: NextRequest, params: { requestId: string }) {
   try {
     // Get authenticated user
     const { userId } = await auth()
@@ -165,6 +162,10 @@ async function approveRequestHandler(
   }
 }
 
-// Export POST method with explicit wrapper function
-export const POST = (req: NextRequest, ctx: { params: { requestId: string } }) => 
-  approveRequestHandler(req, ctx); 
+// Use a clean, simple export with correct type annotations
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { requestId: string } }
+) {
+  return approveRequestHandler(req, params);
+} 

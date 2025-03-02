@@ -38,7 +38,7 @@ interface ListingData extends QueryResultRow {
 }
 
 interface PageProps {
-  params: Promise<{ id: string }> | { id: string }
+  params: Promise<any>
 }
 
 async function getListingData(id: string): Promise<ListingData | null> {

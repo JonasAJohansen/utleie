@@ -100,6 +100,9 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - When using SQL in TypeScript, ensure column names match exactly with the database schema.
 - After updating npm packages (especially auth packages like Clerk), clear build cache before rebuilding.
 - For Next.js 15 API route handlers, use the format `{ params }: { params: { paramName: string } }` without custom type definitions.
+- In Next.js 15, route handler files should only export valid HTTP methods (GET, POST, etc.) and not other utility functions.
+- For complex API routes that need utility functions, move those functions to separate utility files outside the API routes directory.
+- Next.js 15 route handlers work best with simple function declarations and minimal type annotations on the handler function itself.
 
 ## Cursor learned
 

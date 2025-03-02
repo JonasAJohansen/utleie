@@ -226,11 +226,17 @@ export async function GET(request: Request) {
       });
     } catch (dbError) {
       console.error('Database error in map-search:', dbError);
+      
+      // Safely extract error message if available
+      const errorMessage = dbError instanceof Error 
+        ? dbError.message 
+        : 'Unknown database error';
+        
       return NextResponse.json(
         { 
           error: 'database_error', 
           message: 'Error executing database query',
-          details: process.env.NODE_ENV === 'development' ? dbError.message : undefined
+          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
         }, 
         { status: 500 }
       );

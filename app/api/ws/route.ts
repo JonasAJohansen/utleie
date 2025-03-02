@@ -1,41 +1,6 @@
 import { NextRequest } from 'next/server'
 import { getAuth } from '@clerk/nextjs/server'
-
-// Set of active connections
-const connections = new Map<string, any[]>()
-
-// Function to send a message to a specific user
-export function sendToUser(userId: string, message: any) {
-  const userConnections = connections.get(userId)
-  if (userConnections && userConnections.length > 0) {
-    const data = JSON.stringify(message)
-    userConnections.forEach((socket: any) => {
-      if (socket.readyState === 1) { // OPEN
-        try {
-          socket.send(data)
-        } catch (err) {
-          console.error(`Error sending message to user ${userId}:`, err)
-        }
-      }
-    })
-  }
-}
-
-// Function to broadcast a message to all connections
-export function broadcast(message: any) {
-  const data = JSON.stringify(message)
-  connections.forEach((userConnections, userId) => {
-    userConnections.forEach((socket: any) => {
-      if (socket.readyState === 1) { // OPEN
-        try {
-          socket.send(data)
-        } catch (err) {
-          console.error(`Error broadcasting to user ${userId}:`, err)
-        }
-      }
-    })
-  })
-}
+import { addConnection, removeConnection } from '@/lib/websocket-utils'
 
 // Handle WebSocket connection
 export async function GET(request: NextRequest) {
@@ -85,13 +50,7 @@ export async function GET(request: NextRequest) {
           
           // Store the connection in the user's connections array
           if (userId) {
-            if (!connections.has(userId)) {
-              connections.set(userId, [])
-            }
-            const userConnections = connections.get(userId)!
-            if (!userConnections.includes(socket)) {
-              userConnections.push(socket)
-            }
+            addConnection(userId, socket)
             
             try {
               socket.send(JSON.stringify({ 
@@ -122,20 +81,7 @@ export async function GET(request: NextRequest) {
       clearInterval(pingInterval)
       
       // Remove the socket from connections
-      if (userId) {
-        const userConnections = connections.get(userId)
-        if (userConnections) {
-          const index = userConnections.indexOf(socket)
-          if (index !== -1) {
-            userConnections.splice(index, 1)
-          }
-          
-          // Remove user from connections map if no active connections
-          if (userConnections.length === 0) {
-            connections.delete(userId)
-          }
-        }
-      }
+      removeConnection(userId, socket)
     })
 
     return response

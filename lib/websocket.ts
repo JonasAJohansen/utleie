@@ -1,4 +1,4 @@
-import { sendToUser, broadcast } from '@/app/api/ws/route'
+import { sendToUser, broadcast } from '@/lib/websocket-utils'
 
 // Send a notification to a specific user
 export function sendNotification(userId: string, data: any) {

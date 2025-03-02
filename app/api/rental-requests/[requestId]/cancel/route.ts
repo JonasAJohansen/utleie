@@ -10,7 +10,7 @@ type RequestParams = {
 
 export async function POST(
   request: NextRequest,
-  context: { params: RequestParams }
+  { params }: { params: RequestParams }
 ) {
   try {
     // Get authenticated user
@@ -21,7 +21,7 @@ export async function POST(
     }
     
     // Get the requestId from the params
-    const { requestId } = context.params
+    const { requestId } = params
     
     if (!requestId) {
       return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })

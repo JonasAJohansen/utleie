@@ -99,6 +99,7 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - In Next.js 15, dynamic route parameters must be awaited before accessing their properties.
 - When using SQL in TypeScript, ensure column names match exactly with the database schema.
 - After updating npm packages (especially auth packages like Clerk), clear build cache before rebuilding.
+- For Next.js 15 API route handlers, use destructured params pattern `{ params }: { params: YourType }` instead of `context: { params: YourType }`.
 
 ## Cursor learned
 
@@ -122,7 +123,7 @@ There are several issues with the application's build and database access:
 
 1. Build error: "Cannot find module './vendor-chunks/@clerk.js'"
 2. Database connection error: "NeonDbError: Error connecting to database: fetch failed"
-3. Next.js dynamic params issue: "params.id should be awaited before using its properties"
+3. Next.js dynamic params issue: "params.id should be awaited before accessing its properties"
 4. SQL error in rental-requests route: "column rr.message does not exist"
 5. Type error in API routes: "Type does not satisfy the constraint 'ParamCheck<RouteContext>'"
 
@@ -155,5 +156,5 @@ There are several issues with the application's build and database access:
 - Build cache has been cleared
 - Fixed dynamic params usage in listings/[id]/page.tsx
 - Added missing "message" column to rental_requests table
-- Updated API route type definitions to use correct Next.js 15 parameter format
+- Updated API route type definitions to use correct Next.js 15 parameter format with destructured params pattern
 - Still need to address database connection issue

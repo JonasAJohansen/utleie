@@ -5,7 +5,7 @@ import { sendNotification } from '@/lib/websocket'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { requestId: string } }
+  context: { params: { requestId: string } }
 ) {
   try {
     // Get authenticated user
@@ -16,7 +16,7 @@ export async function POST(
     }
     
     // Get the requestId from the params
-    const { requestId } = params
+    const { requestId } = context.params
     
     if (!requestId) {
       return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })

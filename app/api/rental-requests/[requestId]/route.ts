@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { requestId: string } }
+  context: { params: { requestId: string } }
 ) {
   try {
     // Get authenticated user
@@ -15,7 +15,7 @@ export async function GET(
     }
     
     // Get the requestId from the params
-    const { requestId } = params
+    const { requestId } = context.params
     
     if (!requestId) {
       return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })
@@ -68,7 +68,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { requestId: string } }
+  context: { params: { requestId: string } }
 ) {
   try {
     // Get authenticated user
@@ -79,7 +79,7 @@ export async function PATCH(
     }
     
     // Get the requestId from the params
-    const { requestId } = params
+    const { requestId } = context.params
     
     if (!requestId) {
       return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })

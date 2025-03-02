@@ -99,7 +99,7 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - In Next.js 15, dynamic route parameters must be awaited before accessing their properties.
 - When using SQL in TypeScript, ensure column names match exactly with the database schema.
 - After updating npm packages (especially auth packages like Clerk), clear build cache before rebuilding.
-- For Next.js 15 API route handlers, use destructured params pattern `{ params }: { params: YourType }` instead of `context: { params: YourType }`.
+- For Next.js 15 API route handlers, use the format `{ params }: { params: { paramName: string } }` without custom type definitions.
 
 ## Cursor learned
 
@@ -142,6 +142,7 @@ There are several issues with the application's build and database access:
   [X] Update app/api/rental-requests/[requestId]/approve/route.ts
   [X] Update app/api/rental-requests/[requestId]/cancel/route.ts
   [X] Create app/api/rental-requests/[requestId]/route.ts with proper typings
+  [X] Remove custom type definitions and use inline type annotations
 
 [X] Fix runtime error in rental-requests page
   [X] Ensure listing_price is converted to a number before using toFixed()
@@ -165,7 +166,7 @@ There are several issues with the application's build and database access:
 - Build cache has been cleared
 - Fixed dynamic params usage in listings/[id]/page.tsx
 - Added missing "message" column to rental_requests table
-- Updated API route type definitions to use correct Next.js 15 parameter format with destructured params pattern
+- Updated API route type definitions to use inline type annotations without custom type definitions
 - Fixed WebSocket error handling and added reconnection logic
 - Fixed runtime error in rental-requests page by ensuring proper number conversion
 - Still need to address database connection issue

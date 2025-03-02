@@ -123,9 +123,11 @@ There are several issues with the application's build and database access:
 
 1. Build error: "Cannot find module './vendor-chunks/@clerk.js'"
 2. Database connection error: "NeonDbError: Error connecting to database: fetch failed"
-3. Next.js dynamic params issue: "params.id should be awaited before accessing its properties"
+3. Next.js dynamic params issue: "params.id should be awaited before accessing their properties"
 4. SQL error in rental-requests route: "column rr.message does not exist"
 5. Type error in API routes: "Type does not satisfy the constraint 'ParamCheck<RouteContext>'"
+6. Runtime error in WebSocket: "WebSocket error: {}"
+7. Runtime error in rental-requests page: "TypeError: request.listing_price.toFixed is not a function"
 
 ### Implementation Plan
 [X] Fix Clerk.js module error
@@ -140,6 +142,13 @@ There are several issues with the application's build and database access:
   [X] Update app/api/rental-requests/[requestId]/approve/route.ts
   [X] Update app/api/rental-requests/[requestId]/cancel/route.ts
   [X] Create app/api/rental-requests/[requestId]/route.ts with proper typings
+
+[X] Fix runtime error in rental-requests page
+  [X] Ensure listing_price is converted to a number before using toFixed()
+
+[X] Fix WebSocket error handling
+  [X] Improve error reporting in hooks/use-websocket.ts
+  [X] Add reconnection logic after WebSocket errors
 
 [ ] Fix database connection issue
   [ ] Check database connection settings
@@ -157,4 +166,6 @@ There are several issues with the application's build and database access:
 - Fixed dynamic params usage in listings/[id]/page.tsx
 - Added missing "message" column to rental_requests table
 - Updated API route type definitions to use correct Next.js 15 parameter format with destructured params pattern
+- Fixed WebSocket error handling and added reconnection logic
+- Fixed runtime error in rental-requests page by ensuring proper number conversion
 - Still need to address database connection issue

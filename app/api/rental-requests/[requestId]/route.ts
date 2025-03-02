@@ -2,14 +2,9 @@ import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-// Define the expected type for route parameters in Next.js 15
-type RequestParams = {
-  requestId: string
-}
-
 export async function GET(
   request: NextRequest,
-  { params }: { params: RequestParams }
+  { params }: { params: { requestId: string } }
 ) {
   try {
     // Get authenticated user
@@ -73,7 +68,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: RequestParams }
+  { params }: { params: { requestId: string } }
 ) {
   try {
     // Get authenticated user

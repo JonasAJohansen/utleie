@@ -317,7 +317,7 @@ export default function RentalRequestsPage() {
                   <div className="text-sm space-y-1">
                     <div className="flex justify-between">
                       <span>Price per day:</span>
-                      <span>${request.listing_price.toFixed(2)}</span>
+                      <span>${Number(request.listing_price).toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Duration:</span>
@@ -325,7 +325,7 @@ export default function RentalRequestsPage() {
                     </div>
                     <div className="flex justify-between font-medium border-t pt-1 mt-1">
                       <span>Total:</span>
-                      <span>${totalPrice.toFixed(2)}</span>
+                      <span>${(Number(request.listing_price) * days).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>

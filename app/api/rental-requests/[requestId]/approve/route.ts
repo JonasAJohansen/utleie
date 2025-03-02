@@ -3,14 +3,9 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendNotification } from '@/lib/websocket'
 
-// Define the expected type for route parameters in Next.js 15
-type RequestParams = {
-  requestId: string
-}
-
 export async function POST(
-  request: NextRequest, 
-  { params }: { params: RequestParams }
+  request: NextRequest,
+  { params }: { params: { requestId: string } }
 ) {
   try {
     // Get authenticated user

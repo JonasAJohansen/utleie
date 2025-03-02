@@ -3,9 +3,10 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendNotification } from '@/lib/websocket'
 
-export async function POST(
+// Main handler function
+async function approveRequestHandler(
   request: NextRequest,
-  context: { params: { requestId: string } }
+  { params }: { params: { requestId: string } }
 ) {
   try {
     // Get authenticated user
@@ -16,7 +17,7 @@ export async function POST(
     }
     
     // Get the requestId from the params
-    const { requestId } = context.params
+    const { requestId } = params
     
     if (!requestId) {
       return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })
@@ -162,4 +163,8 @@ export async function POST(
       { status: 500 }
     )
   }
-} 
+}
+
+// Export POST method with explicit wrapper function
+export const POST = (req: NextRequest, ctx: { params: { requestId: string } }) => 
+  approveRequestHandler(req, ctx); 

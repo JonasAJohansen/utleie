@@ -3,7 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { sendNotification } from '@/lib/websocket'
 
-export async function POST(
+// Main handler function
+async function rejectRequestHandler(
   request: NextRequest,
   { params }: { params: { requestId: string } }
 ) {
@@ -118,4 +119,8 @@ export async function POST(
       { status: 500 }
     )
   }
-} 
+}
+
+// Export POST method with explicit wrapper function
+export const POST = (req: NextRequest, ctx: { params: { requestId: string } }) => 
+  rejectRequestHandler(req, ctx); 

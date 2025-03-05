@@ -16,8 +16,8 @@ interface CategoryParams {
 }
 
 interface PageProps {
-  params: Promise<any> | undefined
-  searchParams: Promise<any> | undefined
+  params: Promise<Promise<any> | undefined>
+  searchParams: Promise<Promise<any> | undefined>
 }
 
 async function getCategoryListings({ id, ...params }: CategoryParams) {
@@ -103,7 +103,9 @@ async function getCategoryListings({ id, ...params }: CategoryParams) {
   }
 }
 
-export default async function CategoryPage({ params, searchParams }: PageProps) {
+export default async function CategoryPage(props: PageProps) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const resolvedParams = await Promise.resolve(params)
   const resolvedSearchParams = await Promise.resolve(searchParams)
 

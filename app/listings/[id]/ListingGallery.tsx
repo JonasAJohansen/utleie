@@ -14,6 +14,18 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 
+// Define interface for drag info
+interface DragInfo {
+  offset: {
+    x: number;
+    y: number;
+  };
+  velocity: {
+    x: number;
+    y: number;
+  };
+}
+
 interface ListingPhoto {
   id: string
   url: string
@@ -213,7 +225,7 @@ export default function ListingGallery({ photos }: { photos: ListingPhoto[] }) {
                 x: dragPosition.x,
                 y: dragPosition.y
               }}
-              onDragEnd={(e: React.MouseEvent | React.TouchEvent | PointerEvent, info: { offset: { x: number; y: number } }) => {
+              onDragEnd={(e: MouseEvent | TouchEvent | PointerEvent, info: DragInfo) => {
                 setDragPosition({ 
                   x: dragPosition.x + info.offset.x, 
                   y: dragPosition.y + info.offset.y 

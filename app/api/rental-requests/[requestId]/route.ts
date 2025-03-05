@@ -2,8 +2,15 @@ import { sql } from '@vercel/postgres'
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 
-// Main GET handler function - keeps all the business logic
-async function getRentalRequestHandler(request: NextRequest, params: { requestId: string }) {
+// Define the expected type for route parameters in Next.js 15
+type RequestParams = {
+  requestId: string
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ requestId: string }> }
+) {
   try {
     // Get authenticated user
     const { userId } = await auth()
@@ -12,8 +19,8 @@ async function getRentalRequestHandler(request: NextRequest, params: { requestId
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    // Get the requestId from the params
-    const { requestId } = params
+    // Get the requestId from the params - await the params first
+    const { requestId } = await params
     
     if (!requestId) {
       return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })
@@ -64,8 +71,10 @@ async function getRentalRequestHandler(request: NextRequest, params: { requestId
   }
 }
 
-// Main PATCH handler function - keeps all the business logic
-async function updateRentalRequestHandler(request: NextRequest, params: { requestId: string }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ requestId: string }> }
+) {
   try {
     // Get authenticated user
     const { userId } = await auth()
@@ -74,8 +83,8 @@ async function updateRentalRequestHandler(request: NextRequest, params: { reques
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    // Get the requestId from the params
-    const { requestId } = params
+    // Get the requestId from the params - await the params first
+    const { requestId } = await params
     
     if (!requestId) {
       return NextResponse.json({ error: 'Request ID is required' }, { status: 400 })
@@ -151,19 +160,4 @@ async function updateRentalRequestHandler(request: NextRequest, params: { reques
       { status: 500 }
     )
   }
-}
-
-// Export HTTP methods with proper type annotations
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { requestId: string } }
-) {
-  return getRentalRequestHandler(req, params);
-}
-
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { requestId: string } }
-) {
-  return updateRentalRequestHandler(req, params);
 } 

@@ -75,7 +75,7 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
     onFilterChange(updatedFilters)
     
     // Update URL with new filters
-    const params = new URLSearchParams(searchParams.toString())
+    const params = new URLSearchParams(searchParams)
     
     if (updatedFilters.priceRange) {
       params.set('minPrice', updatedFilters.priceRange[0].toString())
@@ -162,16 +162,6 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
     // Ensure we always have two values for the price range
     if (value.length === 2) {
       updateFilters({ priceRange: [value[0], value[1]] })
-    }
-  }
-
-  const handleSortChange = (value: string) => {
-    const params = new URLSearchParams(searchParams.toString())
-    
-    if (value === 'default') {
-      params.delete('sort')
-    } else {
-      params.set('sort', value)
     }
   }
 

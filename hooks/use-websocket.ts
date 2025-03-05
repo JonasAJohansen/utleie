@@ -93,26 +93,7 @@ export function useWebSocket({
       
       // Handle errors - using Event type instead of Error
       socketRef.current.onerror = (event: Event) => {
-        // Extract more meaningful info from the event if possible
-        const errorDetails = {
-          type: 'WebSocket error',
-          timestamp: new Date().toISOString(),
-          readyState: socketRef.current?.readyState
-        };
-        
-        console.error('WebSocket error occurred:', errorDetails);
-        
-        // Set connection status to false on error
-        setIsConnected(false);
-        
-        // Attempt to reconnect after error
-        if (enabled && reconnectTimeoutRef.current === null) {
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectTimeoutRef.current = null;
-            console.log('Attempting to reconnect WebSocket after error...');
-            connect();
-          }, 5000); // Wait 5 seconds before reconnecting
-        }
+        console.error('WebSocket error:', event)
       }
       
     } catch (error) {

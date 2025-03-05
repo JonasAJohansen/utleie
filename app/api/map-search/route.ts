@@ -228,15 +228,18 @@ export async function GET(request: Request) {
       console.error('Database error in map-search:', dbError);
       
       // Safely extract error message if available
-      const errorMessage = dbError instanceof Error 
-        ? dbError.message 
-        : 'Unknown database error';
-        
+      const errorDetails = dbError && 
+        typeof dbError === 'object' && 
+        'message' in dbError && 
+        typeof dbError.message === 'string' 
+          ? dbError.message 
+          : 'Unknown database error';
+          
       return NextResponse.json(
         { 
           error: 'database_error', 
           message: 'Error executing database query',
-          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+          details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
         }, 
         { status: 500 }
       );

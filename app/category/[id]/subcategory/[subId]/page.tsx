@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, use } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ItemGrid } from '@/components/ItemGrid'
 import { categories } from '@/lib/categoryData'
@@ -21,7 +21,8 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
-export default function SubcategoryPage({ params }: Props) {
+export default function SubcategoryPage(props: Props) {
+  const params = use(props.params);
   const [category, setCategory] = useState<(typeof categories)[0] | undefined>()
   const [subcategory, setSubcategory] = useState<Subcategory | undefined>()
   const [items, setItems] = useState<typeof allItems>([])

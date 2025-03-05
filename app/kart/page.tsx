@@ -9,6 +9,7 @@ import { MapListingGrid } from '@/components/map/MapListingGrid'
 import dynamic from 'next/dynamic'
 import { ToggleView } from '@/components/map/ToggleView'
 import { useMediaQuery } from '@/hooks/use-media-query'
+import { cn } from '@/lib/utils'
 
 // Dynamically load MapView component without SSR
 const MapView = dynamic(
@@ -19,6 +20,18 @@ const MapView = dynamic(
     </div>
   )}
 )
+
+export default function MapSearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-full w-full flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <MapSearchContent />
+    </Suspense>
+  )
+}
 
 function MapSearchContent() {
   const searchParams = useSearchParams()
@@ -216,64 +229,55 @@ function MapSearchContent() {
   }, [searchQuery]);
   
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)] bg-white pt-20">
-      {/* Fixed header with search bar */}
-      <header className="sticky top-16 z-10 bg-white shadow-sm py-4 px-4 border-b">
-        <div className="container mx-auto max-w-7xl">
+    <div className="flex flex-col h-screen">
+      <div className="container py-4 px-4 lg:px-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
           <MapSearchBar 
-            onLocationSelect={handleLocationSelect}
-            selectedLocation={selectedLocation}
+            onLocationSelect={handleLocationSelect} 
             onSearch={handleSearch}
+            selectedLocation={selectedLocation}
+            searchQuery={searchQuery}
           />
-          
-          <div className="mt-4">
-            <CategoryScrollbar 
-              selectedCategory={selectedCategory} 
-              onCategorySelect={handleCategorySelect}
-            />
+          <div className="flex-shrink-0">
+            <ToggleView activeView={activeView} onViewChange={handleViewToggle} />
           </div>
         </div>
-      </header>
-      
-      {/* Mobile view toggle */}
-      {isMobile && (
-        <div className="flex justify-center py-2 bg-white border-b">
-          <ToggleView activeView={activeView} onViewChange={handleViewToggle} />
+        <div className="mt-4 overflow-x-auto">
+          <CategoryScrollbar 
+            selectedCategory={selectedCategory} 
+            onCategorySelect={handleCategorySelect} 
+          />
         </div>
-      )}
+      </div>
       
-      {/* Main content area */}
-      <main className="flex-1 flex overflow-hidden">
-        {/* Listings section - hidden on mobile map view */}
-        <motion.div 
-          className="flex-1 overflow-y-auto"
-          initial={{ width: '100%' }}
-          animate={{ 
-            width: activeView === 'map' && !isMobile ? '0%' : 
-                   activeView === 'split' && !isMobile ? '50%' : '100%',
-            display: activeView === 'map' && !isMobile ? 'none' : 'block'
-          }}
-          transition={{ duration: 0.3 }}
-          style={{ display: isMobile && activeView === 'map' ? 'none' : 'block' }}
-        >
-          <MapListingGrid listings={listings} isLoading={isLoading} />
-        </motion.div>
-        
-        {/* Map section - full width on map view, 50% on split view */}
-        {showMap && (
+      <div className="flex-1 overflow-hidden">
+        {/* Grid/List View */}
+        {(activeView === 'list' || (activeView === 'split' && !isMobile)) && (
           <motion.div 
-            className="h-full bg-gray-100"
-            initial={{ width: isMobile ? '100%' : '50%' }}
-            animate={{ 
-              width: activeView === 'list' && !isMobile ? '0%' : 
-                     activeView === 'split' && !isMobile ? '50%' : '100%',
-              display: activeView === 'list' && !isMobile ? 'none' : 'block'
-            }}
+            className={cn(
+              "h-full overflow-y-auto",
+              activeView === 'list' ? 'w-full' : 'w-full md:w-1/2 lg:w-2/5'
+            )}
+            layout
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
-            style={{ 
-              display: isMobile && activeView === 'list' ? 'none' : 'block',
-              height: isMobile ? 'calc(100vh - 200px)' : '100%'
-            }}
+          >
+            <MapListingGrid listings={listings} isLoading={isLoading} />
+          </motion.div>
+        )}
+        
+        {/* Map View */}
+        {(activeView === 'map' || (activeView === 'split' && !isMobile)) && (
+          <motion.div 
+            className={cn(
+              "h-full",
+              activeView === 'map' ? 'w-full' : 'w-full md:w-1/2 lg:w-3/5'
+            )}
+            layout
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
           >
             <MapView 
               listings={listings} 
@@ -283,19 +287,7 @@ function MapSearchContent() {
             />
           </motion.div>
         )}
-      </main>
-    </div>
-  )
-}
-
-export default function MapSearchPage() {
-  return (
-    <Suspense fallback={
-      <div className="h-screen w-full flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
-    }>
-      <MapSearchContent />
-    </Suspense>
+    </div>
   )
 } 

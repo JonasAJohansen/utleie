@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { getAuth } from '@clerk/nextjs/server'
-import { addConnection, removeConnection } from '@/lib/websocket-utils'
+import { addConnection, removeConnection } from '@/lib/websocket'
 
 // Handle WebSocket connection
 export async function GET(request: NextRequest) {
@@ -37,12 +37,6 @@ export async function GET(request: NextRequest) {
 
     // Set up authentication
     let userId: string | null = null
-    try {
-      const auth = await getAuth(request)
-      userId = auth?.userId
-    } catch (error) {
-      console.error('Auth error on connection:', error)
-    }
     
     // When a message is received
     socket.on('message', async (data: any) => {
@@ -51,17 +45,8 @@ export async function GET(request: NextRequest) {
         
         // Handle authentication check
         if (message.type === 'auth_check') {
-          try {
-            const auth = await getAuth(request)
-            userId = auth?.userId
-          } catch (error) {
-            console.error('Auth error during message:', error)
-            socket.send(JSON.stringify({ 
-              type: 'auth_error', 
-              error: 'Authentication failed' 
-            }))
-            return
-          }
+          const auth = await getAuth(request)
+          userId = auth.userId
           
           // Store the connection in the user's connections array
           if (userId) {
@@ -96,7 +81,9 @@ export async function GET(request: NextRequest) {
       clearInterval(pingInterval)
       
       // Remove the socket from connections
-      removeConnection(userId, socket)
+      if (userId) {
+        removeConnection(userId, socket)
+      }
     })
 
     return response

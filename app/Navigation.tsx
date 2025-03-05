@@ -2,7 +2,36 @@
 
 import Link from 'next/link'
 import { Button } from "@/components/ui/button"
-import { ChevronDown, User, Bell, MessageSquare, Package, Heart, Settings, LogOut, Menu, Search, Camera, Drill, Tv, Shirt, Home, Music, Gamepad, Map, Clock, LifeBuoy, HelpCircle, Leaf, Laptop, Mountain, Car, CheckCircle2, XCircle } from 'lucide-react'
+import { 
+  ChevronDown, 
+  User, 
+  Bell, 
+  MessageSquare, 
+  Package, 
+  Heart, 
+  Settings, 
+  LogOut, 
+  Menu, 
+  Search, 
+  Camera, 
+  Drill, 
+  Bike, 
+  Tv, 
+  Shirt, 
+  Home, 
+  Music, 
+  Gamepad, 
+  Map, 
+  Clock, 
+  LifeBuoy, 
+  HelpCircle, 
+  Leaf, 
+  Laptop, 
+  Mountain, 
+  Car, 
+  CheckCircle2, 
+  XCircle 
+} from 'lucide-react'
 import { SignInButton, SignUpButton, useUser, useClerk } from "@clerk/nextjs"
 import { useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"

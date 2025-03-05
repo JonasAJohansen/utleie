@@ -99,10 +99,16 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - In Next.js 15, dynamic route parameters must be awaited before accessing their properties.
 - When using SQL in TypeScript, ensure column names match exactly with the database schema.
 - After updating npm packages (especially auth packages like Clerk), clear build cache before rebuilding.
-- For Next.js 15 API route handlers, use the format `{ params }: { params: { paramName: string } }` without custom type definitions.
-- In Next.js 15, route handler files should only export valid HTTP methods (GET, POST, etc.) and not other utility functions.
-- For complex API routes that need utility functions, move those functions to separate utility files outside the API routes directory.
-- Next.js 15 route handlers work best with simple function declarations and minimal type annotations on the handler function itself.
+- In Next.js 15, there are two approaches to handle dynamic route parameters:
+  1. Using async/await: `const { id } = await params;` in an async component
+  2. Using React's `use` hook: `const { id } = use(params);` in a non-async component
+- In Next.js 15 API route handlers, only HTTP methods (GET, POST, etc.) should be exported directly. Helper functions should be moved to separate utility files.
+- When handling errors in TypeScript, properly type-check or type-cast catch parameters (which are of type `unknown` by default) before accessing their properties.
+- When using arrays with PostgreSQL in @vercel/postgres, use the sql.array() helper function: `ANY(${sql.array(myArray, 'text')})` instead of directly passing arrays to SQL template literals.
+- When using Clerk's getAuth() function in Next.js 15, always pass the request object as an argument: `getAuth(request)`.
+- In framer-motion v11+, neither `MotionProps` nor `HTMLMotionProps` are exported. Instead, define a custom interface with common motion properties and use an index signature for additional props: `[key: string]: any`.
+- When working with SQL results in TypeScript, always check for null before accessing rowCount (e.g., `if (result.rowCount && result.rowCount > 0)`) to avoid null reference errors.
+- For framer-motion event handlers like onDragEnd, create custom interfaces for the event parameters (e.g., `DragInfo` with offset and velocity properties) since types like PanInfo aren't directly exported.
 
 ## Cursor learned
 
@@ -113,6 +119,11 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - For Next.js 15 API route handlers, use specific type definitions for dynamic route parameters to satisfy the constraint 'ParamCheck<RouteContext>'
 - In Next.js 15, dynamic route parameters need to follow a specific TypeScript interface structure to work with the middleware and routing system
 - For Next.js 15 API routes with dynamic segments, avoid complex interfaces and use the built-in context parameter directly
+- When using react-datepicker with selectsRange property, the onChange handler should accept [Date, Date] array type
+- For Next.js components using useSearchParams or other navigation hooks, always wrap them in a Suspense boundary
+- When working with lucide-react icons, verify the icon names in the current version as they may change between updates (e.g., Bicycle replaced with Bike)
+- In schema-dts (JSON-LD schema), use '@id' format for reference values like 'businessFunction' and 'itemCondition'
+- Remove the delete of L.Icon.Default.prototype._getIconUrl in Leaflet initialization as it's not needed in newer versions
 
 # Scratchpad
 
@@ -126,11 +137,15 @@ There are several issues with the application's build and database access:
 
 1. Build error: "Cannot find module './vendor-chunks/@clerk.js'"
 2. Database connection error: "NeonDbError: Error connecting to database: fetch failed"
-3. Next.js dynamic params issue: "params.id should be awaited before accessing their properties"
+3. Next.js dynamic params issue: "params.id should be awaited before accessing its properties"
 4. SQL error in rental-requests route: "column rr.message does not exist"
 5. Type error in API routes: "Type does not satisfy the constraint 'ParamCheck<RouteContext>'"
-6. Runtime error in WebSocket: "WebSocket error: {}"
-7. Runtime error in rental-requests page: "TypeError: request.listing_price.toFixed is not a function"
+6. WebSocket route error: Functions exported from route handler aren't allowed
+7. TypeScript errors:
+   - Missing `id` property in `ListingPageClient.tsx`
+   - `unknown` type error in `map-search/route.ts`
+   - Missing array handling in mark-read/route.ts
+   - Implicit `any` type in event handlers
 
 ### Implementation Plan
 [X] Fix Clerk.js module error
@@ -141,18 +156,15 @@ There are several issues with the application's build and database access:
 [X] Fix Next.js params issue in listings/[id]/page.tsx
   [X] Update code to properly await params before accessing properties
 
-[X] Fix API route parameter typings
+[X] Fix API route parameter typings (Updated plan with new approach)
   [X] Update app/api/rental-requests/[requestId]/approve/route.ts
   [X] Update app/api/rental-requests/[requestId]/cancel/route.ts
-  [X] Create app/api/rental-requests/[requestId]/route.ts with proper typings
-  [X] Remove custom type definitions and use inline type annotations
+  [X] Update app/api/rental-requests/[requestId]/route.ts
 
-[X] Fix runtime error in rental-requests page
-  [X] Ensure listing_price is converted to a number before using toFixed()
-
-[X] Fix WebSocket error handling
-  [X] Improve error reporting in hooks/use-websocket.ts
-  [X] Add reconnection logic after WebSocket errors
+[X] Fix WebSocket route error
+  [X] Move helper functions from route file to lib/websocket.ts
+  [X] Update the route file to use the imported functions
+  [X] Update getAuth() call to pass request parameter
 
 [ ] Fix database connection issue
   [ ] Check database connection settings
@@ -164,12 +176,41 @@ There are several issues with the application's build and database access:
   [X] Add missing "message" column to database
   [X] Update SQL query to handle missing column (no changes needed as column now exists)
 
+[X] Fix TypeScript errors
+  [X] Add missing `id` property in ListingPageClient.tsx
+  [X] Fix unknown type error handling in map-search/route.ts
+  [X] Fix null checks for rowCount in SQL results
+  [X] Update framer-motion types in AnimatedSection.tsx
+  [X] Add explicit types to event handlers in ListingGallery.tsx
+  [X] Fix circular dependency between ws route and websocket.ts
+  [X] Fix schema-dts types in ListingSchema.tsx
+  [X] Fix DateRangePicker onChange handler typing
+  [X] Fix Leaflet _getIconUrl issue in MapView.tsx
+  [X] Add Suspense boundary to kart/page.tsx
+  [X] Update MapSearchBar component props
+
 ### Current Progress
 - Clerk.js package updated to latest version 6.12.2
 - Build cache has been cleared
-- Fixed dynamic params usage in listings/[id]/page.tsx
 - Added missing "message" column to rental_requests table
-- Updated API route type definitions to use inline type annotations without custom type definitions
-- Fixed WebSocket error handling and added reconnection logic
-- Fixed runtime error in rental-requests page by ensuring proper number conversion
-- Still need to address database connection issue
+- Fixed Next.js 15 dynamic parameters in all API routes:
+  - Changed route handler params to use Promise type: `{ params }: { params: Promise<{ requestId: string }> }`
+  - Using `await params` to access parameter values: `const { requestId } = await params`
+- Fixed WebSocket route handler by:
+  - Moving `sendToUser` and `broadcast` functions to a separate utility file
+  - Refactoring the WebSocket connection handling
+  - Updated getAuth() call to pass request parameter
+- Fixed TypeScript errors:
+  - Added missing `id` property in ListingPageClient.tsx
+  - Added proper type checking for error handling in map-search/route.ts
+  - Fixed null checks for rowCount in SQL results
+  - Updated framer-motion types in AnimatedSection.tsx
+  - Added explicit types to event handlers in ListingGallery.tsx
+  - Fixed schema-dts types in ListingSchema component
+  - Updated react-datepicker with correct type for selectsRange onChange handler
+  - Fixed Leaflet marker icon issue in MapView.tsx
+  - Added Suspense boundary to kart/page.tsx for useSearchParams
+  - Updated imported icons from lucide-react (Bicycle -> Bike)
+  - Fixed props in MapSearchBar component
+- Successfully completed the build process
+- Still need to fix database connection issue

@@ -30,9 +30,15 @@ export function DateRangePicker({
     date instanceof Date ? date : new Date(date)
   );
 
-  const handleDateChange = (dates: [Date | null, Date | null]) => {
+  const handleDateChange = (dates: [Date | null, Date | null] | null) => {
+    if (!dates) {
+      setStartDate(null);
+      setEndDate(null);
+      onDateChange(null, null);
+      return;
+    }
+
     const [start, end] = dates;
-    
     setStartDate(start);
     setEndDate(end);
     onDateChange(start, end);

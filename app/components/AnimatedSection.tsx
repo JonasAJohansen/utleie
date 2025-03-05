@@ -13,7 +13,7 @@ interface AnimatedSectionProps {
   variants?: any;
   whileHover?: any;
   whileTap?: any;
-  [key: string]: any;
+  [key: string]: any; // Allow for any other motion props
 }
 
 export function AnimatedSection({ 

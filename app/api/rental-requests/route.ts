@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       WHERE l.id = ${listingId}
     `;
 
-    if (listingResult.rowCount === 0) {
+    if (!listingResult.rowCount || listingResult.rowCount === 0) {
       return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
     }
 
@@ -73,9 +73,9 @@ export async function POST(request: NextRequest) {
         AND status = 'pending'
     `;
 
-    if (existingRequestResult.rowCount != null && existingRequestResult.rowCount > 0) {
-      return NextResponse.json({ 
-        error: 'You already have a pending request for this listing that overlaps with these dates' 
+    if (existingRequestResult.rowCount && existingRequestResult.rowCount > 0) {
+      return NextResponse.json({
+        error: 'You already have a pending request for this listing that overlaps with these dates'
       }, { status: 400 });
     }
 
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
     const existingBookingsResult = await sql`
       SELECT id
       FROM rental_requests
-      WHERE 
-        listing_id = ${listingId} 
+      WHERE listing_id = ${listingId}
+        AND status = 'approved'
         AND (
           (start_date <= ${startDate} AND end_date >= ${startDate})
           OR
@@ -92,12 +92,11 @@ export async function POST(request: NextRequest) {
           OR
           (start_date >= ${startDate} AND end_date <= ${endDate})
         )
-        AND status = 'approved'
     `;
 
-    if (existingBookingsResult.rowCount != null && existingBookingsResult.rowCount > 0) {
-      return NextResponse.json({ 
-        error: 'This listing is already booked for these dates' 
+    if (existingBookingsResult.rowCount && existingBookingsResult.rowCount > 0) {
+      return NextResponse.json({
+        error: 'This listing is already booked for the selected dates'
       }, { status: 400 });
     }
 
@@ -106,8 +105,10 @@ export async function POST(request: NextRequest) {
       SELECT username FROM users WHERE id = ${userId}
     `;
 
-    if (userResult.rowCount === 0) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!userResult.rowCount || userResult.rowCount === 0) {
+      return NextResponse.json({
+        error: 'Recipient user not found'
+      }, { status: 404 });
     }
 
     const username = userResult.rows[0].username;

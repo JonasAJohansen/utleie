@@ -121,7 +121,7 @@ export default function AddListing() {
   }
 
   const handleCategoryChange = (value: string) => {
-    const category = categories.find(c => c.id === value)
+    const category = categories.find(cat => cat.id === value)
     setSelectedCategory(category || null)
     setListing({ ...listing, categoryId: value })
     

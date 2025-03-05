@@ -20,7 +20,6 @@ interface PhotoUploadProps {
     previewUrl: string
     isMain: boolean
   }>) => void
-  onDeletePhoto?: (photoId: string) => void
   maxPhotos?: number
   className?: string
 }
@@ -28,7 +27,6 @@ interface PhotoUploadProps {
 export function PhotoUpload({
   photos,
   onPhotosChange,
-  onDeletePhoto,
   maxPhotos = 4,
   className
 }: PhotoUploadProps) {
@@ -69,10 +67,6 @@ export function PhotoUpload({
   }
 
   const handleRemovePhoto = (index: number) => {
-    if (onDeletePhoto && 'id' in photos[index] && photos[index].id) {
-      onDeletePhoto(photos[index].id as string)
-    }
-    
     const newPhotos = photos.filter((_, i) => i !== index)
     if (photos[index].isMain && newPhotos.length > 0) {
       newPhotos[0].isMain = true

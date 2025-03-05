@@ -38,7 +38,7 @@ interface ListingData extends QueryResultRow {
 }
 
 interface PageProps {
-  params: Promise<any>
+  params: Promise<{ id: string }>
 }
 
 async function getListingData(id: string): Promise<ListingData | null> {
@@ -163,7 +163,7 @@ export default async function ItemListing({ params }: PageProps) {
           mainImage: mainImageUrl,
           images: imageUrls,
           categoryName: item.category_name,
-          reviewCount: item.review_count
+          reviewCount: item.review_count,
         }}
         url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://rentease.no'}/listings/${item.id}`}
       />
@@ -173,4 +173,3 @@ export default async function ItemListing({ params }: PageProps) {
     </div>
   )
 }
-

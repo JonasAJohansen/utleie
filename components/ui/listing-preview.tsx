@@ -24,7 +24,6 @@ interface ListingPreviewProps {
   brandName?: string
   onEdit: (step: number) => void
   onPublish: () => void
-  isEditing?: boolean
 }
 
 const conditionLabels: Record<string, string> = {
@@ -40,8 +39,7 @@ export function ListingPreview({
   categoryName,
   brandName,
   onEdit,
-  onPublish,
-  isEditing = false
+  onPublish
 }: ListingPreviewProps) {
   const mainPhoto = photos.find(p => p.isMain) || photos[0]
 

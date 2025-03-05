@@ -24,10 +24,11 @@ interface MapSearchBarProps {
   onLocationSelect: (location: { lat: number; lng: number; radius: number; name: string } | null) => void
   selectedLocation: { lat: number; lng: number; radius: number; name: string } | null
   onSearch?: (query: string) => void
+  searchQuery?: string
 }
 
-export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch }: MapSearchBarProps) {
-  const [searchQuery, setSearchQuery] = useState('')
+export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, searchQuery = '' }: MapSearchBarProps) {
+  const [searchInput, setSearchInput] = useState(searchQuery)
   const [isSearching, setIsSearching] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [suggestions, setSuggestions] = useState<typeof DEMO_LOCATIONS>([])
@@ -59,16 +60,16 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch }: M
   
   // Filter suggestions based on search query
   useEffect(() => {
-    if (searchQuery.length > 0) {
+    if (searchInput.length > 0) {
       const filteredLocations = DEMO_LOCATIONS.filter(location => 
-        location.name.toLowerCase().includes(searchQuery.toLowerCase())
+        location.name.toLowerCase().includes(searchInput.toLowerCase())
       )
       setSuggestions(filteredLocations)
       setShowSuggestions(true)
       
       // Only trigger search when query has at least 3 characters
-      if (searchQuery.length >= 3) {
-        debouncedSearch(searchQuery);
+      if (searchInput.length >= 3) {
+        debouncedSearch(searchInput);
       }
     } else {
       setSuggestions([])
@@ -77,11 +78,11 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch }: M
       // Also trigger search with empty query to reset
       if (onSearch) debouncedSearch('');
     }
-  }, [searchQuery, debouncedSearch, onSearch])
+  }, [searchInput, debouncedSearch, onSearch])
   
   // Handle location selection
   const handleLocationSelect = (location: typeof DEMO_LOCATIONS[0]) => {
-    setSearchQuery(location.name)
+    setSearchInput(location.name)
     setShowSuggestions(false)
     onLocationSelect({
       lat: location.lat,
@@ -98,12 +99,12 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch }: M
     
     // Find matching location
     const matchingLocation = DEMO_LOCATIONS.find(
-      location => location.name.toLowerCase() === searchQuery.toLowerCase()
+      location => location.name.toLowerCase() === searchInput.toLowerCase()
     )
     
     if (matchingLocation) {
       handleLocationSelect(matchingLocation)
-    } else if (searchQuery.trim()) {
+    } else if (searchInput.trim()) {
       // In a real app, you'd make an API call to geocode the address
       // For demo, we'll just use the first suggestion if available
       if (suggestions.length > 0) {
@@ -111,7 +112,7 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch }: M
       }
       
       // Trigger search with final query
-      if (onSearch) onSearch(searchQuery);
+      if (onSearch) onSearch(searchInput);
     }
     
     setIsSearching(false)
@@ -120,7 +121,7 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch }: M
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setSearchQuery(value);
+    setSearchInput(value);
   };
   
   // Handle radius change
@@ -139,7 +140,7 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch }: M
   
   // Clear search
   const clearSearch = () => {
-    setSearchQuery('')
+    setSearchInput('')
     onLocationSelect(null)
     
     // Reset search results
@@ -157,12 +158,12 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch }: M
           <Input
             type="text"
             placeholder="Søk etter annonser..."
-            value={searchQuery}
+            value={searchInput}
             onChange={handleInputChange}
             className="pl-10 pr-8 py-2 h-12 rounded-l-lg border-r-0"
           />
           
-          {searchQuery && (
+          {searchInput && (
             <button
               type="button"
               onClick={clearSearch}

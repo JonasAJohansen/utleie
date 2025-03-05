@@ -1,11 +1,19 @@
 'use client';
 
 import { ReactNode } from 'react';
-import { motion, MotionProps } from 'framer-motion';
+import { motion } from 'framer-motion';
 
-interface AnimatedSectionProps extends MotionProps {
+interface AnimatedSectionProps {
   children: ReactNode;
   className?: string;
+  initial?: any;
+  animate?: any;
+  exit?: any;
+  transition?: any;
+  variants?: any;
+  whileHover?: any;
+  whileTap?: any;
+  [key: string]: any;
 }
 
 export function AnimatedSection({ 

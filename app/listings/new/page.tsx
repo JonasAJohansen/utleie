@@ -130,7 +130,7 @@ export default function AddListing() {
     setListing(prev => ({ ...prev, brandId: '' }))
     
     if (value) {
-      fetchBrands(value)
+      fetchBrands()
     }
   }
 

@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { 
   Laptop, 
   Drill, 
-  Bike as Bicycle, 
   Camera, 
   Tv, 
   Shirt, 
@@ -15,7 +14,8 @@ import {
   Tent, 
   Wrench, 
   ChevronLeft, 
-  ChevronRight
+  ChevronRight,
+  Mountain
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -25,7 +25,7 @@ const CATEGORIES = [
   { id: 'all', name: 'All', icon: Wrench }, 
   { id: 'electronics', name: 'Electronics', icon: Laptop },
   { id: 'tools', name: 'Tools', icon: Drill },
-  { id: 'sports', name: 'Sports', icon: Bicycle },
+  { id: 'sports', name: 'Sports', icon: Mountain },
   { id: 'cameras', name: 'Cameras', icon: Camera },
   { id: 'entertainment', name: 'Entertainment', icon: Tv },
   { id: 'clothing', name: 'Clothing', icon: Shirt },

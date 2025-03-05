@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
         AND status = 'pending'
     `;
 
-    if (existingRequestResult.rowCount > 0) {
+    if (existingRequestResult.rowCount != null && existingRequestResult.rowCount > 0) {
       return NextResponse.json({ 
         error: 'You already have a pending request for this listing that overlaps with these dates' 
       }, { status: 400 });
@@ -95,9 +95,9 @@ export async function POST(request: NextRequest) {
         AND status = 'approved'
     `;
 
-    if (existingBookingsResult.rowCount > 0) {
+    if (existingBookingsResult.rowCount != null && existingBookingsResult.rowCount > 0) {
       return NextResponse.json({ 
-        error: 'This listing is already booked for some or all of the selected dates' 
+        error: 'This listing is already booked for these dates' 
       }, { status: 400 });
     }
 

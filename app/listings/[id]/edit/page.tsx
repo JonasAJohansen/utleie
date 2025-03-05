@@ -21,7 +21,7 @@ import { locations } from '@/components/ui/location-selector'
 
 interface ListingPhoto {
   id?: string
-  file?: File
+  file: File 
   url?: string
   description: string
   previewUrl: string
@@ -566,7 +566,14 @@ export default function EditListing() {
         {currentStep === 1 && (
           <div className="space-y-6">
             <PhotoUpload
-              photos={[...existingPhotos, ...photos]}
+              photos={[
+                ...existingPhotos.map(photo => ({
+                  ...photo, 
+                  // Create a File object from the URL to satisfy the type requirement
+                  file: new File([], photo.url || '', { type: 'image/jpeg' })
+                })), 
+                ...photos
+              ]}
               onPhotosChange={handleAllPhotosChange}
               maxPhotos={4}
               onDeletePhoto={handleDeletePhoto}

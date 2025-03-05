@@ -41,7 +41,6 @@ interface ListingPageClientProps {
 
 export function ListingPageClient({ listingData }: ListingPageClientProps) {
   const { 
-    id, 
     userId, 
     isFavorited, 
     photos, 
@@ -64,7 +63,7 @@ export function ListingPageClient({ listingData }: ListingPageClientProps) {
           </Suspense>
 
           <Suspense fallback={<Skeleton className="h-20 w-full rounded-lg" />}>
-            <SocialProof listingId={id} />
+            <SocialProof listingId={listingData.id} />
           </Suspense>
 
           <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-lg" />}>
@@ -79,7 +78,7 @@ export function ListingPageClient({ listingData }: ListingPageClientProps) {
         {/* Right Column - Calendar & Booking */}
         <div className="space-y-8">
           <Suspense fallback={<Skeleton className="h-[450px] w-full rounded-lg" />}>
-            <AvailabilityCalendar listingId={id} />
+            <AvailabilityCalendar listingId={listingData.id} />
           </Suspense>
         </div>
       </motion.div>

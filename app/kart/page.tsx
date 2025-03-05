@@ -20,7 +20,7 @@ const MapView = dynamic(
   )}
 )
 
-export default function MapSearchPage() {
+function MapSearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [activeView, setActiveView] = useState<'list' | 'map' | 'split'>('split')
@@ -285,5 +285,17 @@ export default function MapSearchPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function MapSearchPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen w-full flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <MapSearchContent />
+    </Suspense>
   )
 } 

@@ -213,7 +213,7 @@ export default function ListingGallery({ photos }: { photos: ListingPhoto[] }) {
                 x: dragPosition.x,
                 y: dragPosition.y
               }}
-              onDragEnd={(e, info) => {
+              onDragEnd={(e: React.MouseEvent | React.TouchEvent | PointerEvent, info: { offset: { x: number; y: number } }) => {
                 setDragPosition({ 
                   x: dragPosition.x + info.offset.x, 
                   y: dragPosition.y + info.offset.y 

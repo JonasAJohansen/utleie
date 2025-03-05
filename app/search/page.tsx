@@ -76,7 +76,7 @@ function SearchContent() {
   }, [searchParams])
 
   const handleFilterChange = (filters: SearchFiltersState) => {
-    const params = new URLSearchParams(searchParams)
+    const params = new URLSearchParams(searchParams.toString())
     
     // Reset page when filters change
     params.delete('page')
@@ -107,8 +107,14 @@ function SearchContent() {
   }
 
   const handlePageChange = (page: number) => {
-    const params = new URLSearchParams(searchParams)
-    params.set('page', page.toString())
+    const params = new URLSearchParams(searchParams.toString())
+    
+    if (page === 1) {
+      params.delete('page')
+    } else {
+      params.set('page', page.toString())
+    }
+    
     router.push(`/search?${params.toString()}`)
   }
 

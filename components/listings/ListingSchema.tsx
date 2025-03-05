@@ -44,14 +44,14 @@ export function ListingSchema({ item, url }: ListingSchemaProps) {
       category: item.categoryName,
     }),
     ...(item.condition && {
-      itemCondition: `https://schema.org/${getConditionSchema(item.condition)}`,
+      itemCondition: { '@id': `https://schema.org/${getConditionSchema(item.condition)}` }
     }),
     offers: {
       '@type': 'Offer',
       priceCurrency: 'NOK',
       price: item.price,
       priceValidUntil: getNextYearDate(),
-      availability: 'https://schema.org/InStock',
+      availability: { '@id': 'https://schema.org/InStock' },
       url,
       seller: {
         '@type': 'Person',
@@ -62,7 +62,7 @@ export function ListingSchema({ item, url }: ListingSchemaProps) {
         '@type': 'Product',
         name: item.name,
       },
-      businessFunction: 'http://purl.org/goodrelations/v1#LeaseOut',
+      businessFunction: { '@id': 'http://purl.org/goodrelations/v1#LeaseOut' },
       validFrom: new Date().toISOString(),
     },
   }

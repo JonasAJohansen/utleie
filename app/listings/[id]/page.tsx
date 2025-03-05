@@ -163,6 +163,7 @@ export default async function ItemListing({ params }: PageProps) {
           mainImage: mainImageUrl,
           images: imageUrls,
           categoryName: item.category_name,
+          reviewCount: item.review_count
         }}
         url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://rentease.no'}/listings/${item.id}`}
       />

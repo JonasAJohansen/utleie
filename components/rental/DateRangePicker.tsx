@@ -30,30 +30,12 @@ export function DateRangePicker({
     date instanceof Date ? date : new Date(date)
   );
 
-  const handleDateChange = (date: Date | null) => {
-    if (!date) {
-      setStartDate(null);
-      setEndDate(null);
-      onDateChange(null, null);
-      return;
-    }
-
-    if (!startDate || (startDate && endDate)) {
-      // Start new date range selection
-      setStartDate(date);
-      setEndDate(null);
-      onDateChange(date, null);
-    } else {
-      // Complete date range selection
-      if (isBefore(date, startDate)) {
-        setStartDate(date);
-        setEndDate(startDate);
-      } else {
-        setEndDate(date);
-      }
-      
-      onDateChange(startDate, date);
-    }
+  const handleDateChange = (dates: [Date | null, Date | null]) => {
+    const [start, end] = dates;
+    
+    setStartDate(start);
+    setEndDate(end);
+    onDateChange(start, end);
   };
 
   const isDateInRange = (date: Date) => {

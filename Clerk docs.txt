@@ -14,7 +14,7 @@ Under the hood, currentUser() uses the clerkClient wrapper to make a call to the
 Note
 
 Any requests from a Client Component to a Route Handler will read the session from cookies and will not need the token sent as a Bearer token.
-
+yyy
 Server components and actions
 Route Handler
 Route Handler w/ User Fetch

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import ListingGallery from './ListingGallery'
 import { ListingDetails } from './ListingDetails'
 import { SocialProof } from '@/components/listings/SocialProof'
-import { AvailabilityCalendar } from '@/components/listings/AvailabilityCalendar'
+import { RentalRequestForm } from '@/components/rental/RentalRequestForm'
 
 interface ListingPhoto {
   id: string
@@ -36,6 +36,10 @@ interface ListingPageClientProps {
     imageUrls: string[]
     categoryId: string
     categoryName?: string
+    availableFrom: string
+    availableTo: string
+    securityDeposit?: number
+    minRentalDays?: number
   }
 }
 
@@ -46,6 +50,7 @@ export function ListingPageClient({ listingData }: ListingPageClientProps) {
     isFavorited, 
     photos, 
     categoryId,
+    categoryName,
     ...itemDetails 
   } = listingData
 
@@ -57,7 +62,7 @@ export function ListingPageClient({ listingData }: ListingPageClientProps) {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        {/* Left Column - Gallery & Details */}
+        {/* Venstre kolonne - Galleri og detaljer */}
         <div className="lg:col-span-2 space-y-8">
           <Suspense fallback={<Skeleton className="h-[450px] w-full rounded-lg" />}>
             <ListingGallery photos={photos} />
@@ -71,7 +76,8 @@ export function ListingPageClient({ listingData }: ListingPageClientProps) {
             <ListingDetails 
               item={{
                 id,
-                ...itemDetails
+                ...itemDetails,
+                category: categoryName || 'Ukategorisert'
               }} 
               userId={userId} 
               isFavorited={isFavorited} 
@@ -79,15 +85,20 @@ export function ListingPageClient({ listingData }: ListingPageClientProps) {
           </Suspense>
         </div>
 
-        {/* Right Column - Calendar & Booking */}
+        {/* Høyre kolonne - Leieskjema */}
         <div className="space-y-8">
           <Suspense fallback={<Skeleton className="h-[450px] w-full rounded-lg" />}>
-            <AvailabilityCalendar listingId={id} />
+            <RentalRequestForm
+              listingId={id}
+              listingName={itemDetails.name}
+              pricePerDay={itemDetails.price}
+              userIsOwner={userId === itemDetails.user_id}
+            />
           </Suspense>
         </div>
       </motion.div>
 
-      {/* Similar Listings section has been disabled */}
+      {/* Lignende annonser har blitt deaktivert */}
     </>
   )
 } 

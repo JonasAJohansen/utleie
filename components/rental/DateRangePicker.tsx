@@ -3,10 +3,13 @@
 import React, { useState } from 'react';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format, addDays, isAfter, isBefore, isEqual } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+// Import custom styles
+import './calendar-styles.css';
 
 interface DateRangePickerProps {
   onDateChange: (startDate: Date | null, endDate: Date | null) => void;
@@ -83,15 +86,15 @@ export function DateRangePicker({
     const isUnavailable = isDateUnavailable(date);
 
     return {
-      'bg-[#4CD964] text-white rounded-full': isStart || isEnd,
-      'bg-[#E7F9EF] text-gray-800': isRangeDate && !isStart && !isEnd,
+      'bg-[#4CD964] text-white': isStart || isEnd,
+      'bg-[#E7F9EF]': isRangeDate && !isStart && !isEnd,
       'bg-red-100 text-red-800 line-through cursor-not-allowed': isUnavailable,
     };
   };
 
   return (
-    <div className="w-full space-y-2">
-      <div className="w-full bg-white border rounded-lg shadow-sm">
+    <div className="w-full">
+      <div className="w-full border border-gray-200">
         <DatePicker
           selected={startDate}
           onChange={handleDateChange}
@@ -103,10 +106,7 @@ export function DateRangePicker({
           selectsRange
           inline
           calendarClassName="w-full"
-          dayClassName={date => cn(
-            "rounded-full hover:bg-gray-100 transition-colors",
-            highlightDates(date)
-          )}
+          dayClassName={date => cn(highlightDates(date))}
           renderCustomHeader={({
             date,
             decreaseMonth,
@@ -114,20 +114,20 @@ export function DateRangePicker({
             prevMonthButtonDisabled,
             nextMonthButtonDisabled,
           }) => (
-            <div className="flex items-center justify-between px-2 py-2">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={decreaseMonth}
                 disabled={prevMonthButtonDisabled}
                 className={cn(
-                  "text-gray-500 hover:text-gray-700",
+                  "text-gray-600",
                   prevMonthButtonDisabled && "opacity-50 cursor-not-allowed"
                 )}
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
-              <h2 className="text-md font-medium text-gray-900">
+              <h2 className="text-lg font-medium text-gray-900">
                 {format(date, 'MMMM yyyy')}
               </h2>
               <Button
@@ -136,7 +136,7 @@ export function DateRangePicker({
                 onClick={increaseMonth}
                 disabled={nextMonthButtonDisabled}
                 className={cn(
-                  "text-gray-500 hover:text-gray-700",
+                  "text-gray-600",
                   nextMonthButtonDisabled && "opacity-50 cursor-not-allowed"
                 )}
               >
@@ -153,35 +153,18 @@ export function DateRangePicker({
         />
       </div>
       
-      <div className="flex items-center space-x-4 pt-2">
-        <div className="flex items-center space-x-1">
-          <div className="h-3 w-3 rounded-full bg-[#4CD964]"></div>
-          <span className="text-xs text-gray-500">Selected</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="h-3 w-3 rounded-full bg-[#E7F9EF]"></div>
-          <span className="text-xs text-gray-500">In Range</span>
-        </div>
-        <div className="flex items-center space-x-1">
-          <div className="h-3 w-3 rounded-full bg-red-100"></div>
-          <span className="text-xs text-gray-500">Unavailable</span>
-        </div>
-      </div>
-      
-      <div className="flex justify-between pt-2 text-sm text-gray-600">
-        {startDate && (
+      {startDate && endDate && (
+        <div className="flex justify-between mt-3 text-sm text-gray-700">
           <div>
             <span className="font-medium">From:</span>{' '}
             {format(startDate, 'MMM dd, yyyy')}
           </div>
-        )}
-        {endDate && (
           <div>
             <span className="font-medium">To:</span>{' '}
             {format(endDate, 'MMM dd, yyyy')}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 } 

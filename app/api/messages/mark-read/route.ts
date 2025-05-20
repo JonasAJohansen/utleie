@@ -19,11 +19,24 @@ export async function POST(request: Request) {
       WHERE user1_id = ${userId} OR user2_id = ${userId}
     `
     
+    // Check if result is valid
+    if (!conversationsResult || !Array.isArray(conversationsResult.rows)) {
+      console.error('Invalid conversation result structure:', conversationsResult)
+      return NextResponse.json({ 
+        success: true, 
+        markedCount: 0,
+        message: 'No valid conversations found'
+      })
+    }
+    
     const conversations = conversationsResult.rows
-    const conversationIds = conversations.map(conv => conv.id)
+    // Filter out any invalid conversation IDs
+    const conversationIds = conversations
+      .filter(conv => conv && conv.id)
+      .map(conv => conv.id)
     
     // Early return if no conversations found
-    if (conversationIds.length === 0) {
+    if (!conversationIds || conversationIds.length === 0) {
       return NextResponse.json({ 
         success: true, 
         markedCount: 0,
@@ -47,30 +60,36 @@ export async function POST(request: Request) {
       [...conversationIds, userId]
     );
     
-    const markedCount = result.rowCount || 0
+    const markedCount = result?.rowCount || 0
     
     // If any messages were marked as read, notify the senders
-    if (markedCount > 0) {
+    if (markedCount > 0 && Array.isArray(result.rows)) {
       // Map by sender to send a single notification per sender
       const updatesBySender = new Map<string, string[]>()
       
       result.rows.forEach(row => {
+        // Skip invalid rows
+        if (!row || !row.sender_id || !row.conversation_id) return;
+        
         if (!updatesBySender.has(row.sender_id)) {
           updatesBySender.set(row.sender_id, [])
         }
-        const senderConversations = updatesBySender.get(row.sender_id)!
-        if (!senderConversations.includes(row.conversation_id)) {
+        
+        const senderConversations = updatesBySender.get(row.sender_id)
+        if (senderConversations && !senderConversations.includes(row.conversation_id)) {
           senderConversations.push(row.conversation_id)
         }
       })
       
       // Send WebSocket notification to each sender
       updatesBySender.forEach((conversationIds, senderId) => {
-        sendMessageRead(senderId, {
-          readBy: userId,
-          conversationIds,
-          timestamp: new Date().toISOString()
-        })
+        if (senderId && Array.isArray(conversationIds) && conversationIds.length > 0) {
+          sendMessageRead(senderId, {
+            readBy: userId,
+            conversationIds,
+            timestamp: new Date().toISOString()
+          })
+        }
       })
     }
     
@@ -83,7 +102,11 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error marking messages as read:', error)
     return NextResponse.json(
-      { error: 'Failed to mark messages as read' },
+      { 
+        success: false, 
+        markedCount: 0,
+        error: 'Failed to mark messages as read'
+      },
       { status: 500 }
     )
   }

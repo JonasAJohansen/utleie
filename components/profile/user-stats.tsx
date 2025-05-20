@@ -1,5 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Package, Star, Clock, MessageSquare } from 'lucide-react'
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface UserStatsProps {
   stats: {
@@ -10,9 +11,31 @@ interface UserStatsProps {
     totalRentals: number
     reviewCount: number
   }
+  isLoading?: boolean
 }
 
-export function UserStats({ stats }: UserStatsProps) {
+export function UserStats({ stats, isLoading = false }: UserStatsProps) {
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-7 w-16" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <Card>

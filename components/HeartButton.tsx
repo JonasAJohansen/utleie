@@ -92,7 +92,7 @@ export function HeartButton({ itemId, onHeartChange }: HeartButtonProps) {
       disabled={isLoading}
       className={isHearted ? 'text-red-500 hover:text-red-600' : 'text-gray-500 hover:text-gray-600'}
     >
-      <Heart className={`h-5 w-5 ${isHearted ? 'fill-current' : ''}`} />
+      <Heart className={`h-7 w-7 ${isHearted ? 'fill-current' : ''}`} />
     </Button>
   )
 }

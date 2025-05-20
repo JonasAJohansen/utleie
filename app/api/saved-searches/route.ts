@@ -11,7 +11,7 @@ export async function GET() {
     }
 
     const savedSearches = await sql`
-      SELECT id, name, search_query, created_at
+      SELECT id, search_query, created_at
       FROM saved_searches
       WHERE user_id = ${userId}
       ORDER BY created_at DESC
@@ -32,18 +32,9 @@ export async function POST(req: Request) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const { name, searchQuery } = await req.json()
-    if (!name || !searchQuery) {
-      return new NextResponse('Name and search query required', { status: 400 })
-    }
-
-    // Check for duplicate name
-    const existing = await sql`
-      SELECT id FROM saved_searches 
-      WHERE user_id = ${userId} AND name = ${name}
-    `
-    if (existing.rows.length > 0) {
-      return new NextResponse('Search name already exists', { status: 400 })
+    const { searchQuery } = await req.json()
+    if (!searchQuery) {
+      return new NextResponse('Search query required', { status: 400 })
     }
 
     // Limit number of saved searches per user
@@ -56,9 +47,9 @@ export async function POST(req: Request) {
     }
 
     const savedSearch = await sql`
-      INSERT INTO saved_searches (user_id, name, search_query)
-      VALUES (${userId}, ${name}, ${searchQuery})
-      RETURNING id, name, search_query, created_at
+      INSERT INTO saved_searches (user_id, search_query)
+      VALUES (${userId}, ${searchQuery})
+      RETURNING id, search_query, created_at
     `
 
     return NextResponse.json(savedSearch.rows[0])

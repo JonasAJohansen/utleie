@@ -50,13 +50,31 @@ export async function GET() {
       LIMIT 5
     `
 
-    console.log('[RECENT_MESSAGES_GET] Found messages:', result.rows.length)
-    return NextResponse.json(result.rows)
+    console.log('[RECENT_MESSAGES_GET] Found messages:', result?.rows?.length || 0)
+    
+    // Check if result is valid
+    if (!result || !Array.isArray(result.rows)) {
+      console.error('[RECENT_MESSAGES_GET] Invalid result structure:', result)
+      return NextResponse.json([])
+    }
+    
+    // Transform and validate each message object
+    const validMessages = result.rows
+      .filter(row => row && typeof row === 'object')
+      .map(message => ({
+        conversation_id: message.conversation_id || '',
+        message_id: message.message_id || '',
+        content: message.content || '',
+        created_at: message.created_at || new Date().toISOString(),
+        other_user_name: message.other_user_name || 'Unknown User',
+        other_user_avatar: message.other_user_avatar || '/placeholder.svg',
+        unread_count: typeof message.unread_count === 'number' ? message.unread_count : 0
+      }));
+    
+    return NextResponse.json(validMessages)
   } catch (error) {
     console.error('[RECENT_MESSAGES_GET] Error:', error)
-    if (error instanceof Error) {
-      return new NextResponse(`Internal Error: ${error.message}`, { status: 500 })
-    }
-    return new NextResponse('Internal Error', { status: 500 })
+    // Return empty array on error so client doesn't crash
+    return NextResponse.json([])
   }
 } 

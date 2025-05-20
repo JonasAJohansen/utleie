@@ -20,7 +20,7 @@ export default function RootLayout({
           <div className="flex min-h-screen flex-col">
             <ScrollToTop />
             <Navigation />
-            <main className="flex-1 mt-16">
+            <main className="flex-1 mt-24">
               {children}
             </main>
             <footer className="border-t border-gray-100">

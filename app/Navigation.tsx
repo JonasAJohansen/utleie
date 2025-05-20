@@ -191,23 +191,32 @@ export default function Navigation() {
 
   // Handle WebSocket events
   const handleNewNotification = (data: any) => {
+    if (!data) {
+      console.log('Received empty notification data')
+      return
+    }
+    
     console.log('Received new notification:', data)
     
     if (data.type === 'notification_read') {
       // Update notification's read status locally
-      setNotifications(prev => 
-        prev.map(n => 
-          n.id === data.notificationId 
+      setNotifications(prev => {
+        if (!Array.isArray(prev)) return []
+        return prev.map(n => 
+          n && n.id === data.notificationId 
             ? { ...n, read: true } 
             : n
         )
-      )
+      })
       // Update unread count
       setUnreadCount(prev => Math.max(0, prev - 1))
     } 
     else if (data.type === 'all_notifications_read') {
       // Mark all notifications as read locally
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })))
+      setNotifications(prev => {
+        if (!Array.isArray(prev)) return []
+        return prev.map(n => n ? { ...n, read: true } : n)
+      })
       setUnreadCount(0)
     }
     else if (data.type === 'new_notification') {
@@ -217,12 +226,22 @@ export default function Navigation() {
   }
 
   const handleNewMessage = (data: any) => {
+    if (!data) {
+      console.log('Received empty message data')
+      return
+    }
+    
     console.log('Received new message:', data)
     // Refresh messages when a new one arrives
     fetchMessages()
   }
 
   const handleMessageRead = (data: any) => {
+    if (!data) {
+      console.log('Received empty message read data')
+      return
+    }
+    
     console.log('Messages read:', data)
     
     if (data.markedCount) {
@@ -230,12 +249,15 @@ export default function Navigation() {
       setUnreadMessages(0)
       setHasMarkedAsRead(true)
       // Update UI to reflect this
-      setMessages(prev => prev.map(msg => ({
-        ...msg,
-        unread_count: 0
-      })))
+      setMessages(prev => {
+        if (!Array.isArray(prev)) return []
+        return prev.map(msg => msg ? {
+          ...msg,
+          unread_count: 0
+        } : msg)
+      })
     }
-    else if (data.readBy && data.conversationIds) {
+    else if (data.readBy && data.conversationIds && Array.isArray(data.conversationIds)) {
       // Someone else read our messages
       // This could update read receipts in an active chat
       console.log('Messages read by:', data.readBy, 'in conversations:', data.conversationIds)
@@ -291,11 +313,17 @@ export default function Navigation() {
       const response = await fetch('/api/notifications')
       if (response.ok) {
         const data = await response.json()
-        setNotifications(data)
-        setUnreadCount(data.filter((n: Notification) => !n.read).length)
+        // Ensure data is always an array
+        const notificationsArray = Array.isArray(data) ? data : []
+        setNotifications(notificationsArray)
+        // Only filter if we have an array
+        setUnreadCount(notificationsArray.filter((n: Notification) => !n.read).length)
       }
     } catch (error) {
       console.error('Error fetching notifications:', error)
+      // Set to empty array on error
+      setNotifications([])
+      setUnreadCount(0)
     }
   }
 
@@ -304,13 +332,21 @@ export default function Navigation() {
       const response = await fetch('/api/messages/recent')
       if (response.ok) {
         const data = await response.json()
-        setMessages(data)
-        setUnreadMessages(data.reduce((acc: number, msg: Message) => acc + msg.unread_count, 0))
+        // Ensure data is always an array
+        const messagesArray = Array.isArray(data) ? data : []
+        setMessages(messagesArray)
+        // Safe reduce operation with default of 0
+        setUnreadMessages(messagesArray.reduce((acc: number, msg: Message) => 
+          acc + (msg?.unread_count || 0), 0))
       } else {
         console.error('Error fetching messages:', await response.text())
+        setMessages([])
+        setUnreadMessages(0)
       }
     } catch (error) {
       console.error('Error fetching messages:', error)
+      setMessages([])
+      setUnreadMessages(0)
     }
   }
 
@@ -334,11 +370,13 @@ export default function Navigation() {
         if (response.ok) {
           const data = await response.json()
           setUnreadMessages(0)
-          // Update the messages state to reflect read status
-          setMessages(messages.map(msg => ({
-            ...msg,
-            unread_count: 0
-          })))
+          // Update the messages state to reflect read status - safely
+          if (Array.isArray(messages)) {
+            setMessages(messages.map(msg => ({
+              ...msg,
+              unread_count: 0
+            })))
+          }
           // Remember that we've marked messages as read for this session
           setHasMarkedAsRead(true)
         } else {
@@ -383,13 +421,15 @@ export default function Navigation() {
 
   // Helper function to get notification text based on type
   const getNotificationText = (notification: Notification) => {
+    if (!notification) return 'har en oppdatering for deg.'; 
+    
     switch (notification.type) {
       case 'RENTAL_REQUEST':
-        return `har sendt deg en leieforespørsel for ${notification.listingName}.`;
+        return `har sendt deg en leieforespørsel for ${notification.listingName || 'en annonse'}.`;
       case 'REQUEST_APPROVED':
-        return `godkjente leieforespørselen din for ${notification.listingName}.`;
+        return `godkjente leieforespørselen din for ${notification.listingName || 'en annonse'}.`;
       case 'REQUEST_REJECTED':
-        return `avslo leieforespørselen din for ${notification.listingName}.`;
+        return `avslo leieforespørselen din for ${notification.listingName || 'en annonse'}.`;
       case 'MESSAGE':
         return `sendte deg en melding.`;
       default:
@@ -536,13 +576,6 @@ export default function Navigation() {
 
               {/* Essential navigation links */}
               <Link 
-                href="/listings" 
-                className="text-base font-medium text-gray-700 hover:text-[#4CD964] px-3 py-2"
-              >
-                Utforsk
-              </Link>
-              
-              <Link 
                 href="/search?popular=true" 
                 className="text-base font-medium text-gray-700 hover:text-[#4CD964] px-3 py-2"
               >
@@ -610,9 +643,11 @@ export default function Navigation() {
                           )}
                         </div>
                         
-                        {notifications.length > 0 ? (
+                        {Array.isArray(notifications) && notifications.length > 0 ? (
                           <div className="divide-y">
                             {notifications.map((notification) => {
+                              if (!notification) return null;
+                              
                               // Determine notification icon based on type
                               let NotificationIcon;
                               let bgColor;
@@ -641,8 +676,8 @@ export default function Navigation() {
                               
                               return (
                                 <Link
-                                  key={notification.id}
-                                  href={`/notifications/${notification.id}`}
+                                  key={notification.id || `notification-${Math.random()}`}
+                                  href={`/notifications/${notification.id || ''}`}
                                   className={cn(
                                     "flex items-start gap-3 p-3 hover:bg-gray-50 transition-colors",
                                     !notification.read && "bg-[#F2FFF8]"
@@ -653,9 +688,9 @@ export default function Navigation() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between gap-2">
-                                      <p className="font-medium text-sm text-gray-900">{notification.senderName}</p>
+                                      <p className="font-medium text-sm text-gray-900">{notification.senderName || 'Bruker'}</p>
                                       <span className="text-xs text-gray-500 whitespace-nowrap">
-                                        {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
+                                        {notification.createdAt ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true }) : ''}
                                       </span>
                                     </div>
                                     <p className="text-sm text-gray-600 mt-1">{getNotificationText(notification)}</p>
@@ -719,42 +754,46 @@ export default function Navigation() {
                             <Link href="/chat">Se alle</Link>
                           </Button>
                         </div>
-                        {messages.length > 0 ? (
+                        {Array.isArray(messages) && messages.length > 0 ? (
                           <div className="divide-y">
-                            {messages.map((message) => (
-                              <Link
-                                key={message.message_id}
-                                href={`/chat?conversationId=${message.conversation_id}`}
-                                className="flex items-start gap-3 p-3 hover:bg-accent/5 transition-colors"
-                                onClick={() => {
-                                  console.log('Opening conversation:', message.conversation_id)
-                                }}
-                              >
-                                <Image
-                                  src={message.other_user_avatar || '/placeholder.svg'}
-                                  alt={message.other_user_name}
-                                  width={40}
-                                  height={40}
-                                  className="rounded-full"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <p className="font-medium truncate">{message.other_user_name}</p>
-                                    <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                      {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                                    </span>
-                                  </div>
-                                  <p className="text-sm text-muted-foreground truncate">{message.content}</p>
-                                  {message.unread_count > 0 && (
-                                    <div className="mt-1 inline-flex items-center rounded-full bg-[#4CD964] px-2 py-1 text-xs font-medium text-white">
-                                      {message.unread_count} nye
+                            {messages.map((message) => {
+                              if (!message) return null;
+                              
+                              return (
+                                <Link
+                                  key={message.message_id || `message-${Math.random()}`}
+                                  href={`/chat?conversationId=${message.conversation_id || ''}`}
+                                  className="flex items-start gap-3 p-3 hover:bg-accent/5 transition-colors"
+                                  onClick={() => {
+                                    console.log('Opening conversation:', message.conversation_id)
+                                  }}
+                                >
+                                  <Image
+                                    src={message.other_user_avatar || '/placeholder.svg'}
+                                    alt={message.other_user_name || 'User'}
+                                    width={40}
+                                    height={40}
+                                    className="rounded-full"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <p className="font-medium truncate">{message.other_user_name || 'Bruker'}</p>
+                                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                        {message.created_at ? formatDistanceToNow(new Date(message.created_at), { addSuffix: true }) : ''}
+                                      </span>
                                     </div>
-                                  )}
-                                </div>
-                              </Link>
-                            ))}
-                      </div>
-                    ) : (
+                                    <p className="text-sm text-muted-foreground truncate">{message.content || ''}</p>
+                                    {(message.unread_count || 0) > 0 && (
+                                      <div className="mt-1 inline-flex items-center rounded-full bg-[#4CD964] px-2 py-1 text-xs font-medium text-white">
+                                        {message.unread_count} nye
+                                      </div>
+                                    )}
+                                  </div>
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        ) : (
                           <div className="py-8 text-center">
                             <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <p className="text-sm text-muted-foreground">
@@ -891,9 +930,6 @@ export default function Navigation() {
 
                     {/* Mobile Menu Navigation */}
                     <nav className="flex flex-col space-y-4">
-                      <Link href="/listings" className="text-base font-medium text-gray-700 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                        Utforsk
-                      </Link>
                 {user ? (
                   <>
                           <Link href="/rental-requests" className="text-base font-medium text-gray-700 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>

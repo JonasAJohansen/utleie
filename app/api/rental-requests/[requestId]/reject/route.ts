@@ -74,17 +74,17 @@ export async function POST(request: NextRequest, props: { params: Promise<{ requ
         INSERT INTO notifications (
           user_id, 
           type, 
-          title, 
           content, 
           sender_id, 
-          related_id
+          related_id,
+          is_read
         ) VALUES (
           ${requestData.requester_id}, 
           'REQUEST_REJECTED', 
-          'Rental Request Rejected', 
           ${`Your request to rent "${requestData.listing_name}" has been rejected${reason ? `: ${reason}` : '.'}`}, 
           ${userId}, 
-          ${requestId}
+          ${requestId},
+          false
         )
       `
       

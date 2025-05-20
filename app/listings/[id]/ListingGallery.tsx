@@ -47,8 +47,8 @@ export default function ListingGallery({ photos }: { photos: ListingPhoto[] }) {
       <div className="relative h-96 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
         <div className="text-center text-gray-400">
           <ImageIcon className="mx-auto h-12 w-12 mb-2" />
-          <p className="font-medium">No photos available</p>
-          <p className="text-sm mt-1">The owner hasn't uploaded any photos yet</p>
+          <p className="font-medium">Ingen bilder tilgjengelig</p>
+          <p className="text-sm mt-1">Eieren har ikke lastet opp noen bilder enda</p>
         </div>
       </div>
     )
@@ -111,7 +111,7 @@ export default function ListingGallery({ photos }: { photos: ListingPhoto[] }) {
         <div className="absolute inset-0 cursor-zoom-in bg-gradient-to-t from-black/10 via-transparent to-transparent">
           <Image
             src={mainPhoto.url}
-            alt={mainPhoto.description || "Main photo"}
+            alt={mainPhoto.description || "Bilde av produkt"}
             fill
             className="object-cover transition-transform hover:scale-105 duration-500"
             sizes="(max-width: 768px) 100vw, 50vw"

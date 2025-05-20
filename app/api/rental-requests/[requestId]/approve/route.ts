@@ -121,17 +121,17 @@ export async function POST(
         INSERT INTO notifications (
           user_id, 
           type, 
-          title, 
           content, 
           sender_id, 
-          related_id
+          related_id,
+          is_read
         ) VALUES (
           ${requestData.requester_id}, 
           'REQUEST_APPROVED', 
-          'Rental Request Approved', 
           ${`Your request to rent "${requestData.listing_name}" has been approved!`}, 
           ${userId}, 
-          ${requestId}
+          ${requestId},
+          false
         )
       `
       

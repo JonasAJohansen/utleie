@@ -147,10 +147,6 @@ export function AvailabilityCalendar({
                       <span className="text-sm font-medium">Total price:</span>
                       <span className="text-lg font-bold text-[#4CD964]">${totalPrice.toFixed(2)}</span>
                     </div>
-                    
-                    <Button className="w-full mt-4 bg-[#4CD964] hover:bg-[#3DAF50]">
-                      Request to Rent
-                    </Button>
                   </>
                 )}
               </div>

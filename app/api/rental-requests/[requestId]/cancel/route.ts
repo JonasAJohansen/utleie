@@ -116,17 +116,17 @@ export async function POST(
         INSERT INTO notifications (
           user_id, 
           type, 
-          title, 
           content, 
           sender_id, 
-          related_id
+          related_id,
+          is_read
         ) VALUES (
           ${recipientId}, 
           'REQUEST_CANCELED', 
-          'Rental Request Canceled', 
           ${content}, 
           ${userId}, 
-          ${requestId}
+          ${requestId},
+          false
         )
       `
       

@@ -11,6 +11,7 @@ import { ListingSchema } from '@/components/listings/ListingSchema'
 import { Suspense } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ListingPageClient } from './ListingPageClient'
+import { Metadata, ResolvingMetadata } from 'next'
 
 interface ListingPhoto {
   id: string
@@ -35,6 +36,10 @@ interface ListingData extends QueryResultRow {
   condition: string | null
   category_name?: string
   category_id?: string
+  available_from?: string
+  available_to?: string
+  security_deposit?: number
+  min_rental_days?: number
 }
 
 interface PageProps {
@@ -69,6 +74,10 @@ async function getListingData(id: string): Promise<ListingData | null> {
         l.created_at,
         l.condition,
         l.category_id,
+        l.available_from,
+        l.available_to,
+        l.security_deposit,
+        l.min_rental_days,
         c.name as category_name,
         u.username,
         u.image_url as user_image,
@@ -79,7 +88,7 @@ async function getListingData(id: string): Promise<ListingData | null> {
       LEFT JOIN categories c ON l.category_id = c.id::text
       LEFT JOIN reviews r ON l.id = r.listing_id
       WHERE l.id = ${id}::uuid
-      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, l.condition, l.category_id, c.name, u.username, u.image_url
+      GROUP BY l.id, l.name, l.description, l.price, l.location, l.user_id, l.status, l.created_at, l.condition, l.category_id, l.available_from, l.available_to, l.security_deposit, l.min_rental_days, c.name, u.username, u.image_url
     `
 
     if (result.rows.length === 0) {
@@ -103,6 +112,42 @@ async function checkIsFavorited(listingId: string, userId: string) {
     WHERE listing_id = ${listingId} AND user_id = ${userId}
   `
   return result.rows.length > 0
+}
+
+// Generate metadata
+export async function generateMetadata(
+  { params }: { params: Promise<{ id: string }> },
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { id } = await params;
+  
+  try {
+    const result = await sql`
+      SELECT name, description
+      FROM listings
+      WHERE id = ${id}
+    `;
+    
+    if (!result.rows.length) {
+      return {
+        title: 'Annonse ikke funnet',
+        description: 'Annonsen du leter etter finnes ikke eller har blitt fjernet.'
+      };
+    }
+    
+    const { name, description } = result.rows[0];
+    
+    return {
+      title: name || 'Produkt til leie',
+      description: description?.substring(0, 160) || 'Se detaljer om dette produktet til leie på RentEase.'
+    };
+  } catch (error) {
+    console.error('Error fetching listing metadata:', error);
+    return {
+      title: 'Produkt til leie',
+      description: 'Se detaljer om dette produktet til leie på RentEase.'
+    };
+  }
 }
 
 export default async function ItemListing({ params }: PageProps) {
@@ -150,7 +195,11 @@ export default async function ItemListing({ params }: PageProps) {
     mainImageUrl,
     imageUrls,
     categoryId: item.category_id || '',
-    categoryName: item.category_name
+    categoryName: item.category_name,
+    availableFrom: item.available_from || new Date().toISOString(),
+    availableTo: item.available_to || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    securityDeposit: item.security_deposit ? Number(item.security_deposit) : undefined,
+    minRentalDays: item.min_rental_days ? Number(item.min_rental_days) : undefined
   }
 
   return (

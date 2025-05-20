@@ -13,12 +13,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const { listingId, startDate, endDate, message = '' } = await request.json();
+    const { listingId, startDate, endDate, message = '', totalPrice } = await request.json();
 
     // Validate required fields
-    if (!listingId || !startDate || !endDate) {
+    if (!listingId || !startDate || !endDate || totalPrice === undefined) {
       return NextResponse.json({
-        error: 'Missing required fields: listingId, startDate, endDate'
+        error: 'Missing required fields: listingId, startDate, endDate, totalPrice'
       }, { status: 400 });
     }
 
@@ -121,14 +121,16 @@ export async function POST(request: NextRequest) {
         start_date,
         end_date,
         message,
-        status
+        status,
+        total_price
       ) VALUES (
         ${listingId},
         ${userId},
         ${startDate},
         ${endDate},
         ${message},
-        'pending'
+        'pending',
+        ${totalPrice}
       )
       RETURNING id
     `;
@@ -142,17 +144,17 @@ export async function POST(request: NextRequest) {
         INSERT INTO notifications (
           user_id, 
           type, 
-          title, 
           content, 
           sender_id, 
-          related_id
+          related_id,
+          is_read
         ) VALUES (
           ${listing.user_id}, 
           'RENTAL_REQUEST', 
-          'New Rental Request', 
           ${`${username} wants to rent your "${listing.name}" from ${startDate} to ${endDate}`}, 
           ${userId}, 
-          ${requestId}
+          ${requestId},
+          false
         )
       `;
 

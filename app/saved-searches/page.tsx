@@ -10,7 +10,7 @@ import { Suspense } from 'react'
 
 async function getSavedSearches(userId: string) {
   const searches = await sql`
-    SELECT id, name, search_query, created_at
+    SELECT id, search_query, created_at
     FROM saved_searches
     WHERE user_id = ${userId}
     ORDER BY created_at DESC
@@ -38,12 +38,14 @@ function SavedSearchesList({ searches }: { searches: any[] }) {
       {searches.map((search) => {
         const query = search.search_query as Record<string, any>
         const queryString = new URLSearchParams(query).toString()
+        // Generate a descriptive name based on search parameters
+        const searchName = query.q || 'All Items';
         
         return (
           <Card key={search.id}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-lg font-medium">
-                {search.name}
+                {searchName}
               </CardTitle>
               <div className="flex gap-2">
                 <Button
@@ -90,8 +92,8 @@ function SavedSearchesList({ searches }: { searches: any[] }) {
 
 function LoadingState() {
   return (
-    <div className="flex justify-center items-center py-12">
-      <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+    <div className="flex justify-center py-12">
+      <Loader2 className="h-8 w-8 animate-spin text-primary" />
     </div>
   )
 }

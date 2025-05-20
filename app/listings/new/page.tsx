@@ -240,7 +240,9 @@ export default function AddListing() {
         })
         
         if (!photoResponse.ok) {
-          throw new Error('Failed to upload photos')
+          const errorText = await photoResponse.text().catch(() => 'Unknown error');
+          console.error(`Failed to upload photo: ${errorText}`);
+          return Promise.reject(new Error(`Failed to upload photo: ${photoResponse.status} ${errorText}`));
         }
         
         return photoResponse.json()

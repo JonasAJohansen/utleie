@@ -71,7 +71,7 @@ export function FavoriteButton({
       onClick={toggleFavorite}
     >
       <Heart
-        className={`h-5 w-5 ${isFavorited ? 'fill-current' : ''}`}
+        className={`h-7 w-7 ${isFavorited ? 'fill-current' : ''}`}
       />
       <span className="sr-only">
         {isFavorited ? 'Remove from favorites' : 'Add to favorites'}

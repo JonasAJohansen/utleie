@@ -58,7 +58,7 @@ export default function ListingCard({
         </div>
         <p className="text-gray-600 mb-2">${data.price}/day</p>
         <div className="flex items-center mb-2">
-          <Star className="h-5 w-5 text-yellow-400 fill-current" />
+          <Star className="h-6 w-6 text-yellow-400 fill-current" />
           <span className="ml-1">
             {hasRating ? `${data.rating.toFixed(1)} (${data.review_count})` : 'No reviews yet'}
           </span>

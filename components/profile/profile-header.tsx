@@ -23,13 +23,15 @@ interface ProfileHeaderProps {
   }
   onImageUpload: (file: File) => Promise<void>
   isOwnProfile?: boolean
+  isLoading?: boolean
 }
 
 export function ProfileHeader({ 
   user, 
   stats, 
   onImageUpload,
-  isOwnProfile = false
+  isOwnProfile = false,
+  isLoading = false
 }: ProfileHeaderProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const { toast } = useToast()
@@ -128,7 +130,7 @@ export function ProfileHeader({
       </div>
 
       {/* User Stats */}
-      <UserStats stats={stats} />
+      <UserStats stats={stats} isLoading={isLoading} />
     </div>
   )
 } 

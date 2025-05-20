@@ -51,8 +51,20 @@ export function useWebSocket({
       // Listen for messages
       socketRef.current.onmessage = (event) => {
         try {
+          // Check if event.data exists and is a string
+          if (!event || typeof event.data !== 'string') {
+            console.warn('Invalid WebSocket message received:', event)
+            return
+          }
+          
           const data = JSON.parse(event.data)
           console.log('WebSocket message received:', data)
+          
+          // Check if data and type exist
+          if (!data || typeof data.type !== 'string') {
+            console.warn('Invalid message format, missing type:', data)
+            return
+          }
           
           if (data.type === 'ping') {
             // Respond to ping with pong
@@ -62,16 +74,16 @@ export function useWebSocket({
             return
           }
           
-          // Route messages to appropriate handlers
-          if (data.type === 'notification') {
-            onNewNotification?.(data.data)
-          } else if (data.type === 'message') {
-            onNewMessage?.(data.data)
-          } else if (data.type === 'message_read') {
-            onMessageRead?.(data.data)
+          // Route messages to appropriate handlers with null checks
+          if (data.type === 'notification' && onNewNotification) {
+            onNewNotification(data.data || {}) // Pass empty object if data is null
+          } else if (data.type === 'message' && onNewMessage) {
+            onNewMessage(data.data || {})
+          } else if (data.type === 'message_read' && onMessageRead) {
+            onMessageRead(data.data || {})
           }
           
-          setLastEvent({ type: data.type, data: data.data })
+          setLastEvent({ type: data.type, data: data.data || null })
         } catch (error) {
           console.error('Error parsing WebSocket message:', error)
         }
@@ -130,25 +142,29 @@ export function useWebSocket({
     
     // Listen for auth changes (for example, from Clerk's session)
     window.addEventListener('storage', (event) => {
-      if (event.key?.includes('clerk') || event.key?.includes('session')) {
+      if (event.key && (event.key.includes('clerk') || event.key.includes('session'))) {
         handleAuthChange()
       }
     })
     
     return () => {
       window.removeEventListener('storage', handleAuthChange)
-      cleanup?.()
+      if (typeof cleanup === 'function') {
+        cleanup()
+      }
     }
   }, [connect])
   
   // Send a message over WebSocket
   const sendMessage = useCallback((type: string, data: any) => {
-    if (!isConnected || !socketRef.current) return
+    if (!isConnected || !socketRef.current) return false
     
     try {
       socketRef.current.send(JSON.stringify({ type, data }))
+      return true
     } catch (error) {
       console.error('Error sending WebSocket message:', error)
+      return false
     }
   }, [isConnected])
   

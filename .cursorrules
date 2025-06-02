@@ -171,3 +171,4 @@ Successfully improved price range search UX and fixed rental request creation:
 - Better user experience with manual control over when search happens
 - Rental request creation now works properly with total_price column
 - Fixed TypeScript build error by removing non-existent onSearch prop from SearchBar
+- Fixed Next.js build error by wrapping useSearchParams in Suspense boundary

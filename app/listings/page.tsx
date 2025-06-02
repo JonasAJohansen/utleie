@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { SearchBar } from '@/components/SearchBar'
 import { SearchFilters } from '@/components/SearchFilters'
@@ -23,7 +23,7 @@ interface Listing {
   user_image?: string
 }
 
-export default function ListingsPage() {
+function ListingsContent() {
   const [listings, setListings] = useState<Listing[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [totalCount, setTotalCount] = useState(0)
@@ -140,5 +140,54 @@ export default function ListingsPage() {
         </main>
       </div>
     </div>
+  )
+}
+
+export default function ListingsPage() {
+  return (
+    <Suspense fallback={
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-4">All Listings</h1>
+          <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg">
+            <div className="w-[180px] h-10 bg-gray-100 rounded-md animate-pulse" />
+            <div className="flex-1 h-10 bg-gray-100 rounded-md animate-pulse" />
+            <div className="w-[180px] h-10 bg-gray-100 rounded-md animate-pulse" />
+            <div className="w-10 h-10 bg-gray-100 rounded-full animate-pulse" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <aside className="md:col-span-1">
+            <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
+              <div className="space-y-4">
+                {Array(4).fill(0).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-4 bg-gray-100 rounded animate-pulse" />
+                    <div className="h-10 bg-gray-100 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+          <main className="md:col-span-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Array(9).fill(0).map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <Skeleton className="h-48 w-full" />
+                  <CardContent className="p-4">
+                    <Skeleton className="h-6 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2 mb-2" />
+                    <Skeleton className="h-4 w-2/3 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </main>
+        </div>
+      </div>
+    }>
+      <ListingsContent />
+    </Suspense>
   )
 } 

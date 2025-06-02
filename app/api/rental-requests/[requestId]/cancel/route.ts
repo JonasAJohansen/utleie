@@ -98,8 +98,6 @@ export async function POST(
       UPDATE rental_requests
       SET 
         status = 'canceled',
-        cancellation_reason = ${reason || null},
-        canceled_by = ${userId},
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${requestId}
     `

@@ -67,7 +67,7 @@ export function AnimatedSearchCard({ item, index }: AnimatedSearchCardProps) {
           </div>
           <div className="p-4">
             <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
-            <p className="text-gray-600 mb-2">${item.price}/day</p>
+            <p className="text-gray-600 mb-2">{item.price} kr/day</p>
             <div className="flex items-center mb-2">
               <Star className="h-5 w-5 text-yellow-400 fill-current" />
               <span className="ml-1">{formatRating(item.rating)}</span>

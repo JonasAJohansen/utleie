@@ -93,9 +93,80 @@ export async function GET(
       return new NextResponse('Listing not found', { status: 404 })
     }
 
-    return NextResponse.json(result.rows[0])
+    const listing = result.rows[0]
+
+    // Get photos for the listing
+    const photosResult = await sql`
+      SELECT 
+        id,
+        url,
+        description,
+        is_main as "isMain",
+        display_order as "displayOrder"
+      FROM listing_photos
+      WHERE listing_id = ${listingId}::uuid
+      ORDER BY display_order
+    `
+
+    // Add photos to the listing object
+    const listingWithPhotos = {
+      ...listing,
+      photos: photosResult.rows
+    }
+
+    return NextResponse.json(listingWithPhotos)
   } catch (error) {
     console.error('Error fetching listing:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  context: RouteContext
+) {
+  const { userId } = await auth()
+  const { id: listingId } = await context.params
+
+  if (!userId) {
+    return new NextResponse('Unauthorized', { status: 401 })
+  }
+
+  try {
+    const body = await request.json()
+    const { name, description, price, categoryId, location } = body
+
+    // Validate required fields
+    if (!name || !description || !price || !categoryId) {
+      return new NextResponse('Name, description, price, and category are required', { status: 400 })
+    }
+
+    // Update the listing
+    const result = await sql`
+      UPDATE listings
+      SET 
+        name = ${name},
+        description = ${description},
+        price = ${price},
+        category_id = ${categoryId},
+        location = ${location},
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ${listingId}::uuid 
+        AND user_id = ${userId}
+      RETURNING id
+    `
+
+    if (result.rowCount === 0) {
+      return new NextResponse('Listing not found or unauthorized', { status: 404 })
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Listing updated successfully',
+      id: result.rows[0].id 
+    })
+  } catch (error) {
+    console.error('Error updating listing:', error)
     return new NextResponse('Internal Server Error', { status: 500 })
   }
 } 

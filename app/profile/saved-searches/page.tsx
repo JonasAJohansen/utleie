@@ -104,9 +104,9 @@ export default function SavedSearchesPage() {
                   {(search.search_query.minPrice || search.search_query.maxPrice) && (
                     <p className="text-sm text-gray-500">
                       Price: 
-                      {search.search_query.minPrice && ` $${search.search_query.minPrice}`}
-                      {search.search_query.minPrice && search.search_query.maxPrice && ' -'}
-                      {search.search_query.maxPrice && ` $${search.search_query.maxPrice}`}
+                      {search.search_query.minPrice && ` ${search.search_query.minPrice} kr`}
+                      {search.search_query.minPrice && search.search_query.maxPrice && ' - '}
+                      {search.search_query.maxPrice && ` ${search.search_query.maxPrice} kr`}
                     </p>
                   )}
                 </div>

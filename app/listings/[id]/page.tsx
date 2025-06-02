@@ -139,13 +139,13 @@ export async function generateMetadata(
     
     return {
       title: name || 'Produkt til leie',
-      description: description?.substring(0, 160) || 'Se detaljer om dette produktet til leie på RentEase.'
+      description: description?.substring(0, 160) || 'Se detaljer om dette produktet til leie på Price Tag.'
     };
   } catch (error) {
     console.error('Error fetching listing metadata:', error);
     return {
       title: 'Produkt til leie',
-      description: 'Se detaljer om dette produktet til leie på RentEase.'
+      description: 'Se detaljer om dette produktet til leie på Price Tag.'
     };
   }
 }
@@ -214,7 +214,7 @@ export default async function ItemListing({ params }: PageProps) {
           categoryName: item.category_name,
           reviewCount: item.review_count,
         }}
-        url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://rentease.no'}/listings/${item.id}`}
+        url={`${process.env.NEXT_PUBLIC_APP_URL || 'https://pricetag.no'}/listings/${item.id}`}
       />
 
       {/* Use a client component to handle the UI with animations */}

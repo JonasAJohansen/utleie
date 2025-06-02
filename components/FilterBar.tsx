@@ -13,6 +13,14 @@ import {
   SelectValue,
 } from "./ui/select"
 
+// Norwegian cities for location suggestions
+const norwegianCities = [
+  'Oslo', 'Bergen', 'Trondheim', 'Stavanger', 'Kristiansand', 'Drammen',
+  'Fredrikstad', 'Sandnes', 'Tromsø', 'Sarpsborg', 'Ålesund', 'Skien',
+  'Bodø', 'Sandefjord', 'Tønsberg', 'Moss', 'Haugesund', 'Arendal',
+  'Lillehammer', 'Molde', 'Gjøvik', 'Harstad', 'Kongsberg', 'Steinkjer'
+]
+
 interface FilterBarProps {
   onFilterChange?: (filters: FilterState) => void
 }
@@ -35,6 +43,12 @@ const initialState: FilterState = {
 
 export function FilterBar({ onFilterChange }: FilterBarProps) {
   const [filters, setFilters] = useState<FilterState>(initialState)
+  const [priceInputs, setPriceInputs] = useState({
+    minPrice: '0',
+    maxPrice: '1000'
+  })
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
+  const [filteredCities, setFilteredCities] = useState<string[]>([])
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -47,6 +61,12 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
     if (searchParams.has('sortBy')) newFilters.sortBy = searchParams.get('sortBy')!
     if (searchParams.has('rating')) newFilters.rating = Number(searchParams.get('rating'))
     setFilters(newFilters)
+    
+    // Update price input display values
+    setPriceInputs({
+      minPrice: newFilters.minPrice.toString(),
+      maxPrice: newFilters.maxPrice.toString()
+    })
   }, [searchParams])
 
   const updateFilters = (newFilters: Partial<FilterState>) => {
@@ -76,37 +96,136 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
     }
   }
 
+  const handlePriceChange = (field: 'minPrice' | 'maxPrice', value: string) => {
+    // Only update the display value, don't trigger search
+    setPriceInputs(prev => ({ ...prev, [field]: value }))
+  }
+
+  const formatPriceInput = (field: 'minPrice' | 'maxPrice') => {
+    const value = priceInputs[field]
+    if (value === '') return
+    
+    const numValue = parseFloat(value)
+    if (!isNaN(numValue)) {
+      const formattedValue = numValue.toString()
+      setPriceInputs(prev => ({ ...prev, [field]: formattedValue }))
+    }
+  }
+
+  const handleLocationChange = (value: string) => {
+    updateFilters({ location: value })
+    
+    // Filter cities based on input
+    if (value.length > 0) {
+      const filtered = norwegianCities.filter(city =>
+        city.toLowerCase().includes(value.toLowerCase())
+      )
+      setFilteredCities(filtered)
+      setShowLocationSuggestions(filtered.length > 0)
+    } else {
+      setShowLocationSuggestions(false)
+    }
+  }
+
+  const selectCity = (city: string) => {
+    updateFilters({ location: city })
+    setShowLocationSuggestions(false)
+  }
+
+  const handleSearch = () => {
+    // Parse current price input values
+    const minPrice = parseFloat(priceInputs.minPrice) || 0
+    const maxPrice = parseFloat(priceInputs.maxPrice) || 1000
+    
+    // Update filters with current values including prices
+    const currentFilters = {
+      ...filters,
+      minPrice,
+      maxPrice
+    }
+    
+    // Navigate to listings page with current filters
+    const params = new URLSearchParams()
+    Object.entries(currentFilters).forEach(([key, value]) => {
+      if (value !== initialState[key as keyof FilterState]) {
+        params.set(key, String(value))
+      }
+    })
+
+    // Keep existing search query if it exists
+    const query = searchParams.get('q')
+    if (query) params.set('q', query)
+
+    // Navigate to search results
+    router.push(`/listings?${params.toString()}`)
+  }
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md space-y-6">
       <div>
         <h3 className="text-sm font-medium mb-2">Price Range (per day)</h3>
         <div className="flex items-center space-x-4">
           <Input
-            type="number"
-            value={filters.minPrice}
-            onChange={(e) => updateFilters({ minPrice: Number(e.target.value) })}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={priceInputs.minPrice}
+            onChange={(e) => handlePriceChange('minPrice', e.target.value)}
+            onBlur={() => formatPriceInput('minPrice')}
             className="w-24"
             placeholder="Min"
           />
           <span>to</span>
           <Input
-            type="number"
-            value={filters.maxPrice}
-            onChange={(e) => updateFilters({ maxPrice: Number(e.target.value) })}
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={priceInputs.maxPrice}
+            onChange={(e) => handlePriceChange('maxPrice', e.target.value)}
+            onBlur={() => formatPriceInput('maxPrice')}
             className="w-24"
             placeholder="Max"
           />
         </div>
       </div>
 
-      <div>
+      <div className="relative">
         <h3 className="text-sm font-medium mb-2">Location</h3>
         <Input
           type="text"
           value={filters.location}
-          onChange={(e) => updateFilters({ location: e.target.value })}
-          placeholder="Enter location"
+          onChange={(e) => handleLocationChange(e.target.value)}
+          onFocus={() => {
+            if (filters.location.length > 0) {
+              const filtered = norwegianCities.filter(city =>
+                city.toLowerCase().includes(filters.location.toLowerCase())
+              )
+              setFilteredCities(filtered)
+              setShowLocationSuggestions(filtered.length > 0)
+            }
+          }}
+          onBlur={() => {
+            // Delay hiding suggestions to allow for clicks
+            setTimeout(() => setShowLocationSuggestions(false), 150)
+          }}
+          placeholder="Enter Norwegian city..."
         />
+        {showLocationSuggestions && (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+            {filteredCities.map((city) => (
+              <div
+                key={city}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                onMouseDown={(e) => {
+                  e.preventDefault() // Prevent onBlur from firing
+                  selectCity(city)
+                }}
+              >
+                {city}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div>
@@ -147,13 +266,10 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
 
       <Button
         variant="outline"
-        onClick={() => {
-          setFilters(initialState)
-          router.push(searchParams.get('q') ? `?q=${searchParams.get('q')}` : '', { scroll: false })
-        }}
+        onClick={handleSearch}
         className="w-full"
       >
-        Reset Filters
+        Search
       </Button>
     </div>
   )

@@ -85,9 +85,9 @@ export function ListingSchema({ item, url }: ListingSchemaProps) {
   // Organization schema for the rental platform
   const organizationSchema: Organization = {
     '@type': 'Organization',
-    name: 'RentEase',
-    url: 'https://rentease.no',
-    logo: 'https://rentease.no/logo.png',
+    name: 'Price Tag',
+    url: 'https://pricetag.no',
+    logo: 'https://pricetag.no/logo.png',
   }
   
   // Complete schema with @context

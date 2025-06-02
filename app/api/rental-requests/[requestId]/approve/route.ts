@@ -96,7 +96,6 @@ export async function POST(
       UPDATE rental_requests
       SET 
         status = 'rejected',
-        rejection_reason = 'Another request for these dates was approved',
         updated_at = CURRENT_TIMESTAMP
       WHERE 
         id != ${requestId}

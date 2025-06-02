@@ -39,7 +39,7 @@ export function RentalHistory({ rentals }: RentalHistoryProps) {
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold">${rental.totalPrice.toFixed(2)}</p>
+                  <p className="font-semibold">{rental.totalPrice.toFixed(2)} kr</p>
                   <Badge 
                     variant={
                       rental.status === 'active' ? 'default' : 

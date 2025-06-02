@@ -168,7 +168,7 @@ export default function MyListingsPage() {
                     <h3 className="font-semibold text-lg">{listing.name}</h3>
                     <HeartButton itemId={listing.id} />
                   </div>
-                  <p className="text-gray-600 mb-2">${listing.price}/day</p>
+                  <p className="text-gray-600 mb-2">{listing.price} kr/day</p>
                   <div className="flex items-center mb-2">
                     <Star className="h-5 w-5 text-yellow-400 fill-current" />
                     <span className="ml-1">

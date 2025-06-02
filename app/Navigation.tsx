@@ -474,7 +474,7 @@ export default function Navigation() {
               <Link href="/" className="flex items-center space-x-2">
                 <div className="flex items-center">
                   <Leaf className="h-7 w-7 text-[#4CD964]" />
-                  <span className="text-2xl font-bold ml-1 text-gray-900">Rent<span className="text-[#4CD964]">Ease</span></span>
+                  <span className="text-2xl font-bold ml-1 text-gray-900">Price<span className="text-[#4CD964]">Tag</span></span>
                 </div>
               </Link>
             </div>

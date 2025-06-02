@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
   return {
-    title: `${category.name} Subcategories | RentEase`,
+    title: `${category.name} Subcategories | Price Tag`,
   }
 }
 

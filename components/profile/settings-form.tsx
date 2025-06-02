@@ -37,11 +37,8 @@ const languages = [
 ]
 
 const currencies = [
-  { value: 'NOK', label: 'Norwegian Krone (NOK)' },
+  { value: 'NOK', label: 'Norwegian Kroner (NOK)' },
   { value: 'EUR', label: 'Euro (EUR)' },
-  { value: 'USD', label: 'US Dollar (USD)' },
-  { value: 'SEK', label: 'Swedish Krona (SEK)' },
-  { value: 'DKK', label: 'Danish Krone (DKK)' },
 ]
 
 export function SettingsForm({ user }: SettingsFormProps) {

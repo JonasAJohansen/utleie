@@ -106,7 +106,7 @@ export function RentalRequestForm({ listingId, listingName, pricePerDay, userIsO
         description: "Utleier vil bli varslet om din forespørsel.",
       });
       
-      router.push('/profil/leieforesporsler');
+      router.push('/rental-requests');
       router.refresh();
       
     } catch (error) {

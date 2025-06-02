@@ -75,7 +75,7 @@ export default function Dashboard() {
                       <Image src={listing.image} alt={listing.name} width={300} height={200} className="w-full h-48 object-cover rounded-t-lg" />
                       <div className="p-4">
                         <h3 className="font-semibold text-lg mb-2">{listing.name}</h3>
-                        <p className="text-gray-600 mb-2">${listing.price}/day</p>
+                        <p className="text-gray-600 mb-2">{listing.price} kr/day</p>
                         <div className="flex items-center mb-2">
                           <Star className="h-5 w-5 text-yellow-400 fill-current" />
                           <span className="ml-1">{listing.rating.toFixed(1)}</span>

@@ -100,7 +100,7 @@ export function ListingsTab() {
                 <TableCell>{listing.name}</TableCell>
                 <TableCell>{listing.username}</TableCell>
                 <TableCell>{listing.category_name}</TableCell>
-                <TableCell>${listing.price}/day</TableCell>
+                <TableCell>{listing.price} kr/day</TableCell>
                 <TableCell>
                   <Badge variant={listing.status === 'active' ? 'default' : 'secondary'}>
                     {listing.status}

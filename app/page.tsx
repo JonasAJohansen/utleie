@@ -107,11 +107,11 @@ export default async function Home() {
                 </p>
                 
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" className="bg-[#4CD964] hover:bg-[#3DAF50] text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-[#4CD964]/20 hover:shadow-xl hover:shadow-[#4CD964]/30 transform transition-all duration-300 hover:-translate-y-1">
-                    Begynn å leie
+                  <Button size="lg" className="bg-[#4CD964] hover:bg-[#3DAF50] text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-[#4CD964]/20 hover:shadow-xl hover:shadow-[#4CD964]/30 transform transition-all duration-300 hover:-translate-y-1" asChild>
+                    <Link href="/listings">Begynn å leie</Link>
                   </Button>
-                  <Button size="lg" variant="outline" className="border-2 border-[#4CD964] text-[#4CD964] px-8 py-6 text-lg rounded-xl hover:bg-[#4CD964]/10 transition-all duration-300">
-                    List gjenstandene dine
+                  <Button size="lg" variant="outline" className="border-2 border-[#4CD964] text-[#4CD964] px-8 py-6 text-lg rounded-xl hover:bg-[#4CD964]/10 transition-all duration-300" asChild>
+                    <Link href="/listings/new">List gjenstandene dine</Link>
                   </Button>
                 </div>
                 
@@ -215,7 +215,7 @@ export default async function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Hvordan RentEase fungerer</h2>
+              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Hvordan Price Tag fungerer</h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                 Å leie gjenstander har aldri vært enklere. Følg disse enkle trinnene for å komme i gang.
               </p>
@@ -237,15 +237,15 @@ export default async function Home() {
                   step: 2,
                   title: "Be om utleie",
                   description: "Velg datoene dine og send en forespørsel til eieren. Vårt sikre meldingssystem gjør kommunikasjonen enkel.",
-                  link: "/how-it-works",
+                  link: "/help",
                   linkText: "Lær mer"
                 },
                 {
                   step: 3,
                   title: "Betal trygt og nyt",
                   description: "Bruk vårt sikre betalingssystem. Hent gjenstanden, bruk den, og returner den når du er ferdig.",
-                  link: "/payments",
-                  linkText: "Betalingsalternativer"
+                  link: "/about",
+                  linkText: "Sikkerhet og betalinger"
                 }
               ].map((step, index) => (
                 <AnimatedSection 
@@ -388,7 +388,7 @@ export default async function Home() {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Hvorfor velge RentEase?</h2>
+              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Hvorfor velge Price Tag?</h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
                 Vi gjør utleie enkelt, trygt og rimelig for alle i Norge.
               </p>
@@ -468,8 +468,8 @@ export default async function Home() {
                   Den gjennomsnittlige norske husstanden har 300 000 kr verdt av sjelden brukte gjenstander.
                   Gjør dine ubrukte eiendeler til passiv inntekt.
                 </p>
-                <Button size="lg" className="bg-white text-[#4CD964] hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg">
-                  Bli utleier
+                <Button size="lg" className="bg-white text-[#4CD964] hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg" asChild>
+                  <Link href="/listings/new">Bli utleier</Link>
                 </Button>
               </AnimatedSection>
               
@@ -533,7 +533,7 @@ export default async function Home() {
             >
               <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Hva våre brukere sier</h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Bli med tusenvis av fornøyde brukere over hele Norge som allerede bruker RentEase.
+                Bli med tusenvis av fornøyde brukere over hele Norge som allerede bruker Price Tag.
               </p>
             </AnimatedSection>
             
@@ -603,11 +603,11 @@ export default async function Home() {
                 Registrer deg på minutter og begynn å leie eller liste gjenstandene dine.
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Button size="lg" className="bg-[#4CD964] hover:bg-[#3DAF50] text-white px-8 py-6 text-lg rounded-xl shadow-lg transform transition-all duration-300 hover:-translate-y-1">
-                  Opprett en konto
+                <Button size="lg" className="bg-[#4CD964] hover:bg-[#3DAF50] text-white px-8 py-6 text-lg rounded-xl shadow-lg transform transition-all duration-300 hover:-translate-y-1" asChild>
+                  <Link href="/listings">Opprett en konto</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="border-2 border-[#4CD964] text-[#4CD964] px-8 py-6 text-lg rounded-xl hover:bg-[#4CD964]/10 transition-all duration-300">
-                  Lær mer
+                <Button size="lg" variant="outline" className="border-2 border-[#4CD964] text-[#4CD964] px-8 py-6 text-lg rounded-xl hover:bg-[#4CD964]/10 transition-all duration-300" asChild>
+                  <Link href="/about">Lær mer</Link>
         </Button>
               </div>
             </AnimatedSection>

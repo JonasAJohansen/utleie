@@ -56,7 +56,7 @@ export default function ListingCard({
             />
           )}
         </div>
-        <p className="text-gray-600 mb-2">${data.price}/day</p>
+        <p className="text-gray-600 mb-2">{data.price} kr/day</p>
         <div className="flex items-center mb-2">
           <Star className="h-6 w-6 text-yellow-400 fill-current" />
           <span className="ml-1">

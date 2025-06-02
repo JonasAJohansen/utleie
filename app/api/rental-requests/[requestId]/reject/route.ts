@@ -62,7 +62,6 @@ export async function POST(request: NextRequest, props: { params: Promise<{ requ
       UPDATE rental_requests
       SET 
         status = 'rejected',
-        rejection_reason = ${reason || null},
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${requestId}
     `

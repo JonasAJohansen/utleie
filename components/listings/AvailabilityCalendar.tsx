@@ -138,14 +138,14 @@ export function AvailabilityCalendar({
                 
                 {totalPrice > 0 && (
                   <>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm">Price per day:</span>
-                      <span className="text-sm">${pricePerDay.toFixed(2)}</span>
+                    <div className="flex justify-between items-center text-sm mb-2">
+                      <span className="text-gray-600">Price per day:</span>
+                      <span className="text-sm">{pricePerDay.toFixed(2)} kr</span>
                     </div>
                     
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-medium">Total price:</span>
-                      <span className="text-lg font-bold text-[#4CD964]">${totalPrice.toFixed(2)}</span>
+                      <span className="text-lg font-semibold">Total:</span>
+                      <span className="text-lg font-bold text-[#4CD964]">{totalPrice.toFixed(2)} kr</span>
                     </div>
                   </>
                 )}

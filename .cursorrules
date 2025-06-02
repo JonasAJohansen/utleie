@@ -109,6 +109,7 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - In framer-motion v11+, neither `MotionProps` nor `HTMLMotionProps` are exported. Instead, define a custom interface with common motion properties and use an index signature for additional props: `[key: string]: any`.
 - When working with SQL results in TypeScript, always check for null before accessing rowCount (e.g., `if (result.rowCount && result.rowCount > 0)`) to avoid null reference errors.
 - For framer-motion event handlers like onDragEnd, create custom interfaces for the event parameters (e.g., `DragInfo` with offset and velocity properties) since types like PanInfo aren't directly exported.
+- To fix leading zero issues in number inputs: use type="text" with inputMode="numeric" instead of type="number", maintain separate string state for display values, and implement proper validation and formatting functions to prevent leading zeros while preserving number functionality.
 
 ## Cursor learned
 
@@ -127,90 +128,45 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 
 # Scratchpad
 
-## Previous Task: Implement Rental Request Functionality
-[This task is now complete]
+## Previous Task: Fix Listing Edit Functionality ✅ COMPLETED
 
-## Current Task: Fix Build and Database Issues
+Successfully fixed listing edit functionality:
+- PUT endpoint now exists and properly handles listing updates
+- GET endpoint includes photos data that the edit page needs
+- Proper authorization ensures users can only edit their own listings
+- All required field validation is in place
+
+## Current Task: Improve Price Range Search UX
 
 ### Problem Description
-There are several issues with the application's build and database access:
+User reports that price range filtering searches automatically when typing, but wants to be able to click search manually instead of automatic searching.
 
-1. Build error: "Cannot find module './vendor-chunks/@clerk.js'"
-2. Database connection error: "NeonDbError: Error connecting to database: fetch failed"
-3. Next.js dynamic params issue: "params.id should be awaited before accessing its properties"
-4. SQL error in rental-requests route: "column rr.message does not exist"
-5. Type error in API routes: "Type does not satisfy the constraint 'ParamCheck<RouteContext>'"
-6. WebSocket route error: Functions exported from route handler aren't allowed
-7. TypeScript errors:
-   - Missing `id` property in `ListingPageClient.tsx`
-   - `unknown` type error in `map-search/route.ts`
-   - Missing array handling in mark-read/route.ts
-   - Implicit `any` type in event handlers
+Additionally, there was an issue with rental request creation failing due to missing total_price column.
+
+### Analysis
+The `handlePriceChange` function in `FilterBar.tsx` was calling `updateFilters` immediately when users typed in price inputs, which triggered automatic URL updates and searching. This creates poor UX as search results change while users are still typing.
+
+The rental request creation was failing because the database actually has a NOT NULL `total_price` column that we had removed from the INSERT statement.
 
 ### Implementation Plan
-[X] Fix Clerk.js module error
-  [X] Update Clerk.js package (already done - now 6.12.2)
-  [X] Clear .next build cache (already done)
-  [X] Update any incompatible Clerk code if necessary
-
-[X] Fix Next.js params issue in listings/[id]/page.tsx
-  [X] Update code to properly await params before accessing properties
-
-[X] Fix API route parameter typings (Updated plan with new approach)
-  [X] Update app/api/rental-requests/[requestId]/approve/route.ts
-  [X] Update app/api/rental-requests/[requestId]/cancel/route.ts
-  [X] Update app/api/rental-requests/[requestId]/route.ts
-
-[X] Fix WebSocket route error
-  [X] Move helper functions from route file to lib/websocket.ts
-  [X] Update the route file to use the imported functions
-  [X] Update getAuth() call to pass request parameter
-
-[ ] Fix database connection issue
-  [ ] Check database connection settings
-  [ ] Ensure environment variables are properly set
-  [ ] Verify Neon DB connection is accessible
-
-[X] Fix rental-requests API route SQL error
-  [X] Check rental_requests table schema
-  [X] Add missing "message" column to database
-  [X] Update SQL query to handle missing column (no changes needed as column now exists)
-
-[X] Fix TypeScript errors
-  [X] Add missing `id` property in ListingPageClient.tsx
-  [X] Fix unknown type error handling in map-search/route.ts
-  [X] Fix null checks for rowCount in SQL results
-  [X] Update framer-motion types in AnimatedSection.tsx
-  [X] Add explicit types to event handlers in ListingGallery.tsx
-  [X] Fix circular dependency between ws route and websocket.ts
-  [X] Fix schema-dts types in ListingSchema.tsx
-  [X] Fix DateRangePicker onChange handler typing
-  [X] Fix Leaflet _getIconUrl issue in MapView.tsx
-  [X] Add Suspense boundary to kart/page.tsx
-  [X] Update MapSearchBar component props
+[X] Modify handlePriceChange to only update display values without triggering search
+[X] Update handleSearch to parse price inputs and apply them when search button is clicked
+[X] Keep other filters (location, rating, sort) working as before
+[X] Fix rental request creation by adding total_price back to INSERT statement
 
 ### Current Progress
-- Clerk.js package updated to latest version 6.12.2
-- Build cache has been cleared
-- Added missing "message" column to rental_requests table
-- Fixed Next.js 15 dynamic parameters in all API routes:
-  - Changed route handler params to use Promise type: `{ params }: { params: Promise<{ requestId: string }> }`
-  - Using `await params` to access parameter values: `const { requestId } = await params`
-- Fixed WebSocket route handler by:
-  - Moving `sendToUser` and `broadcast` functions to a separate utility file
-  - Refactoring the WebSocket connection handling
-  - Updated getAuth() call to pass request parameter
-- Fixed TypeScript errors:
-  - Added missing `id` property in ListingPageClient.tsx
-  - Added proper type checking for error handling in map-search/route.ts
-  - Fixed null checks for rowCount in SQL results
-  - Updated framer-motion types in AnimatedSection.tsx
-  - Added explicit types to event handlers in ListingGallery.tsx
-  - Fixed schema-dts types in ListingSchema component
-  - Updated react-datepicker with correct type for selectsRange onChange handler
-  - Fixed Leaflet marker icon issue in MapView.tsx
-  - Added Suspense boundary to kart/page.tsx for useSearchParams
-  - Updated imported icons from lucide-react (Bicycle -> Bike)
-  - Fixed props in MapSearchBar component
-- Successfully completed the build process
-- Still need to fix database connection issue
+- ✅ Modified handlePriceChange to only update display values (priceInputs state)
+- ✅ Updated handleSearch to parse current price input values and include them in search
+- ✅ Preserved formatting functionality for price inputs
+- ✅ Other filters continue to work as expected
+- ✅ Fixed rental request creation by adding total_price column back to INSERT
+
+## Task Status: COMPLETED ✅
+
+Successfully improved price range search UX and fixed rental request creation:
+- Price range inputs no longer trigger automatic searching
+- Users can type prices and then click "Search" button to apply filters
+- Price values are properly parsed and validated when search is executed
+- Other filters (location, rating, sort) continue to work as before
+- Better user experience with manual control over when search happens
+- Rental request creation now works properly with total_price column

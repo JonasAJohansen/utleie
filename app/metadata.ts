@@ -1,6 +1,6 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'RentEase - Rent Anything, Anytime',
+  title: 'Price Tag - Rent Anything, Anytime',
   description: 'Platform for renting out items',
 }

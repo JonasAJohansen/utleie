@@ -63,8 +63,8 @@ export function FilterOptions({ categories, onFilterChange }: FilterOptionsProps
           className="mb-2"
         />
         <div className="flex justify-between text-sm text-gray-600">
-          <span>${priceRange[0]}</span>
-          <span>${priceRange[1]}</span>
+          <span>{priceRange[0]} kr</span>
+          <span>{priceRange[1]} kr</span>
         </div>
       </div>
       <Button onClick={applyFilters} className="w-full">Apply Filters</Button>

@@ -75,7 +75,7 @@ export default function RootLayout({
                   </div>
                 </div>
                 <div className="mt-8 border-t border-gray-200 pt-8 text-center">
-                  <p className="text-gray-400">&copy; 2023 RentEase. All rights reserved.</p>
+                  <p className="text-gray-400">&copy; 2023 Price Tag. All rights reserved.</p>
                 </div>
               </div>
             </footer>

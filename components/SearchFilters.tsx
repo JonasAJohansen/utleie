@@ -191,8 +191,8 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
             className="mt-2"
           />
           <div className="flex justify-between text-sm text-gray-600 mt-1">
-            <span>${filters.priceRange[0]}</span>
-            <span>${filters.priceRange[1]}</span>
+            <span>{filters.priceRange[0]} kr</span>
+            <span>{filters.priceRange[1]} kr</span>
           </div>
         </div>
 

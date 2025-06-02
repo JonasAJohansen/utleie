@@ -170,3 +170,4 @@ Successfully improved price range search UX and fixed rental request creation:
 - Other filters (location, rating, sort) continue to work as before
 - Better user experience with manual control over when search happens
 - Rental request creation now works properly with total_price column
+- Fixed TypeScript build error by removing non-existent onSearch prop from SearchBar

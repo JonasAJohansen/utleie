@@ -8,17 +8,37 @@ import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { motion, AnimatePresence } from 'framer-motion'
 import { debounce } from 'lodash'
+import { SearchableDropdown } from '@/components/ui/searchable-dropdown'
 
-// Simulated locations for demo purposes
-const DEMO_LOCATIONS = [
-  { name: 'Oslo', lat: 59.9139, lng: 10.7522 },
-  { name: 'Bergen', lat: 60.3913, lng: 5.3221 },
-  { name: 'Trondheim', lat: 63.4305, lng: 10.3951 },
-  { name: 'Stavanger', lat: 58.9700, lng: 5.7331 },
-  { name: 'Tromsø', lat: 69.6492, lng: 18.9553 },
-  { name: 'Kristiansand', lat: 58.1599, lng: 8.0182 },
-  { name: 'Drammen', lat: 59.7440, lng: 10.2045 }
-]
+// City interface for API response
+interface City {
+  name: string
+  municipality: string
+  county: string
+  countyCode: string
+  displayName: string
+}
+
+// Location interface for map
+interface Location {
+  name: string
+  lat: number
+  lng: number
+}
+
+// Default coordinates for major Norwegian cities (fallback)
+const DEFAULT_COORDINATES: Record<string, { lat: number; lng: number }> = {
+  'oslo': { lat: 59.9139, lng: 10.7522 },
+  'bergen': { lat: 60.3913, lng: 5.3221 },
+  'trondheim': { lat: 63.4305, lng: 10.3951 },
+  'stavanger': { lat: 58.9700, lng: 5.7331 },
+  'tromsø': { lat: 69.6492, lng: 18.9553 },
+  'kristiansand': { lat: 58.1599, lng: 8.0182 },
+  'drammen': { lat: 59.7440, lng: 10.2045 },
+  'fredrikstad': { lat: 59.2181, lng: 10.9298 },
+  'sandnes': { lat: 58.8516, lng: 5.7372 },
+  'sarpsborg': { lat: 59.2839, lng: 11.1094 }
+}
 
 interface MapSearchBarProps {
   onLocationSelect: (location: { lat: number; lng: number; radius: number; name: string } | null) => void
@@ -30,10 +50,8 @@ interface MapSearchBarProps {
 export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, searchQuery = '' }: MapSearchBarProps) {
   const [searchInput, setSearchInput] = useState(searchQuery)
   const [isSearching, setIsSearching] = useState(false)
-  const [showSuggestions, setShowSuggestions] = useState(false)
-  const [suggestions, setSuggestions] = useState<typeof DEMO_LOCATIONS>([])
   const [radius, setRadius] = useState(5) // Default radius in km
-  const searchRef = useRef<HTMLDivElement>(null)
+  const [selectedLocationValue, setSelectedLocationValue] = useState('')
   
   // Create debounced search function with a longer delay
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,44 +64,25 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
     [onSearch]
   );
   
-  // Close suggestions when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false)
-      }
-    }
+  // Convert city to location with coordinates
+  const cityToLocation = (cityName: string): Location => {
+    const cityKey = cityName.toLowerCase()
+    const coords = DEFAULT_COORDINATES[cityKey] || { lat: 59.9139, lng: 10.7522 } // Default to Oslo
     
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
-  
-  // Filter suggestions based on search query
-  useEffect(() => {
-    if (searchInput.length > 0) {
-      const filteredLocations = DEMO_LOCATIONS.filter(location => 
-        location.name.toLowerCase().includes(searchInput.toLowerCase())
-      )
-      setSuggestions(filteredLocations)
-      setShowSuggestions(true)
-      
-      // Only trigger search when query has at least 3 characters
-      if (searchInput.length >= 3) {
-        debouncedSearch(searchInput);
-      }
-    } else {
-      setSuggestions([])
-      setShowSuggestions(false)
-      
-      // Also trigger search with empty query to reset
-      if (onSearch) debouncedSearch('');
+    return {
+      name: cityName,
+      lat: coords.lat,
+      lng: coords.lng
     }
-  }, [searchInput, debouncedSearch, onSearch])
+  }
   
-  // Handle location selection
-  const handleLocationSelect = (location: typeof DEMO_LOCATIONS[0]) => {
-    setSearchInput(location.name)
-    setShowSuggestions(false)
+  // Handle location selection from dropdown
+  const handleLocationChange = (value: string) => {
+    setSelectedLocationValue(value)
+    
+    // Convert the value back to proper city name (capitalize first letter)
+    const cityName = value.charAt(0).toUpperCase() + value.slice(1)
+    const location = cityToLocation(cityName)
     onLocationSelect({
       lat: location.lat,
       lng: location.lng,
@@ -97,22 +96,9 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
     e.preventDefault()
     setIsSearching(true)
     
-    // Find matching location
-    const matchingLocation = DEMO_LOCATIONS.find(
-      location => location.name.toLowerCase() === searchInput.toLowerCase()
-    )
-    
-    if (matchingLocation) {
-      handleLocationSelect(matchingLocation)
-    } else if (searchInput.trim()) {
-      // In a real app, you'd make an API call to geocode the address
-      // For demo, we'll just use the first suggestion if available
-      if (suggestions.length > 0) {
-        handleLocationSelect(suggestions[0])
-      }
-      
-      // Trigger search with final query
-      if (onSearch) onSearch(searchInput);
+    // Trigger search with current query
+    if (onSearch && searchInput.trim()) {
+      onSearch(searchInput);
     }
     
     setIsSearching(false)
@@ -122,6 +108,14 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchInput(value);
+    
+    // Only trigger search when query has at least 3 characters
+    if (value.length >= 3) {
+      debouncedSearch(value);
+    } else if (value.length === 0) {
+      // Also trigger search with empty query to reset
+      if (onSearch) debouncedSearch('');
+    }
   };
   
   // Handle radius change
@@ -141,14 +135,24 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
   // Clear search
   const clearSearch = () => {
     setSearchInput('')
+    setSelectedLocationValue('')
     onLocationSelect(null)
     
     // Reset search results
     if (onSearch) onSearch('');
   }
   
+  // Update selectedLocationValue when selectedLocation changes
+  useEffect(() => {
+    if (selectedLocation) {
+      setSelectedLocationValue(selectedLocation.name.toLowerCase())
+    } else {
+      setSelectedLocationValue('')
+    }
+  }, [selectedLocation])
+  
   return (
-    <div ref={searchRef} className="relative w-full">
+    <div className="relative w-full">
       <form onSubmit={handleSubmit} className="flex items-center w-full">
         <div className="relative flex-1">
           <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
@@ -166,7 +170,10 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
           {searchInput && (
             <button
               type="button"
-              onClick={clearSearch}
+              onClick={() => {
+                setSearchInput('')
+                if (onSearch) onSearch('')
+              }}
               className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
             >
               <X className="h-4 w-4" />
@@ -176,15 +183,18 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
         
         <div className="relative">
           <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-300"></div>
-          <Input
-            type="text"
-            placeholder="Sted..."
-            className="h-12 border-x-0 w-[120px] sm:w-[150px]"
-            disabled={isSearching}
-            readOnly
-            onClick={() => setShowSuggestions(!showSuggestions)}
-            value={selectedLocation?.name || ''}
-          />
+          <div className="h-12 border-x-0 w-[120px] sm:w-[150px] flex items-center">
+            <SearchableDropdown
+              value={selectedLocationValue}
+              onValueChange={handleLocationChange}
+              placeholder={isSearching ? "Laster..." : "Sted..."}
+              searchPlaceholder="Søk etter sted..."
+              className="w-full border-none"
+              disabled={isSearching}
+              apiEndpoint="/api/cities"
+              staticItems={false}
+            />
+          </div>
         </div>
         
         <Button 
@@ -196,29 +206,6 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
           <span className="ml-2 hidden md:inline">Søk</span>
         </Button>
       </form>
-      
-      {/* Suggestions dropdown */}
-      <AnimatePresence>
-        {showSuggestions && suggestions.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="absolute z-10 right-[120px] w-[200px] mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto"
-          >
-            {suggestions.map(location => (
-              <div
-                key={location.name}
-                className="p-3 hover:bg-gray-100 cursor-pointer flex items-center"
-                onClick={() => handleLocationSelect(location)}
-              >
-                <MapPin className="h-4 w-4 text-gray-400 mr-2" />
-                <span>{location.name}</span>
-              </div>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
       
       {/* Radius selector (show only when location is selected) */}
       {selectedLocation && (

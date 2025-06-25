@@ -13,13 +13,14 @@ import {
   SelectValue,
 } from "./ui/select"
 
-// Norwegian cities for location suggestions
-const norwegianCities = [
-  'Oslo', 'Bergen', 'Trondheim', 'Stavanger', 'Kristiansand', 'Drammen',
-  'Fredrikstad', 'Sandnes', 'Tromsø', 'Sarpsborg', 'Ålesund', 'Skien',
-  'Bodø', 'Sandefjord', 'Tønsberg', 'Moss', 'Haugesund', 'Arendal',
-  'Lillehammer', 'Molde', 'Gjøvik', 'Harstad', 'Kongsberg', 'Steinkjer'
-]
+// City interface for API response
+interface City {
+  name: string
+  municipality: string
+  county: string
+  countyCode: string
+  displayName: string
+}
 
 interface FilterBarProps {
   onFilterChange?: (filters: FilterState) => void
@@ -48,9 +49,33 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
     maxPrice: '1000'
   })
   const [showLocationSuggestions, setShowLocationSuggestions] = useState(false)
-  const [filteredCities, setFilteredCities] = useState<string[]>([])
+  const [filteredCities, setFilteredCities] = useState<City[]>([])
+  const [allCities, setAllCities] = useState<City[]>([])
+  const [loadingCities, setLoadingCities] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  // Load all cities on component mount
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        setLoadingCities(true)
+        const response = await fetch('/api/cities?limit=100')
+        if (response.ok) {
+          const data = await response.json()
+          setAllCities(data.cities || [])
+        }
+      } catch (error) {
+        console.error('Error loading cities:', error)
+        // Fallback to empty array - the API has its own fallback
+        setAllCities([])
+      } finally {
+        setLoadingCities(false)
+      }
+    }
+
+    loadCities()
+  }, [])
 
   useEffect(() => {
     // Update filters from URL params
@@ -112,23 +137,51 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
     }
   }
 
-  const handleLocationChange = (value: string) => {
-    updateFilters({ location: value })
-    
-    // Filter cities based on input
-    if (value.length > 0) {
-      const filtered = norwegianCities.filter(city =>
-        city.toLowerCase().includes(value.toLowerCase())
-      )
+  const searchCities = async (query: string) => {
+    if (query.length === 0) {
+      setFilteredCities([])
+      setShowLocationSuggestions(false)
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/cities?q=${encodeURIComponent(query)}&limit=10`)
+      if (response.ok) {
+        const data = await response.json()
+        setFilteredCities(data.cities || [])
+        setShowLocationSuggestions((data.cities || []).length > 0)
+      } else {
+        // Fallback to local filtering if API fails
+        const filtered = allCities.filter(city =>
+          city.name.toLowerCase().includes(query.toLowerCase()) ||
+          city.municipality.toLowerCase().includes(query.toLowerCase()) ||
+          city.county.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 10)
+        setFilteredCities(filtered)
+        setShowLocationSuggestions(filtered.length > 0)
+      }
+    } catch (error) {
+      console.error('Error searching cities:', error)
+      // Fallback to local filtering
+      const filtered = allCities.filter(city =>
+        city.name.toLowerCase().includes(query.toLowerCase()) ||
+        city.municipality.toLowerCase().includes(query.toLowerCase()) ||
+        city.county.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 10)
       setFilteredCities(filtered)
       setShowLocationSuggestions(filtered.length > 0)
-    } else {
-      setShowLocationSuggestions(false)
     }
   }
 
-  const selectCity = (city: string) => {
-    updateFilters({ location: city })
+  const handleLocationChange = (value: string) => {
+    updateFilters({ location: value })
+    
+    // Search cities with debouncing
+    searchCities(value)
+  }
+
+  const selectCity = (city: City) => {
+    updateFilters({ location: city.name })
     setShowLocationSuggestions(false)
   }
 
@@ -197,11 +250,7 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
           onChange={(e) => handleLocationChange(e.target.value)}
           onFocus={() => {
             if (filters.location.length > 0) {
-              const filtered = norwegianCities.filter(city =>
-                city.toLowerCase().includes(filters.location.toLowerCase())
-              )
-              setFilteredCities(filtered)
-              setShowLocationSuggestions(filtered.length > 0)
+              searchCities(filters.location)
             }
           }}
           onBlur={() => {
@@ -209,19 +258,26 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
             setTimeout(() => setShowLocationSuggestions(false), 150)
           }}
           placeholder="Enter Norwegian city..."
+          disabled={loadingCities}
         />
         {showLocationSuggestions && (
-          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
-            {filteredCities.map((city) => (
+          <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+            {filteredCities.map((city, index) => (
               <div
-                key={city}
-                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                key={`${city.name}-${city.municipality}-${index}`}
+                className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
                 onMouseDown={(e) => {
                   e.preventDefault() // Prevent onBlur from firing
                   selectCity(city)
                 }}
               >
-                {city}
+                <div className="font-medium">{city.name}</div>
+                {city.municipality && city.municipality !== city.name && (
+                  <div className="text-xs text-gray-500">{city.municipality}</div>
+                )}
+                {city.county && (
+                  <div className="text-xs text-gray-400">{city.county}</div>
+                )}
               </div>
             ))}
           </div>
@@ -268,8 +324,9 @@ export function FilterBar({ onFilterChange }: FilterBarProps) {
         variant="outline"
         onClick={handleSearch}
         className="w-full"
+        disabled={loadingCities}
       >
-        Search
+        {loadingCities ? 'Loading...' : 'Search'}
       </Button>
     </div>
   )

@@ -8,6 +8,7 @@ import { Search } from 'lucide-react'
 import { useToast } from "@/hooks/use-toast"
 import { useUser } from "@clerk/nextjs"
 import { SearchDropdown } from "@/components/ui/search-dropdown"
+import { SearchableDropdown } from "@/components/ui/searchable-dropdown"
 
 interface SearchBarProps {
   initialQuery?: string
@@ -19,13 +20,6 @@ const categories = [
   { value: "tools", label: "Verktøy" },
   { value: "sports", label: "Sport" },
   { value: "camping", label: "Camping" },
-]
-
-const locations = [
-  { value: "oslo", label: "Oslo" },
-  { value: "bergen", label: "Bergen" },
-  { value: "trondheim", label: "Trondheim" },
-  { value: "stavanger", label: "Stavanger" },
 ]
 
 function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
@@ -128,12 +122,14 @@ function SearchBarContent({ initialQuery = '' }: SearchBarProps) {
         className="flex-1 border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
       />
 
-      <SearchDropdown
+      <SearchableDropdown
         value={location}
         onValueChange={setLocation}
-        items={locations}
         placeholder="Velg sted"
-        className="w-[180px]"
+        searchPlaceholder="Søk etter sted..."
+        className="w-[200px]"
+        apiEndpoint="/api/cities"
+        staticItems={false}
       />
 
       <Button 
@@ -167,7 +163,7 @@ export function SearchBar(props: SearchBarProps) {
       <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm p-2 rounded-full shadow-lg">
         <div className="w-[180px] h-10 bg-gray-100 rounded-md animate-pulse" />
         <div className="flex-1 h-10 bg-gray-100 rounded-md animate-pulse" />
-        <div className="w-[180px] h-10 bg-gray-100 rounded-md animate-pulse" />
+        <div className="w-[200px] h-10 bg-gray-100 rounded-md animate-pulse" />
         <div className="w-10 h-10 bg-gray-100 rounded-full animate-pulse" />
       </div>
     }>

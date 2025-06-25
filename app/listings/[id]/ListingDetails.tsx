@@ -17,8 +17,7 @@ import {
   User,
   Truck,
   Eye,
-  CheckCircle,
-  BadgeCheck
+  CheckCircle
 } from 'lucide-react'
 import { ReportDialog } from '@/components/ReportDialog'
 import { FavoriteButton } from '../../components/ui/favorite-button'
@@ -162,49 +161,6 @@ export function ListingDetails({ item, userId, isFavorited = false }: ListingDet
             <div className="flex items-center text-2xl font-bold text-[#4CD964]">
               {item.price} kr
               <span className="text-base font-normal text-gray-600 ml-1">/ dag</span>
-            </div>
-          </div>
-
-          {/* Trust indicators */}
-          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="bg-blue-50 p-1.5 rounded-md mr-3">
-                <Clock className="h-5 w-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Rask responstid</p>
-                <p className="text-sm text-gray-500">Svarer vanligvis innen en time</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="bg-green-50 p-1.5 rounded-md mr-3">
-                <Calendar className="h-5 w-5 text-green-500" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Tilgjengelig nå</p>
-                <p className="text-sm text-gray-500">Klar for utleie straks</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="bg-yellow-50 p-1.5 rounded-md mr-3">
-                <Shield className="h-5 w-5 text-yellow-500" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Trygge betalinger</p>
-                <p className="text-sm text-gray-500">Sikker betalingsløsning</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center p-3 bg-gray-50 rounded-lg border border-gray-100">
-              <div className="bg-purple-50 p-1.5 rounded-md mr-3">
-                <BadgeCheck className="h-5 w-5 text-purple-500" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Verifisert bruker</p>
-                <p className="text-sm text-gray-500">ID og kontaktinfo bekreftet</p>
-              </div>
             </div>
           </div>
 

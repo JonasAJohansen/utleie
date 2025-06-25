@@ -5,7 +5,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { motion } from 'framer-motion'
 import ListingGallery from './ListingGallery'
 import { ListingDetails } from './ListingDetails'
-import { SocialProof } from '@/components/listings/SocialProof'
 import { RentalRequestForm } from '@/components/rental/RentalRequestForm'
 
 interface ListingPhoto {
@@ -66,10 +65,6 @@ export function ListingPageClient({ listingData }: ListingPageClientProps) {
         <div className="lg:col-span-2 space-y-8">
           <Suspense fallback={<Skeleton className="h-[450px] w-full rounded-lg" />}>
             <ListingGallery photos={photos} />
-          </Suspense>
-
-          <Suspense fallback={<Skeleton className="h-20 w-full rounded-lg" />}>
-            <SocialProof listingId={id} />
           </Suspense>
 
           <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-lg" />}>

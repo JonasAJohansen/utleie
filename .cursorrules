@@ -125,6 +125,7 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - When working with lucide-react icons, verify the icon names in the current version as they may change between updates (e.g., Bicycle replaced with Bike)
 - In schema-dts (JSON-LD schema), use '@id' format for reference values like 'businessFunction' and 'itemCondition'
 - Remove the delete of L.Icon.Default.prototype._getIconUrl in Leaflet initialization as it's not needed in newer versions
+- When fixing TypeScript interface compliance errors, ensure all required properties are included in object initializations - missing properties like 'subcategory' in SearchFilters type will cause compilation errors
 
 # Scratchpad
 
@@ -211,3 +212,63 @@ Users can now:
 - Experience smooth search performance with proper loading states
 
 The implementation provides a much better user experience for location selection with comprehensive city coverage and intelligent prioritization.
+
+## Current Task: Translate Categories & Check Incomplete Functions ✅ COMPLETED
+
+## Current Task: Navbar & Legal Pages Update ✅ COMPLETED
+
+### Problem Description
+User requested several updates:
+1. Remove "kart" (map) from the navbar
+2. Change "populære" to "Nye Annonser" (New Listings) in the navbar
+3. Create "vilkår" (terms) and "personvern" (privacy) pages
+4. Populate these pages with content
+5. Remove "karriere" (career) from the footer
+
+### Implementation Plan
+[X] Remove "Kart" link from Navigation.tsx
+[X] Change "Populære" to "Nye Annonser" in Navigation.tsx
+[X] Remove "Karriere" link from footer in layout.tsx
+[X] Create comprehensive Terms of Service page (app/terms/page.tsx)
+[X] Create comprehensive Privacy Policy page (app/privacy/page.tsx)
+[X] Ensure both pages are fully populated with Norwegian content
+
+### Completed Tasks
+1. **Navbar Updates:**
+   - ✅ **Removed "Kart" link**: Completely removed the map navigation link
+   - ✅ **Changed "Populære" to "Nye Annonser"**: Updated link text and href from `/search?popular=true` to `/search?newest=true`
+
+2. **Footer Updates:**
+   - ✅ **Removed "Karriere" link**: Removed career link from the "Om oss" section in footer
+
+3. **Legal Pages Created:**
+   - ✅ **Terms of Service** (`app/terms/page.tsx`): Comprehensive 12-section terms covering:
+     - Acceptance of terms, service description, user accounts
+     - Renter/lessee responsibilities, payment & fees, cancellation policy
+     - Prohibited use, liability limitations, term changes
+     - Applicable law, contact information
+   
+   - ✅ **Privacy Policy** (`app/privacy/page.tsx`): Complete GDPR-compliant privacy policy covering:
+     - Data collection (user-provided and automatic)
+     - Data usage, sharing policies, security measures
+     - Cookie usage, user rights (GDPR), data retention
+     - International transfers, minors policy, contact information
+
+### Implementation Details
+- **Navigation.tsx**: Streamlined navigation by removing map functionality and focusing on newest listings
+- **Layout.tsx**: Cleaned up footer by removing career section
+- **Terms Page**: Full Norwegian terms covering platform usage, responsibilities, and legal aspects
+- **Privacy Page**: Comprehensive privacy policy compliant with Norwegian/EU data protection laws
+- Both legal pages include proper metadata, responsive design, and professional styling
+
+### Task Status: COMPLETED ✅
+
+Successfully completed all requested updates:
+- ✅ Navbar streamlined with "Nye Annonser" replacing "Populære" and "Kart" removed
+- ✅ Footer cleaned up with "Karriere" removed
+- ✅ Professional Terms of Service page created with comprehensive coverage
+- ✅ GDPR-compliant Privacy Policy page created with detailed data protection information
+- ✅ Both pages properly styled and responsive
+- ✅ All content in Norwegian as requested
+
+The platform now has a cleaner navigation focused on new listings and comprehensive legal pages that provide transparency and compliance with Norwegian/EU regulations.

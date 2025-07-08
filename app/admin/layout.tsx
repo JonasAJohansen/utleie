@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { buttonVariants } from '@/components/ui/button'
-import { LayoutGrid, Tags, Settings } from 'lucide-react'
+import { LayoutGrid, Tags, Settings, Users, Package, AlertTriangle } from 'lucide-react'
 
 export default async function AdminLayout({
   children,
@@ -37,6 +37,26 @@ export default async function AdminLayout({
               Dashboard
             </Link>
             <Link 
+              href="/admin/listings" 
+              className={cn(
+                buttonVariants({ variant: "ghost" }), 
+                "w-full justify-start"
+              )}
+            >
+              <Package className="mr-2 h-4 w-4" />
+              Listings
+            </Link>
+            <Link 
+              href="/admin/users" 
+              className={cn(
+                buttonVariants({ variant: "ghost" }), 
+                "w-full justify-start"
+              )}
+            >
+              <Users className="mr-2 h-4 w-4" />
+              Users
+            </Link>
+            <Link 
               href="/admin/categories" 
               className={cn(
                 buttonVariants({ variant: "ghost" }), 
@@ -56,6 +76,16 @@ export default async function AdminLayout({
               <Settings className="mr-2 h-4 w-4" />
               Brands
             </Link>
+            <Link 
+              href="/admin/reports" 
+              className={cn(
+                buttonVariants({ variant: "ghost" }), 
+                "w-full justify-start"
+              )}
+            >
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              Reports
+            </Link>
           </nav>
         </div>
       </aside>
@@ -72,6 +102,22 @@ export default async function AdminLayout({
             <LayoutGrid className="h-4 w-4" />
           </Link>
           <Link 
+            href="/admin/listings" 
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" })
+            )}
+          >
+            <Package className="h-4 w-4" />
+          </Link>
+          <Link 
+            href="/admin/users" 
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" })
+            )}
+          >
+            <Users className="h-4 w-4" />
+          </Link>
+          <Link 
             href="/admin/categories" 
             className={cn(
               buttonVariants({ variant: "ghost", size: "sm" })
@@ -86,6 +132,14 @@ export default async function AdminLayout({
             )}
           >
             <Settings className="h-4 w-4" />
+          </Link>
+          <Link 
+            href="/admin/reports" 
+            className={cn(
+              buttonVariants({ variant: "ghost", size: "sm" })
+            )}
+          >
+            <AlertTriangle className="h-4 w-4" />
           </Link>
         </nav>
       </div>

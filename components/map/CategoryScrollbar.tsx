@@ -22,16 +22,16 @@ import { cn } from '@/lib/utils'
 
 // Define the categories with their icons
 const CATEGORIES = [
-  { id: 'all', name: 'All', icon: Wrench }, 
-  { id: 'electronics', name: 'Electronics', icon: Laptop },
-  { id: 'tools', name: 'Tools', icon: Drill },
-  { id: 'sports', name: 'Sports', icon: Bicycle },
-  { id: 'cameras', name: 'Cameras', icon: Camera },
-  { id: 'entertainment', name: 'Entertainment', icon: Tv },
-  { id: 'clothing', name: 'Clothing', icon: Shirt },
-  { id: 'music', name: 'Music', icon: Music },
-  { id: 'gaming', name: 'Gaming', icon: Gamepad },
-  { id: 'vehicles', name: 'Vehicles', icon: Car },
+  { id: 'all', name: 'Alle', icon: Wrench }, 
+  { id: 'electronics', name: 'Elektronikk', icon: Laptop },
+  { id: 'tools', name: 'Verktøy', icon: Drill },
+  { id: 'sports', name: 'Sport', icon: Bicycle },
+  { id: 'cameras', name: 'Kameraer', icon: Camera },
+  { id: 'entertainment', name: 'Underholdning', icon: Tv },
+  { id: 'clothing', name: 'Klær', icon: Shirt },
+  { id: 'music', name: 'Musikk', icon: Music },
+  { id: 'gaming', name: 'Spill', icon: Gamepad },
+  { id: 'vehicles', name: 'Kjøretøy', icon: Car },
   { id: 'camping', name: 'Camping', icon: Tent },
 ]
 

@@ -69,7 +69,7 @@ interface Message {
 // Updated categories with consolidated parent groups
 const categoryGroups = [
   {
-    name: "Electronics & Tech",
+    name: "Elektronikk & Teknologi",
     icon: <Laptop className="h-6 w-6" />,
     categories: [
       {
@@ -90,7 +90,7 @@ const categoryGroups = [
     ]
   },
   {
-    name: "Home & DIY",
+    name: "Hjem & Gjør-det-selv",
     icon: <Home className="h-6 w-6" />,
     categories: [
       {
@@ -111,7 +111,7 @@ const categoryGroups = [
     ]
   },
   {
-    name: "Sports & Outdoors",
+    name: "Sport & Friluft",
     icon: <Mountain className="h-6 w-6" />,
     categories: [
       {
@@ -132,7 +132,7 @@ const categoryGroups = [
     ]
   },
   {
-    name: "Music & Hobbies",
+    name: "Musikk & Hobby",
     icon: <Music className="h-6 w-6" />,
     categories: [
       {
@@ -576,17 +576,10 @@ export default function Navigation() {
 
               {/* Essential navigation links */}
               <Link 
-                href="/search?popular=true" 
+                href="/search?newest=true" 
                 className="text-base font-medium text-gray-700 hover:text-[#4CD964] px-3 py-2"
               >
-                Populære
-              </Link>
-              
-              <Link 
-                href="/kart" 
-                className="text-base font-medium text-gray-700 hover:text-[#4CD964] px-3 py-2"
-              >
-                Kart
+                Nye Annonser
               </Link>
               
               {user && (

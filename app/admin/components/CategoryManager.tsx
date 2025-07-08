@@ -41,16 +41,66 @@ export function CategoryManager() {
   const [newCategory, setNewCategory] = useState({ name: '', icon: '', description: '' })
   const { toast } = useToast()
 
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/admin/categories')
+        if (response.ok) {
+          const data = await response.json()
+          // Add default values for is_popular and is_featured since they don't exist in DB yet
+          const categoriesWithDefaults = data.map((category: any) => ({
+            ...category,
+            is_popular: category.is_popular || false,
+            is_featured: category.is_featured || false
+          }))
+          setCategories(categoriesWithDefaults)
+        } else {
+          throw new Error('Failed to fetch categories')
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error)
+        toast({
+          title: 'Feil',
+          description: 'Kunne ikke laste kategorier.',
+          variant: 'destructive'
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
+
   const handleTogglePopular = async (category: Category) => {
     try {
-      // TODO: Implement API call to toggle popular status
-      const updatedCategory = { ...category, is_popular: !category.is_popular }
+      const response = await fetch(`/api/admin/categories/${category.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: category.name,
+          description: category.description,
+          icon: category.icon,
+          is_popular: !category.is_popular,
+          is_featured: category.is_featured
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update category')
+      }
+
+      const updatedCategory = await response.json()
       setCategories(categories.map(c => c.id === category.id ? updatedCategory : c))
       toast({
         title: updatedCategory.is_popular ? 'Lagt til i populære' : 'Fjernet fra populære',
         description: `${category.name} har blitt ${updatedCategory.is_popular ? 'lagt til i' : 'fjernet fra'} populære kategorier.`
       })
     } catch (error) {
+      console.error('Error toggling popular status:', error)
       toast({
         title: 'Feil',
         description: 'Kunne ikke oppdatere kategori status.',
@@ -61,14 +111,32 @@ export function CategoryManager() {
 
   const handleToggleFeatured = async (category: Category) => {
     try {
-      // TODO: Implement API call to toggle featured status
-      const updatedCategory = { ...category, is_featured: !category.is_featured }
+      const response = await fetch(`/api/admin/categories/${category.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: category.name,
+          description: category.description,
+          icon: category.icon,
+          is_popular: category.is_popular,
+          is_featured: !category.is_featured
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update category')
+      }
+
+      const updatedCategory = await response.json()
       setCategories(categories.map(c => c.id === category.id ? updatedCategory : c))
       toast({
         title: updatedCategory.is_featured ? 'Lagt til i utvalgte' : 'Fjernet fra utvalgte',
         description: `${category.name} har blitt ${updatedCategory.is_featured ? 'lagt til i' : 'fjernet fra'} utvalgte kategorier.`
       })
     } catch (error) {
+      console.error('Error toggling featured status:', error)
       toast({
         title: 'Feil',
         description: 'Kunne ikke oppdatere kategori status.',
@@ -79,16 +147,25 @@ export function CategoryManager() {
 
   const handleDeleteCategory = async (categoryId: string) => {
     try {
-      // TODO: Implement API call to delete category
+      const response = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete category')
+      }
+
       setCategories(categories.filter(c => c.id !== categoryId))
       toast({
         title: 'Kategori slettet',
         description: 'Kategorien har blitt slettet.'
       })
     } catch (error) {
+      console.error('Error deleting category:', error)
       toast({
         title: 'Feil',
-        description: 'Kunne ikke slette kategorien.',
+        description: error instanceof Error ? error.message : 'Kunne ikke slette kategorien.',
         variant: 'destructive'
       })
     }
@@ -96,15 +173,25 @@ export function CategoryManager() {
 
   const handleAddCategory = async () => {
     try {
-      // TODO: Implement API call to add new category
-      const newCategoryWithId = {
-        id: Date.now().toString(), // Temporary ID generation
-        ...newCategory,
-        is_active: true,
-        is_popular: false,
-        is_featured: false
+      const response = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newCategory.name,
+          description: newCategory.description,
+          icon: newCategory.icon,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create category')
       }
-      setCategories([...categories, newCategoryWithId])
+
+      const createdCategory = await response.json()
+      setCategories([...categories, createdCategory])
       setIsAddingCategory(false)
       setNewCategory({ name: '', icon: '', description: '' })
       toast({
@@ -112,9 +199,10 @@ export function CategoryManager() {
         description: 'Ny kategori har blitt lagt til.'
       })
     } catch (error) {
+      console.error('Error creating category:', error)
       toast({
         title: 'Feil',
-        description: 'Kunne ikke opprette ny kategori.',
+        description: error instanceof Error ? error.message : 'Kunne ikke opprette ny kategori.',
         variant: 'destructive'
       })
     }

@@ -37,16 +37,17 @@ async function getLatestListings() {
     return result.rows
   } catch (error) {
     console.error('Database Error:', error)
-    throw new Error('Failed to fetch latest listings')
+    // Return empty array instead of throwing to prevent page crash
+    return []
   }
 }
 
 async function getPopularCategories() {
   try {
     const result = await sql`
-      SELECT id, name, icon, description
+      SELECT name, name as id, icon, description
       FROM categories
-      WHERE is_popular = true
+      WHERE is_active = true
       ORDER BY name ASC
       LIMIT 8
     `
@@ -302,7 +303,7 @@ export default async function Home() {
             </div>
             
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
-              {latestListings.map((listing, index) => (
+              {latestListings.length > 0 ? latestListings.map((listing, index) => (
                 <AnimatedSection
                   key={listing.id}
                   initial={{ opacity: 0, y: 30 }}
@@ -373,7 +374,12 @@ export default async function Home() {
                     </Card>
             </Link>
                 </AnimatedSection>
-          ))}
+              )) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-500 text-lg">Ingen annonser tilgjengelig for øyeblikket.</p>
+                  <p className="text-gray-400 text-sm mt-2">Prøv igjen senere eller sjekk nettverkstilkoblingen din.</p>
+                </div>
+              )}
         </div>
         </div>
       </section>

@@ -79,7 +79,7 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
   // Handle location selection from dropdown
   const handleLocationChange = (value: string) => {
     setSelectedLocationValue(value)
-    
+      
     // Convert the value back to proper city name (capitalize first letter)
     const cityName = value.charAt(0).toUpperCase() + value.slice(1)
     const location = cityToLocation(cityName)
@@ -190,10 +190,10 @@ export function MapSearchBar({ onLocationSelect, selectedLocation, onSearch, sea
               placeholder={isSearching ? "Laster..." : "Sted..."}
               searchPlaceholder="Søk etter sted..."
               className="w-full border-none"
-              disabled={isSearching}
+            disabled={isSearching}
               apiEndpoint="/api/cities"
               staticItems={false}
-            />
+          />
           </div>
         </div>
         

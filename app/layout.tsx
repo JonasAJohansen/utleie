@@ -31,7 +31,6 @@ export default function RootLayout({
                     <ul className="space-y-2">
                       <li><Link href="/about" className="text-gray-600 hover:text-gray-900">Vår historie</Link></li>
                       <li><Link href="/team" className="text-gray-600 hover:text-gray-900">Vårt team</Link></li>
-                      <li><Link href="/careers" className="text-gray-600 hover:text-gray-900">Karriere</Link></li>
                     </ul>
                   </div>
                   <div>

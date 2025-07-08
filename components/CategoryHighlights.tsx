@@ -84,14 +84,14 @@ export const CategoryHighlights: React.FC = () => {
     <div className="space-y-8">
       {popularCategories.length > 0 && (
         <CategorySection
-          title="Popular Categories"
+          title="Populære kategorier"
           icon={TrendingUp}
           categories={popularCategories}
         />
       )}
       {featuredCategories.length > 0 && (
         <CategorySection
-          title="Featured Categories"
+          title="Utvalgte kategorier"
           icon={Star}
           categories={featuredCategories}
         />

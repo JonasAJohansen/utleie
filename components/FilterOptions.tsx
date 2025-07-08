@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
+import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 
 interface FilterOptionsProps {
@@ -26,9 +26,7 @@ export function FilterOptions({ categories, onFilterChange }: FilterOptionsProps
     )
   }
 
-  const handlePriceChange = (value: number[]) => {
-    setPriceRange([value[0], value[1]])
-  }
+
 
   const applyFilters = () => {
     onFilterChange({
@@ -53,18 +51,40 @@ export function FilterOptions({ categories, onFilterChange }: FilterOptionsProps
         ))}
       </div>
       <div>
-        <h3 className="text-lg font-semibold mb-2">Price Range</h3>
-        <Slider
-          min={0}
-          max={100}
-          step={1}
-          value={priceRange}
-          onValueChange={handlePriceChange}
-          className="mb-2"
-        />
-        <div className="flex justify-between text-sm text-gray-600">
-          <span>{priceRange[0]} kr</span>
-          <span>{priceRange[1]} kr</span>
+        <h3 className="text-lg font-semibold mb-2">Price Range (per day)</h3>
+        <div className="flex items-center space-x-4 mb-2">
+          <Input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={priceRange[0].toString()}
+            onChange={(e) => {
+              const value = e.target.value
+              if (value === '' || /^\d+$/.test(value)) {
+                const numValue = value === '' ? 0 : parseInt(value)
+                setPriceRange([numValue, priceRange[1]])
+              }
+            }}
+            className="w-24"
+            placeholder="Min"
+          />
+          <span className="text-sm text-gray-600">to</span>
+          <Input
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            value={priceRange[1].toString()}
+            onChange={(e) => {
+              const value = e.target.value
+              if (value === '' || /^\d+$/.test(value)) {
+                const numValue = value === '' ? 0 : parseInt(value)
+                setPriceRange([priceRange[0], numValue])
+              }
+            }}
+            className="w-24"
+            placeholder="Max"
+          />
+          <span className="text-sm text-gray-600">kr</span>
         </div>
       </div>
       <Button onClick={applyFilters} className="w-full">Apply Filters</Button>

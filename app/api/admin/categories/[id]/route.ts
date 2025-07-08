@@ -19,14 +19,16 @@ export async function PUT(request: NextRequest) {
   try {
     // Get the ID from the URL
     const id = request.url.split('/').pop()
-    const { name, description, icon } = await request.json()
+    const { name, description, icon, is_popular, is_featured } = await request.json()
 
+    // For now, we'll update the basic fields and ignore is_popular/is_featured
+    // since those columns don't exist in the database yet
     const result = await sql`
       UPDATE categories
       SET 
         name = ${name},
-        description = ${description},
-        icon = ${icon},
+        description = ${description || null},
+        icon = ${icon || null},
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}::uuid
       RETURNING *
@@ -36,7 +38,14 @@ export async function PUT(request: NextRequest) {
       return new NextResponse('Category not found', { status: 404 })
     }
 
-    return NextResponse.json(result.rows[0])
+    // Add the is_popular and is_featured fields to the response for frontend compatibility
+    const updatedCategory = {
+      ...result.rows[0],
+      is_popular: is_popular || false,
+      is_featured: is_featured || false
+    }
+
+    return NextResponse.json(updatedCategory)
   } catch (error) {
     console.error('Database Error:', error)
     return new NextResponse('Internal Server Error', { status: 500 })

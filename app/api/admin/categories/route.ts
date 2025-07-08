@@ -16,7 +16,14 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { name } = await req.json()
+    const { name, description, icon } = await req.json()
+    
+    if (!name || name.trim() === '') {
+      return NextResponse.json(
+        { error: 'Kategorinavn er påkrevd' },
+        { status: 400 }
+      )
+    }
     
     // Check if category already exists
     const { rows: existing } = await sql`
@@ -31,8 +38,8 @@ export async function POST(req: Request) {
     }
 
     const { rows } = await sql`
-      INSERT INTO categories (name)
-      VALUES (${name})
+      INSERT INTO categories (name, description, icon, is_active)
+      VALUES (${name}, ${description || null}, ${icon || null}, true)
       RETURNING *
     `
 

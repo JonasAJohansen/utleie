@@ -24,6 +24,7 @@ export default function SearchResults() {
   const [filters, setFilters] = useState<SearchFiltersType>({
     priceRange: [0, 100],
     category: 'All Categories',
+    subcategory: 'all',
     sortBy: 'relevance',
     features: [],
     dateRange: { from: undefined, to: undefined },

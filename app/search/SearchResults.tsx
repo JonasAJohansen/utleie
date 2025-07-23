@@ -29,7 +29,8 @@ export default function SearchResults() {
     features: [],
     dateRange: { from: undefined, to: undefined },
     location: '',
-    rating: 0
+    rating: 0,
+    freeItemsOnly: false
   })
   const [searchResults, setSearchResults] = useState(allItems)
 

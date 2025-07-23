@@ -27,6 +27,7 @@ export interface SearchFilters {
   dateRange: { from: Date | undefined; to: Date | undefined }
   location: string
   rating: number
+  freeItemsOnly: boolean
 }
 
 const mainCategories = [
@@ -100,7 +101,8 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       to: searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined
     },
     location: searchParams.get('location') || '',
-    rating: Number(searchParams.get('rating')) || 0
+    rating: Number(searchParams.get('rating')) || 0,
+    freeItemsOnly: searchParams.get('freeOnly') === 'true'
   })
 
   const updateFilters = (newFilters: Partial<SearchFilters>) => {
@@ -144,6 +146,11 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
       params.set('rating', updatedFilters.rating.toString())
     } else {
       params.delete('rating')
+    }
+    if (updatedFilters.freeItemsOnly) {
+      params.set('freeOnly', 'true')
+    } else {
+      params.delete('freeOnly')
     }
 
     router.push(`/search?${params.toString()}`)
@@ -248,6 +255,17 @@ export function SearchFilters({ onFilterChange }: SearchFiltersProps) {
               placeholder="Max"
             />
             <span className="text-sm text-gray-600">kr</span>
+          </div>
+          
+          <div className="flex items-center space-x-2 mt-3">
+            <Checkbox 
+              id="free-items"
+              checked={filters.freeItemsOnly}
+              onCheckedChange={(checked) => updateFilters({ freeItemsOnly: checked as boolean })}
+            />
+            <Label htmlFor="free-items" className="text-sm font-medium cursor-pointer">
+              Kun gratis gjenstander
+            </Label>
           </div>
         </div>
 

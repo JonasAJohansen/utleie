@@ -10,11 +10,12 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Camera, Send, Smile, X, Search, Loader2, MessageCircle, MessageSquare } from 'lucide-react'
+import { Camera, Send, Smile, X, Search, Loader2, MessageCircle, MessageSquare, Shield } from 'lucide-react'
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { validateMessageContent } from "@/lib/content-validation"
 
 type Message = {
   id: string;
@@ -76,6 +77,7 @@ function ChatContent() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({})
   const [initialLoad, setInitialLoad] = useState(true)
+  const [hasBlockedContent, setHasBlockedContent] = useState(false)
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -227,6 +229,19 @@ function ChatContent() {
     const messageContent = newMessage.trim() || selectedImage
     const messageType = selectedImage ? 'image' : 'text'
 
+    // Client-side validation for text messages
+    if (messageType === 'text') {
+      const validation = validateMessageContent(messageContent)
+      if (!validation.isValid) {
+        toast({
+          title: "Message Blocked",
+          description: validation.message,
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
     try {
       const response = await fetch('/api/messages', {
         method: 'POST',
@@ -251,9 +266,22 @@ function ChatContent() {
             ? { ...conv, lastMessage: messageContent, lastMessageTime: new Date().toISOString() } 
             : conv
         ))
+      } else {
+        // Handle validation errors (like blocked content)
+        const errorText = await response.text()
+        toast({
+          title: "Message Blocked",
+          description: errorText,
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error sending message:', error)
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      })
     }
   }
 
@@ -486,11 +514,18 @@ function ChatContent() {
                 <Input
                   value={newMessage}
                   onChange={(e) => {
-                    setNewMessage(e.target.value)
+                    const value = e.target.value
+                    setNewMessage(value)
+                    
+                    // Check for blocked content in real-time
+                    const validation = validateMessageContent(value)
+                    setHasBlockedContent(!validation.isValid)
+                    
                     handleTyping()
                   }}
                   placeholder="Type a message..."
                   onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  className={hasBlockedContent ? 'border-red-500 focus:border-red-500' : ''}
                 />
                 <Popover>
                   <PopoverTrigger asChild>
@@ -514,10 +549,21 @@ function ChatContent() {
                   />
                   <Camera className="h-4 w-4" />
                 </Button>
-                <Button onClick={handleSendMessage}>
+                <Button 
+                  onClick={handleSendMessage}
+                  disabled={hasBlockedContent}
+                  className={hasBlockedContent ? 'opacity-50 cursor-not-allowed' : ''}
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
+              <p className={`text-xs mt-2 flex items-center gap-1 ${hasBlockedContent ? 'text-red-500' : 'text-gray-500'}`}>
+                <Shield className="h-3 w-3" />
+                {hasBlockedContent 
+                  ? 'Cannot send: Phone numbers and email addresses are not allowed'
+                  : 'Phone numbers and email addresses are not allowed in chat. Keep all communication secure within the platform.'
+                }
+              </p>
             </div>
           </>
         ) : (

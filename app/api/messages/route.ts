@@ -2,6 +2,7 @@ import { sql } from '@vercel/postgres'
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
+import { validateMessageContent } from '@/lib/content-validation'
 
 export async function GET(request: Request) {
   try {
@@ -65,6 +66,14 @@ export async function POST(request: Request) {
     
     if (!conversationId || !content) {
       return new NextResponse('Missing required fields', { status: 400 })
+    }
+
+    // Validate message content for blocked patterns (phone numbers and emails)
+    if (type === 'text') {
+      const validation = validateMessageContent(content)
+      if (!validation.isValid) {
+        return new NextResponse(validation.message, { status: 400 })
+      }
     }
 
     // Verify user has access to this conversation

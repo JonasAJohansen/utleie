@@ -81,12 +81,18 @@ export async function POST(request: Request) {
       brandId,
       latitude,
       longitude,
-      radius 
+      radius,
+      isFree 
     } = body
 
     // Validate required fields
-    if (!name || !description || !price || !categoryId) {
+    if (!name || !description || (price === null || price === undefined) || !categoryId) {
       return new NextResponse('Name, description, price, and category are required', { status: 400 })
+    }
+
+    // Validate price is not negative
+    if (price < 0) {
+      return new NextResponse('Price cannot be negative', { status: 400 })
     }
 
     // Get the user's data from Clerk
@@ -117,6 +123,7 @@ export async function POST(request: Request) {
         name, 
         description, 
         price, 
+        is_free,
         user_id, 
         category_id, 
         location, 
@@ -130,6 +137,7 @@ export async function POST(request: Request) {
         ${name}, 
         ${description}, 
         ${price}, 
+        ${isFree || false},
         ${userId}, 
         ${categoryId}, 
         ${location}, 

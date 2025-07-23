@@ -19,6 +19,7 @@ interface SearchFiltersState {
   dateRange: { from: Date | undefined; to: Date | undefined }
   location: string
   rating: number
+  freeItemsOnly: boolean
 }
 
 interface SearchResponse {
@@ -53,7 +54,8 @@ function SearchContent() {
       to: searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined
     },
     location: searchParams.get('location') || '',
-    rating: Number(searchParams.get('rating')) || 0
+    rating: Number(searchParams.get('rating')) || 0,
+    freeItemsOnly: searchParams.get('freeOnly') === 'true'
   }
 
   useEffect(() => {
@@ -102,6 +104,9 @@ function SearchContent() {
     
     if (filters.rating > 0) params.set('rating', filters.rating.toString())
     else params.delete('rating')
+    
+    if (filters.freeItemsOnly) params.set('freeOnly', 'true')
+    else params.delete('freeOnly')
 
     router.push(`/search?${params.toString()}`)
   }

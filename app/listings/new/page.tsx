@@ -15,6 +15,7 @@ import { MultiStepForm } from '@/components/ui/multi-step-form'
 import { PhotoUpload } from '@/components/ui/photo-upload'
 import { AlertCircle, HelpCircle, Loader2 } from 'lucide-react'
 import { ListingPreview } from '@/components/ui/listing-preview'
+import { GISBot } from '@/components/gis/GISBot'
 
 // Import locations from location selector
 import { locations } from '@/components/ui/location-selector'
@@ -70,6 +71,7 @@ export default function AddListing() {
   const [isFetchingBrands, setIsFetchingBrands] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+  const [showGISBot, setShowGISBot] = useState(false)
 
   const steps = [
     {
@@ -117,7 +119,15 @@ export default function AddListing() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setListing({ ...listing, [e.target.name]: e.target.value })
+    const newListing = { ...listing, [e.target.name]: e.target.value }
+    
+    // Check if price is being set to 0 (free item)
+    if (e.target.name === 'price' && parseFloat(e.target.value) === 0) {
+      // Show GIS bot for free items
+      setShowGISBot(true)
+    }
+    
+    setListing(newListing)
   }
 
   const handleCategoryChange = (value: string) => {
@@ -209,7 +219,8 @@ export default function AddListing() {
         location: listing.location,
         latitude: listing.latitude,
         longitude: listing.longitude,
-        radius: listing.radius
+        radius: listing.radius,
+        isFree: parseFloat(listing.price) === 0
       }
       
       const listingResponse = await fetch('/api/listings', {
@@ -492,6 +503,8 @@ export default function AddListing() {
                 <HelpCircle className="h-4 w-4 mt-0.5" />
                 <p>
                   Sett en konkurransedyktig pris. Du kan sjekke lignende annonser for å få en idé om prisnivået.
+                  <br />
+                  <strong>Skriv 0 for gratis gjenstander</strong> - GIS-assistenten vil hjelpe deg med å finne det beste stedet for utdeling.
                 </p>
               </div>
             </div>
@@ -527,6 +540,14 @@ export default function AddListing() {
           />
         )}
       </MultiStepForm>
+
+      <GISBot
+        isVisible={showGISBot}
+        onClose={() => setShowGISBot(false)}
+        onLocationSelect={handleLocationChange}
+        currentLocation={listing.location}
+        itemName={listing.name}
+      />
     </div>
   )
 }

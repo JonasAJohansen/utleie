@@ -43,7 +43,7 @@ export function LocationSelector({ value, onChange }: LocationSelectorProps) {
             className="cursor-pointer"
           >
             <div className="flex items-center">
-              <MapPin className="h-4 w-4 mr-2 text-[#4CD964]" />
+              <MapPin className="h-4 w-4 mr-2 text-emerald-500" />
               {location.label}
             </div>
           </SelectItem>

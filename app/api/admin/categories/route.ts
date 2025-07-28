@@ -16,7 +16,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const { name, description, icon } = await req.json()
+    const { name, description, icon, is_popular, is_featured } = await req.json()
     
     if (!name || name.trim() === '') {
       return NextResponse.json(
@@ -38,8 +38,8 @@ export async function POST(req: Request) {
     }
 
     const { rows } = await sql`
-      INSERT INTO categories (name, description, icon, is_active)
-      VALUES (${name}, ${description || null}, ${icon || null}, true)
+      INSERT INTO categories (name, description, icon, is_active, is_popular, is_featured)
+      VALUES (${name}, ${description || null}, ${icon || null}, true, ${is_popular || false}, ${is_featured || false})
       RETURNING *
     `
 

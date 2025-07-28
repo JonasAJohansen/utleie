@@ -30,7 +30,8 @@ import {
   Mountain, 
   Car, 
   CheckCircle2, 
-  XCircle 
+  XCircle,
+  Plus
 } from 'lucide-react'
 import { SignInButton, SignUpButton, useUser, useClerk } from "@clerk/nextjs"
 import { useRouter } from 'next/navigation'
@@ -66,109 +67,29 @@ interface Message {
   unread_count: number
 }
 
-// Updated categories with consolidated parent groups
-const categoryGroups = [
-  {
-    name: "Elektronikk & Teknologi",
-    icon: <Laptop className="h-6 w-6" />,
-    categories: [
-      {
-        name: "Elektronikk",
-        subcategories: ["Laptops", "Mobiler", "Nettbrett", "Hodetelefoner"],
-        featured: ["Nye Apple Produkter", "Gaming Laptops"]
-      },
-      {
-        name: "Kameraer",
-        subcategories: ["DSLR", "Mirrorless", "Action Cameras", "Tilbehør"],
-        featured: ["GoPro Collection", "Sony Alpha Series"]
-      },
-      {
-        name: "Underholdning",
-        subcategories: ["TVer", "Høyttalere", "Streaming-enheter", "Spillkonsoller"],
-        featured: ["Smart TV", "Sonos Speakers"]
-      }
-    ]
-  },
-  {
-    name: "Hjem & Gjør-det-selv",
-    icon: <Home className="h-6 w-6" />,
-    categories: [
-      {
-        name: "Verktøy",
-        subcategories: ["Drill", "Sag", "Håndsverktøy", "Elektroverktøy"],
-        featured: ["Bosch Professional", "Makita Tools"]
-      },
-      {
-        name: "Hageartikler",
-        subcategories: ["Gressklippere", "Hagemøbler", "Grilling", "Hageverktøy"],
-        featured: ["Weber Grills", "Garden Furniture Sets"]
-      },
-      {
-        name: "Interiør",
-        subcategories: ["Møbler", "Dekorasjon", "Belysning"],
-        featured: ["Designer Lamps", "Modern Furniture"]
-      }
-    ]
-  },
-  {
-    name: "Sport & Friluft",
-    icon: <Mountain className="h-6 w-6" />,
-    categories: [
-      {
-        name: "Sport",
-        subcategories: ["Ski", "Sykkel", "Fotball", "Løping"],
-        featured: ["High-end Mountain Bikes", "Ski Equipment"]
-      },
-      {
-        name: "Camping",
-        subcategories: ["Telt", "Soveposer", "Matlagingsutstyr", "Ryggsekker"],
-        featured: ["Fjällräven Collection", "Ultralight Tents"]
-      },
-      {
-        name: "Vannsport",
-        subcategories: ["Kajakk", "SUP", "Surfing", "Dykking"],
-        featured: ["Inflatable Kayaks", "Premium SUP Boards"]
-      }
-    ]
-  },
-  {
-    name: "Musikk & Hobby",
-    icon: <Music className="h-6 w-6" />,
-    categories: [
-      {
-        name: "Musikk",
-        subcategories: ["Gitarer", "Keyboard", "DJ-utstyr", "Studio"],
-        featured: ["Fender Collection", "Professional DJ Equipment"]
-      },
-      {
-        name: "Spill",
-        subcategories: ["Konsoll", "PC", "Tilbehør", "VR"],
-        featured: ["PlayStation 5", "High-end Gaming PCs"]
-      },
-      {
-        name: "Hobby & Fritid",
-        subcategories: ["Kunst", "Håndarbeid", "Modellbygging"],
-        featured: ["Art Supplies", "Professional Craft Tools"]
-      }
-    ]
-  },
-  {
-    name: "Transport",
-    icon: <Car className="h-6 w-6" />,
-    categories: [
-      {
-        name: "Kjøretøy",
-        subcategories: ["Biler", "Motorsykler", "Tilhengere"],
-        featured: ["Electric Vehicles", "Luxury Cars"]
-      },
-      {
-        name: "Sykler",
-        subcategories: ["Terrengsykkel", "Bysykkel", "Elsykkel", "Tilbehør"],
-        featured: ["E-bikes", "Premium Road Bikes"]
-      }
-    ]
-  }
-];
+// Category icon mapping
+const categoryIcons: { [key: string]: JSX.Element } = {
+  "Kameraer": <Camera className="h-4 w-4" />,
+  "Verktøy": <Drill className="h-4 w-4" />,
+  "Elektronikk": <Laptop className="h-4 w-4" />,
+  "Sport": <Mountain className="h-4 w-4" />,
+  "Musikk": <Music className="h-4 w-4" />,
+  "Transport": <Car className="h-4 w-4" />,
+  "TV og lyd": <Tv className="h-4 w-4" />,
+  "Klær": <Shirt className="h-4 w-4" />,
+  "Hjem": <Home className="h-4 w-4" />,
+  "Gaming": <Gamepad className="h-4 w-4" />,
+  "default": <Package className="h-4 w-4" />
+}
+
+interface Category {
+  name: string
+  id: string
+  description?: string
+  icon?: string
+  is_popular?: boolean
+  is_featured?: boolean
+}
 
 export default function Navigation() {
   const { user } = useUser()
@@ -181,15 +102,15 @@ export default function Navigation() {
   const [unreadMessages, setUnreadMessages] = useState(0)
   const [isMarkingRead, setIsMarkingRead] = useState(false)
   const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false)
-  const [activeMegaMenu, setActiveMegaMenu] = useState<string | null>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showCategories, setShowCategories] = useState(false)
+  const [popularCategories, setPopularCategories] = useState<Category[]>([])
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const megaMenuRef = useRef<HTMLDivElement>(null)
   const hasFetchedRef = useRef(false)
   const markReadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Handle WebSocket events
+  // Handle WebSocket events (keeping existing functionality)
   const handleNewNotification = (data: any) => {
     if (!data) {
       console.log('Received empty notification data')
@@ -199,7 +120,6 @@ export default function Navigation() {
     console.log('Received new notification:', data)
     
     if (data.type === 'notification_read') {
-      // Update notification's read status locally
       setNotifications(prev => {
         if (!Array.isArray(prev)) return []
         return prev.map(n => 
@@ -208,11 +128,9 @@ export default function Navigation() {
             : n
         )
       })
-      // Update unread count
       setUnreadCount(prev => Math.max(0, prev - 1))
     } 
     else if (data.type === 'all_notifications_read') {
-      // Mark all notifications as read locally
       setNotifications(prev => {
         if (!Array.isArray(prev)) return []
         return prev.map(n => n ? { ...n, read: true } : n)
@@ -220,7 +138,6 @@ export default function Navigation() {
       setUnreadCount(0)
     }
     else if (data.type === 'new_notification') {
-      // Add new notification to the list
       fetchNotifications()
     }
   }
@@ -232,7 +149,6 @@ export default function Navigation() {
     }
     
     console.log('Received new message:', data)
-    // Refresh messages when a new one arrives
     fetchMessages()
   }
 
@@ -245,10 +161,8 @@ export default function Navigation() {
     console.log('Messages read:', data)
     
     if (data.markedCount) {
-      // Current user marked messages as read
       setUnreadMessages(0)
       setHasMarkedAsRead(true)
-      // Update UI to reflect this
       setMessages(prev => {
         if (!Array.isArray(prev)) return []
         return prev.map(msg => msg ? {
@@ -258,8 +172,6 @@ export default function Navigation() {
       })
     }
     else if (data.readBy && data.conversationIds && Array.isArray(data.conversationIds)) {
-      // Someone else read our messages
-      // This could update read receipts in an active chat
       console.log('Messages read by:', data.readBy, 'in conversations:', data.conversationIds)
     }
   }
@@ -272,36 +184,35 @@ export default function Navigation() {
   })
 
   useEffect(() => {
-    // Initial data fetch on login
     if (user && !hasFetchedRef.current) {
       fetchNotifications()
       fetchMessages()
       hasFetchedRef.current = true
     }
     
-    // Reset the refs and states when user changes (logout/login)
     if (!user) {
       hasFetchedRef.current = false
       setHasMarkedAsRead(false)
     }
   }, [user])
 
-  // We don't need the polling anymore since we're using WebSockets
-  // The old polling useEffect can be removed
-
+  // Fetch popular categories
   useEffect(() => {
-    // Handle click outside to close the mega menu
-    const handleClickOutside = (event: MouseEvent) => {
-      if (megaMenuRef.current && !megaMenuRef.current.contains(event.target as Node)) {
-        setActiveMegaMenu(null)
+    const fetchPopularCategories = async () => {
+      try {
+        const response = await fetch('/api/categories?type=popular')
+        if (response.ok) {
+          const categories = await response.json()
+          setPopularCategories(categories)
+        }
+      } catch (error) {
+        console.error('Error fetching popular categories:', error)
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    fetchPopularCategories()
   }, [])
 
-  // Focus search input when search is opened
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
       searchInputRef.current.focus()
@@ -313,15 +224,12 @@ export default function Navigation() {
       const response = await fetch('/api/notifications')
       if (response.ok) {
         const data = await response.json()
-        // Ensure data is always an array
         const notificationsArray = Array.isArray(data) ? data : []
         setNotifications(notificationsArray)
-        // Only filter if we have an array
         setUnreadCount(notificationsArray.filter((n: Notification) => !n.read).length)
       }
     } catch (error) {
       console.error('Error fetching notifications:', error)
-      // Set to empty array on error
       setNotifications([])
       setUnreadCount(0)
     }
@@ -332,10 +240,8 @@ export default function Navigation() {
       const response = await fetch('/api/messages/recent')
       if (response.ok) {
         const data = await response.json()
-        // Ensure data is always an array
         const messagesArray = Array.isArray(data) ? data : []
         setMessages(messagesArray)
-        // Safe reduce operation with default of 0
         setUnreadMessages(messagesArray.reduce((acc: number, msg: Message) => 
           acc + (msg?.unread_count || 0), 0))
       } else {
@@ -351,15 +257,12 @@ export default function Navigation() {
   }
 
   const markMessagesAsRead = async () => {
-    // Don't run if already marking as read, no unread messages, or already marked as read this session
     if (isMarkingRead || unreadMessages === 0 || hasMarkedAsRead) return
     
-    // Clear any pending timeouts
     if (markReadTimeoutRef.current) {
       clearTimeout(markReadTimeoutRef.current)
     }
     
-    // Set a debounce timeout to prevent multiple rapid calls
     markReadTimeoutRef.current = setTimeout(async () => {
       try {
         setIsMarkingRead(true)
@@ -368,16 +271,13 @@ export default function Navigation() {
         })
         
         if (response.ok) {
-          const data = await response.json()
           setUnreadMessages(0)
-          // Update the messages state to reflect read status - safely
           if (Array.isArray(messages)) {
             setMessages(messages.map(msg => ({
               ...msg,
               unread_count: 0
             })))
           }
-          // Remember that we've marked messages as read for this session
           setHasMarkedAsRead(true)
         } else {
           console.error('Error marking messages as read:', await response.text())
@@ -387,14 +287,7 @@ export default function Navigation() {
       } finally {
         setIsMarkingRead(false)
       }
-    }, 300) // 300ms debounce
-    
-    // Clean up the timeout on component unmount
-    return () => {
-      if (markReadTimeoutRef.current) {
-        clearTimeout(markReadTimeoutRef.current)
-      }
-    }
+    }, 300)
   }
 
   const handleSignOut = () => {
@@ -410,16 +303,6 @@ export default function Navigation() {
     }
   }
 
-  // Add back the toggleCategoryMenu function
-  const toggleCategoryMenu = (category: string) => {
-    if (activeMegaMenu === category) {
-      setActiveMegaMenu(null)
-    } else {
-      setActiveMegaMenu(category)
-    }
-  }
-
-  // Helper function to get notification text based on type
   const getNotificationText = (notification: Notification) => {
     if (!notification) return 'har en oppdatering for deg.'; 
     
@@ -438,568 +321,429 @@ export default function Navigation() {
   }
 
   return (
-    <header className="fixed top-0 left-0 right-0 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-      {/* Top navigation bar */}
-      <div className="bg-[#4CD964] text-white py-1.5 hidden md:block">
-        <div className="container mx-auto px-4 flex justify-between items-center text-sm">
-          <div className="flex items-center space-x-4">
+    <header className="fixed top-0 left-0 right-0 w-full bg-white border-b border-gray-100 backdrop-blur supports-[backdrop-filter]:bg-white/95 z-50">
+      <div className="container mx-auto px-4">
+        <div className="flex h-20 items-center justify-between">
+          {/* Logo */}
+          <Link href="/" className="flex items-center">
             <div className="flex items-center">
-              <Map className="h-3.5 w-3.5 mr-1" />
-              <span>Norge</span>
+              <div className="w-10 h-10 bg-emerald-500 rounded-2xl flex items-center justify-center mr-3">
+                <Leaf className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-2xl font-black text-gray-900">
+                Price<span className="text-emerald-500">Tag</span>
+              </span>
             </div>
-          <div className="flex items-center">
-              <Clock className="h-3.5 w-3.5 mr-1" />
-              <span>24/7 Kundestøtte</span>
-            </div>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Link href="/help" className="hover:underline flex items-center">
-              <HelpCircle className="h-3.5 w-3.5 mr-1" />
-              <span>Hjelp</span>
-            </Link>
-            <Link href="/about" className="hover:underline flex items-center">
-              <LifeBuoy className="h-3.5 w-3.5 mr-1" />
-              <span>Om oss</span>
-            </Link>
-          </div>
-        </div>
-      </div>
+          </Link>
 
-      {/* Main navbar */}
-      <div className="bg-white shadow-sm">
-        <div className="container mx-auto px-4">
-          <div className="flex h-16 items-center justify-between">
-            {/* Logo and brand */}
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center space-x-2">
-                <div className="flex items-center">
-                  <Leaf className="h-7 w-7 text-[#4CD964]" />
-                  <span className="text-2xl font-bold ml-1 text-gray-900">Price<span className="text-[#4CD964]">Tag</span></span>
-                </div>
-              </Link>
-            </div>
-
-            {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center space-x-4" ref={megaMenuRef}>
-              {/* Single Categories dropdown instead of multiple category groups */}
-              <div className="relative">
-                <button 
-                  className="flex items-center space-x-1 py-2 px-3 text-base font-medium text-gray-800 hover:text-[#4CD964] transition-colors"
-                  onClick={() => toggleCategoryMenu("AllCategories")}
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center space-x-8">
+            <div className="relative">
+              <button 
+                className="flex items-center space-x-1 text-gray-700 hover:text-gray-900 font-medium transition-colors"
+                onClick={() => setShowCategories(!showCategories)}
+                onMouseEnter={() => setShowCategories(true)}
+              >
+                <span>Kategorier</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showCategories ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showCategories && (
+                <div 
+                  className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 min-w-[200px] z-50"
+                  onMouseLeave={() => setShowCategories(false)}
                 >
-                  <span>Kategorier</span>
-                  <ChevronDown className={`h-4 w-4 opacity-70 transition-transform ${activeMegaMenu === "AllCategories" ? 'rotate-180' : ''}`} />
-                </button>
-                
-                {activeMegaMenu === "AllCategories" && (
-                  <div 
-                    className="absolute z-50 left-0 mt-2 bg-white shadow-xl rounded-lg overflow-hidden border border-gray-200"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ width: "650px" }}
-                  >
-                    <div className="flex">
-                      {/* Left sidebar with category groups */}
-                      <div className="w-1/3 bg-gray-50 py-3 border-r border-gray-100">
-                        {categoryGroups.map((group) => (
-                          <Link 
-                            key={group.name}
-                            href={`/category/${encodeURIComponent(group.name.toLowerCase())}`}
-                            className="flex items-center px-4 py-2.5 hover:bg-white transition-colors group"
-                          >
-                            <div className="mr-3 p-1.5 bg-[#E7F9EF] rounded-md text-[#4CD964]">
-                              {group.icon}
-                            </div>
-                            <span className="font-medium text-gray-700 group-hover:text-[#4CD964]">
-                              {group.name}
-                            </span>
-                          </Link>
-                        ))}
-                        
-                        <div className="px-4 pt-4 mt-2 border-t">
-                          <Link 
-                            href="/categories" 
-                            className="flex items-center text-sm font-medium text-[#4CD964] hover:underline"
-                          >
-                            <span>Se alle kategorier</span>
-                            <ChevronDown className="h-3 w-3 ml-1 transform -rotate-90" />
-                          </Link>
+                  {popularCategories.map((category) => (
+                    <Link 
+                      key={category.name}
+                      href={`/category/${category.name.toLowerCase()}`}
+                      className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="mr-3 text-gray-500">
+                        {categoryIcons[category.name] || categoryIcons.default}
+                      </div>
+                      <span className="font-medium text-gray-700">{category.name}</span>
+                    </Link>
+                  ))}
+                  <div className="border-t border-gray-100 mt-2 pt-2">
+                    <Link 
+                      href="/categories" 
+                      className="flex items-center px-4 py-3 text-emerald-600 hover:bg-emerald-50 transition-colors font-medium"
+                    >
+                      Se alle kategorier
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Link 
+              href="/search?newest=true" 
+              className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+            >
+              Nye annonser
+            </Link>
+
+            {user && (
+              <Link 
+                href="/rental-requests" 
+                className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
+              >
+                Forespørsler
+              </Link>
+            )}
+          </nav>
+
+          {/* Right side actions */}
+          <div className="flex items-center space-x-2">
+            {/* Search */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl"
+              onClick={() => setIsSearchOpen(!isSearchOpen)}
+            >
+              <Search className="h-5 w-5" />
+            </Button>
+
+            {user ? (
+              <>
+                {/* Notifications */}
+                <CustomDropdown
+                  trigger={
+                    <Button variant="ghost" size="icon" className="relative text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl">
+                      <Bell className="h-5 w-5" />
+                      {unreadCount > 0 && (
+                        <div className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">{unreadCount}</span>
                         </div>
+                      )}
+                    </Button>
+                  }
+                  content={
+                    <div className="w-80 max-h-[480px] overflow-y-auto">
+                      <div className="sticky top-0 z-10 flex items-center justify-between py-4 px-4 border-b bg-white">
+                        <h3 className="font-bold text-gray-900">Varsler</h3>
+                        {unreadCount > 0 && (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-sm font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg"
+                          >
+                            Merk alle som lest
+                          </Button>
+                        )}
                       </div>
                       
-                      {/* Right content area with subcategories */}
-                      <div className="w-2/3 p-4">
-                        <h3 className="font-medium text-gray-900 mb-3">Populære kategorier</h3>
-                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                          {/* Display top categories from each group */}
-                          {categoryGroups.flatMap(group => 
-                            group.categories.slice(0, 2).map(category => (
-                              <Link 
-                                key={`${group.name}-${category.name}`}
-                                href={`/category/${encodeURIComponent(category.name.toLowerCase())}`}
-                                className="py-1.5 text-gray-700 hover:text-[#4CD964] flex items-center"
+                      {Array.isArray(notifications) && notifications.length > 0 ? (
+                        <div className="divide-y divide-gray-100">
+                          {notifications.map((notification) => {
+                            if (!notification) return null;
+                            
+                            let NotificationIcon;
+                            let iconColor;
+                            
+                            switch (notification.type) {
+                              case 'RENTAL_REQUEST':
+                                NotificationIcon = Package;
+                                iconColor = 'text-blue-600';
+                                break;
+                              case 'REQUEST_APPROVED':
+                                NotificationIcon = CheckCircle2;
+                                iconColor = 'text-green-600';
+                                break;
+                              case 'REQUEST_REJECTED':
+                                NotificationIcon = XCircle;
+                                iconColor = 'text-red-600';
+                                break;
+                              case 'MESSAGE':
+                                NotificationIcon = MessageSquare;
+                                iconColor = 'text-purple-600';
+                                break;
+                              default:
+                                NotificationIcon = Bell;
+                                iconColor = 'text-gray-600';
+                            }
+                            
+                            return (
+                              <Link
+                                key={notification.id || `notification-${Math.random()}`}
+                                href={`/notifications/${notification.id || ''}`}
+                                className={cn(
+                                  "flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors",
+                                  !notification.read && "bg-emerald-50/50"
+                                )}
                               >
-                                <span className="w-2 h-2 rounded-full bg-[#4CD964] mr-2"></span>
-                                {category.name}
+                                <div className="p-2 bg-gray-100 rounded-xl flex-shrink-0 mt-0.5">
+                                  <NotificationIcon className={cn("h-4 w-4", iconColor)} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <p className="font-semibold text-gray-900">{notification.senderName || 'Bruker'}</p>
+                                    <span className="text-xs text-gray-500 whitespace-nowrap">
+                                      {notification.createdAt ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true }) : ''}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600 mt-1">{getNotificationText(notification)}</p>
+                                  {!notification.read && (
+                                    <div className="mt-2 w-2 h-2 rounded-full bg-emerald-500"></div>
+                                  )}
+                                </div>
                               </Link>
-                            ))
-                          )}
+                            );
+                          })}
                         </div>
-                        
-                        <div className="mt-6">
-                          <h3 className="font-medium text-gray-900 mb-3">Mest utleid nå</h3>
-                          <div className="grid grid-cols-2 gap-4">
-                            <Link 
-                              href="/category/elektronikk/kameraer"
-                              className="group"
-                            >
-                              <div className="aspect-[4/3] rounded bg-gray-100 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent group-hover:from-black/60 transition-colors"></div>
-                                <div className="absolute bottom-2 left-2 text-white font-medium">Kameraer</div>
-                              </div>
-                    </Link>
-                            <Link 
-                              href="/category/tools/elektroverktoy"
-                              className="group"
-                            >
-                              <div className="aspect-[4/3] rounded bg-gray-100 relative overflow-hidden">
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent group-hover:from-black/60 transition-colors"></div>
-                                <div className="absolute bottom-2 left-2 text-white font-medium">Elektroverktøy</div>
-                              </div>
-                  </Link>
+                      ) : (
+                        <div className="py-12 px-4 text-center">
+                          <div className="bg-gray-100 mx-auto h-16 w-16 rounded-2xl flex items-center justify-center mb-4">
+                            <Bell className="h-6 w-6 text-gray-400" />
                           </div>
+                          <p className="text-gray-700 font-semibold mb-2">Ingen varsler ennå</p>
+                          <p className="text-sm text-gray-500">
+                            Vi varsler deg når du har aktivitet på kontoen din
+                          </p>
                         </div>
-                      </div>
+                      )}
                     </div>
-                  </div>
-                )}
-              </div>
+                  }
+                  align="end"
+                  contentClassName="w-80 overflow-hidden rounded-2xl shadow-xl border border-gray-100"
+                />
 
-              {/* Essential navigation links */}
-              <Link 
-                href="/search?newest=true" 
-                className="text-base font-medium text-gray-700 hover:text-[#4CD964] px-3 py-2"
-              >
-                Nye Annonser
-              </Link>
-              
-              {user && (
-                <Link 
-                  href="/rental-requests" 
-                  className="text-base font-medium text-gray-700 hover:text-[#4CD964] px-3 py-2"
-                >
-                  Forespørsler
-                </Link>
-              )}
-            </nav>
-
-            {/* Right side buttons/actions */}
-            <div className="flex items-center space-x-3">
-              {/* Search Button */}
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-gray-700 hover:text-[#4CD964]"
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-              >
-                <Search className="h-5 w-5" />
-                <span className="sr-only">Søk</span>
-              </Button>
-
-              {user ? (
-                <>
-                  {/* Redesigned Notifications Dropdown */}
-                  <CustomDropdown
-                    trigger={
-                    <Button variant="ghost" size="icon" className="relative">
-                        <Bell className="h-5 w-5 text-gray-700 hover:text-[#4CD964]" />
-                        <span className="sr-only">Varsler</span>
-                      {unreadCount > 0 && (
-                          <div className="absolute -top-1 -right-1 h-4 w-4 bg-[#4CD964] rounded-full flex items-center justify-center">
-                            <span className="text-[10px] font-medium text-white">{unreadCount}</span>
-                          </div>
+                {/* Messages */}
+                <CustomDropdown
+                  trigger={
+                    <Button variant="ghost" size="icon" className="relative text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl">
+                      <MessageSquare className="h-5 w-5" />
+                      {unreadMessages > 0 && (
+                        <div className="absolute -top-1 -right-1 h-5 w-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                          <span className="text-xs font-bold text-white">{unreadMessages}</span>
+                        </div>
                       )}
                     </Button>
-                    }
-                    content={
-                      <div className="w-80 max-h-[480px] overflow-y-auto">
-                        <div className="sticky top-0 z-10 flex items-center justify-between py-3 px-4 border-b bg-white">
-                          <h3 className="font-semibold text-gray-900">Varslinger</h3>
-                          {unreadCount > 0 && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-xs font-medium text-[#4CD964] hover:text-[#3DAF50] hover:bg-[#F2FFF8]"
-                              onClick={() => console.log('Mark all as read')}
-                            >
-                              Merk alle som lest
-                            </Button>
-                          )}
-                        </div>
-                        
-                        {Array.isArray(notifications) && notifications.length > 0 ? (
-                          <div className="divide-y">
-                            {notifications.map((notification) => {
-                              if (!notification) return null;
-                              
-                              // Determine notification icon based on type
-                              let NotificationIcon;
-                              let bgColor;
-                              
-                              switch (notification.type) {
-                                case 'RENTAL_REQUEST':
-                                  NotificationIcon = Package;
-                                  bgColor = 'bg-blue-100';
-                                  break;
-                                case 'REQUEST_APPROVED':
-                                  NotificationIcon = CheckCircle2;
-                                  bgColor = 'bg-green-100';
-                                  break;
-                                case 'REQUEST_REJECTED':
-                                  NotificationIcon = XCircle;
-                                  bgColor = 'bg-red-100';
-                                  break;
-                                case 'MESSAGE':
-                                  NotificationIcon = MessageSquare;
-                                  bgColor = 'bg-purple-100';
-                                  break;
-                                default:
-                                  NotificationIcon = Bell;
-                                  bgColor = 'bg-gray-100';
-                              }
-                              
-                              return (
-                                <Link
-                                  key={notification.id || `notification-${Math.random()}`}
-                                  href={`/notifications/${notification.id || ''}`}
-                                  className={cn(
-                                    "flex items-start gap-3 p-3 hover:bg-gray-50 transition-colors",
-                                    !notification.read && "bg-[#F2FFF8]"
+                  }
+                  content={
+                    <div className="w-80" onMouseEnter={unreadMessages > 0 && !isMarkingRead ? markMessagesAsRead : undefined}>
+                      <div className="flex items-center justify-between py-4 px-4 border-b">
+                        <h3 className="font-bold text-gray-900">Meldinger</h3>
+                        <Button variant="ghost" size="sm" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg" asChild>
+                          <Link href="/chat">Se alle</Link>
+                        </Button>
+                      </div>
+                      {Array.isArray(messages) && messages.length > 0 ? (
+                        <div className="divide-y divide-gray-100">
+                          {messages.map((message) => {
+                            if (!message) return null;
+                            
+                            return (
+                              <Link
+                                key={message.message_id || `message-${Math.random()}`}
+                                href={`/chat?conversationId=${message.conversation_id || ''}`}
+                                className="flex items-start gap-3 p-4 hover:bg-gray-50 transition-colors"
+                              >
+                                <Image
+                                  src={message.other_user_avatar || '/placeholder.svg'}
+                                  alt={message.other_user_name || 'User'}
+                                  width={40}
+                                  height={40}
+                                  className="rounded-full"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <p className="font-semibold text-gray-900 truncate">{message.other_user_name || 'Bruker'}</p>
+                                    <span className="text-xs text-gray-500 whitespace-nowrap">
+                                      {message.created_at ? formatDistanceToNow(new Date(message.created_at), { addSuffix: true }) : ''}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-600 truncate">{message.content || ''}</p>
+                                  {(message.unread_count || 0) > 0 && (
+                                    <div className="mt-1 inline-flex items-center rounded-full bg-emerald-500 px-2 py-1 text-xs font-bold text-white">
+                                      {message.unread_count} nye
+                                    </div>
                                   )}
-                                >
-                                  <div className={cn("p-2 rounded-full flex-shrink-0 mt-0.5", bgColor)}>
-                                    <NotificationIcon className="h-4 w-4 text-gray-700" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-2">
-                                      <p className="font-medium text-sm text-gray-900">{notification.senderName || 'Bruker'}</p>
-                                      <span className="text-xs text-gray-500 whitespace-nowrap">
-                                        {notification.createdAt ? formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true }) : ''}
-                                      </span>
-                                    </div>
-                                    <p className="text-sm text-gray-600 mt-1">{getNotificationText(notification)}</p>
-                                    {notification.listingName && (
-                                      <div className="mt-1 bg-gray-100 rounded px-2 py-1 text-xs font-medium text-gray-600 inline-block">
-                                        {notification.listingName}
-                                      </div>
-                                    )}
-                                    {!notification.read && (
-                                      <div className="mt-2 w-2 h-2 rounded-full bg-[#4CD964]"></div>
-                                    )}
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="py-12 px-4 text-center">
-                            <div className="bg-gray-100 mx-auto h-14 w-14 rounded-full flex items-center justify-center mb-4">
-                              <Bell className="h-6 w-6 text-gray-400" />
-                            </div>
-                            <p className="text-gray-700 font-medium mb-1">Ingen varslinger ennå</p>
-                            <p className="text-xs text-gray-500 max-w-[200px] mx-auto">
-                              Vi varsler deg når du har nytt aktivitet på kontoen din
-                            </p>
-                          </div>
-                        )}
-                        
-                        <div className="border-t p-3 bg-gray-50 sticky bottom-0 z-10">
-                          <Link 
-                            href="/notifications" 
-                            className="text-sm text-center block w-full text-[#4CD964] hover:underline"
-                          >
-                            Se alle varsler
-                          </Link>
+                                </div>
+                              </Link>
+                            );
+                          })}
                         </div>
-                      </div>
-                    }
-                    align="end"
-                    contentClassName="w-80 overflow-hidden rounded-xl shadow-lg border border-gray-200"
-                  />
-
-                  {/* Messages */}
-                  <CustomDropdown
-                    trigger={
-                      <Button variant="ghost" size="icon" className="relative">
-                        <MessageSquare className="h-5 w-5 text-gray-700 hover:text-[#4CD964]" />
-                        <span className="sr-only">Meldinger</span>
-                        {unreadMessages > 0 && (
-                          <div className="absolute -top-1 -right-1 h-4 w-4 bg-[#4CD964] rounded-full flex items-center justify-center">
-                            <span className="text-[10px] font-medium text-white">{unreadMessages}</span>
+                      ) : (
+                        <div className="py-12 px-4 text-center">
+                          <div className="bg-gray-100 mx-auto h-16 w-16 rounded-2xl flex items-center justify-center mb-4">
+                            <MessageSquare className="h-6 w-6 text-gray-400" />
                           </div>
-                        )}
-                      </Button>
-                    }
-                    content={
-                      <div className="w-80" onMouseEnter={unreadMessages > 0 && !isMarkingRead ? markMessagesAsRead : undefined}>
-                        <div className="flex items-center justify-between py-2 px-4 border-b">
-                          <span className="font-semibold">Meldinger</span>
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href="/chat">Se alle</Link>
-                          </Button>
+                          <p className="text-gray-700 font-semibold mb-2">Ingen meldinger ennå</p>
+                          <p className="text-sm text-gray-500">
+                            Start en samtale ved å kontakte en utleier
+                          </p>
                         </div>
-                        {Array.isArray(messages) && messages.length > 0 ? (
-                          <div className="divide-y">
-                            {messages.map((message) => {
-                              if (!message) return null;
-                              
-                              return (
-                                <Link
-                                  key={message.message_id || `message-${Math.random()}`}
-                                  href={`/chat?conversationId=${message.conversation_id || ''}`}
-                                  className="flex items-start gap-3 p-3 hover:bg-accent/5 transition-colors"
-                                  onClick={() => {
-                                    console.log('Opening conversation:', message.conversation_id)
-                                  }}
-                                >
-                                  <Image
-                                    src={message.other_user_avatar || '/placeholder.svg'}
-                                    alt={message.other_user_name || 'User'}
-                                    width={40}
-                                    height={40}
-                                    className="rounded-full"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <p className="font-medium truncate">{message.other_user_name || 'Bruker'}</p>
-                                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                        {message.created_at ? formatDistanceToNow(new Date(message.created_at), { addSuffix: true }) : ''}
-                                      </span>
-                                    </div>
-                                    <p className="text-sm text-muted-foreground truncate">{message.content || ''}</p>
-                                    {(message.unread_count || 0) > 0 && (
-                                      <div className="mt-1 inline-flex items-center rounded-full bg-[#4CD964] px-2 py-1 text-xs font-medium text-white">
-                                        {message.unread_count} nye
-                                      </div>
-                                    )}
-                                  </div>
-                                </Link>
-                              );
-                            })}
-                          </div>
-                        ) : (
-                          <div className="py-8 text-center">
-                            <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-sm text-muted-foreground">
-                              Du har ingen meldinger ennå
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Start en samtale ved å klikke på "Send melding" på en brukers profil
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    }
-                    align="end"
-                    contentClassName="w-80"
-                  />
-
-                  {/* Add Listing Button */}
-                  <Button className="hidden md:flex bg-[#4CD964] hover:bg-[#3DAF50] text-white" asChild>
-                    <Link href="/listings/new">Lei ut dine ting</Link>
-                  </Button>
-
-                  {/* User Menu */}
-                  <CustomDropdown
-                    trigger={
-                      <Button variant="ghost" size="icon" className="rounded-full border-2 border-gray-100">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={user?.imageUrl} />
-                          <AvatarFallback>{user?.firstName?.charAt(0) ?? user?.username?.charAt(0) ?? '?'}</AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    }
-                    content={
-                      <div className="w-56">
-                        <div className="px-4 py-3">
-                          <p className="text-sm font-medium">{user.fullName || user.username}</p>
-                          <p className="text-xs text-gray-500">{user.primaryEmailAddress?.emailAddress}</p>
+                      )}
                     </div>
-                        <div className="border-t">
-                          <Link href="/profile" className="w-full px-4 py-2 text-sm text-left hover:bg-[#F2FFF8] hover:text-[#4CD964] focus:bg-[#F2FFF8] focus:outline-none transition-colors flex items-center">
-                      <Package className="mr-2 h-4 w-4" />
-                            <span>Mine annonser</span>
-                    </Link>
-                          <Link href="/profile/favorites" className="w-full px-4 py-2 text-sm text-left hover:bg-[#F2FFF8] hover:text-[#4CD964] focus:bg-[#F2FFF8] focus:outline-none transition-colors flex items-center">
-                      <Heart className="mr-2 h-4 w-4" />
-                            <span>Favoritter</span>
-                    </Link>
-                          <Link href="/profile?tab=settings" className="w-full px-4 py-2 text-sm text-left hover:bg-[#F2FFF8] hover:text-[#4CD964] focus:bg-[#F2FFF8] focus:outline-none transition-colors flex items-center">
-                      <Settings className="mr-2 h-4 w-4" />
-                            <span>Innstillinger</span>
-                    </Link>
-                        </div>
-                        <div className="border-t">
-                          <CustomDropdownItem
-                            onClick={handleSignOut}
-                            className="text-red-600 focus:text-red-600 focus:bg-red-50"
-                          >
-                            <div className="flex items-center">
-                    <LogOut className="mr-2 h-4 w-4" />
-                              <span>Logg ut</span>
-                            </div>
-                          </CustomDropdownItem>
-                        </div>
+                  }
+                  align="end"
+                  contentClassName="w-80 rounded-2xl shadow-xl border border-gray-100"
+                />
+
+                {/* Add Listing Button */}
+                <Button className="hidden md:flex bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2 rounded-xl shadow-sm" asChild>
+                  <Link href="/listings/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Legg ut annonse
+                  </Link>
+                </Button>
+
+                {/* User Menu */}
+                <CustomDropdown
+                  trigger={
+                    <Button variant="ghost" className="flex items-center space-x-2 hover:bg-gray-100 rounded-xl p-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.imageUrl} />
+                        <AvatarFallback className="bg-emerald-500 text-white font-semibold">
+                          {user?.firstName?.charAt(0) ?? user?.username?.charAt(0) ?? '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="hidden md:block text-left">
+                        <p className="text-sm font-semibold text-gray-900">{user.firstName || user.username}</p>
                       </div>
-                    }
-                    align="end"
-                    contentClassName="w-56"
-                  />
-                </>
-            ) : (
-              <>
-                <SignInButton mode="modal">
-                    <Button variant="ghost" size="sm" className="text-gray-700 hover:text-[#4CD964]">
-                      Logg inn
                     </Button>
+                  }
+                  content={
+                    <div className="w-56">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-sm font-semibold text-gray-900">{user.fullName || user.username}</p>
+                        <p className="text-xs text-gray-500">{user.primaryEmailAddress?.emailAddress}</p>
+                      </div>
+                      <div className="py-2">
+                        <Link href="/profile" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                          <Package className="mr-3 h-4 w-4" />
+                          Mine annonser
+                        </Link>
+                        <Link href="/profile/favorites" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                          <Heart className="mr-3 h-4 w-4" />
+                          Favoritter
+                        </Link>
+                        <Link href="/profile?tab=settings" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                          <Settings className="mr-3 h-4 w-4" />
+                          Innstillinger
+                        </Link>
+                      </div>
+                      <div className="border-t border-gray-100 py-2">
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <LogOut className="mr-3 h-4 w-4" />
+                          Logg ut
+                        </button>
+                      </div>
+                    </div>
+                  }
+                  align="end"
+                  contentClassName="w-56 rounded-2xl shadow-xl border border-gray-100"
+                />
+              </>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <SignInButton mode="modal">
+                  <Button variant="ghost" className="text-gray-700 hover:text-gray-900 font-medium">
+                    Logg inn
+                  </Button>
                 </SignInButton>
                 <SignUpButton mode="modal">
-                    <Button size="sm" className="bg-[#4CD964] hover:bg-[#3DAF50] text-white">
-                      Registrer deg
-                    </Button>
+                  <Button className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-6 py-2 rounded-xl shadow-sm">
+                    Registrer deg
+                  </Button>
                 </SignUpButton>
-              </>
+              </div>
             )}
 
-              {/* Mobile Menu */}
-              <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden">
+            {/* Mobile Menu */}
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-xl">
                   <Menu className="h-5 w-5" />
-                    <span className="sr-only">Åpne meny</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="overflow-y-auto">
-                  <div className="flex flex-col h-full">
-                    {/* Mobile Search */}
-                    <div className="mb-6">
-                      <form onSubmit={handleSearch} className="relative">
-                        <Input
-                          type="text"
-                          placeholder="Søk..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          className="pr-10"
-                        />
-                        <Button 
-                          type="submit" 
-                          size="icon" 
-                          variant="ghost" 
-                          className="absolute right-0 top-0 h-full"
-                        >
-                          <Search className="h-4 w-4" />
                 </Button>
-                      </form>
-                    </div>
-
-                    {/* Mobile Menu Categories */}
-                    <div className="mb-6">
-                      <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wider">
-                        Kategorier
-                      </h3>
-                      <div className="space-y-1">
-                        {categoryGroups.map((group) => (
-                          <Link 
-                            key={group.name}
-                            href={`/category/${group.name.toLowerCase()}`}
-                            className="flex items-center py-2 text-base font-medium text-gray-700 hover:text-[#4CD964]"
-                            onClick={() => setIsOpen(false)}
-                          >
-                            <div className="mr-3 text-[#4CD964]">{group.icon}</div>
-                            {group.name}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Mobile Menu Navigation */}
-                    <nav className="flex flex-col space-y-4">
-                {user ? (
-                  <>
-                          <Link href="/rental-requests" className="text-base font-medium text-gray-700 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                            Leieforespørsler
-                          </Link>
-                          <Link href="/chat" className="text-base font-medium text-gray-700 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                            Meldinger
-                          </Link>
-                          <Link href="/listings/new" className="text-base font-medium text-gray-700 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                            Lei ut dine ting
-                          </Link>
-                          <div className="border-t pt-4 mt-2">
-                            <h3 className="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wider">
-                              Min konto
-                            </h3>
-                            <div className="space-y-2">
-                              <Link href="/profile" className="flex items-center text-base font-medium text-gray-700 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                        <Package className="mr-2 h-4 w-4" />
-                                <span>Mine annonser</span>
-                      </Link>
-                              <Link href="/profile/favorites" className="flex items-center text-base font-medium text-gray-700 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                        <Heart className="mr-2 h-4 w-4" />
-                                <span>Favoritter</span>
-                      </Link>
-                              <Link href="/profile?tab=settings" className="flex items-center text-base font-medium text-gray-700 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                        <Settings className="mr-2 h-4 w-4" />
-                                <span>Innstillinger</span>
-                      </Link>
-                            </div>
-                          </div>
-                          <button 
-                            onClick={() => {
-                              handleSignOut()
-                              setIsOpen(false)
-                            }}
-                            className="flex items-center text-base font-medium text-red-600 text-left"
-                          >
-                      <LogOut className="mr-2 h-4 w-4" />
-                            <span>Logg ut</span>
-                          </button>
-                  </>
-                ) : (
-                        <div className="flex flex-col space-y-2">
-                      <SignInButton mode="modal">
-                            <Button variant="outline" className="justify-start border-gray-200 hover:bg-[#F2FFF8] hover:text-[#4CD964]">
-                              <User className="mr-2 h-4 w-4" />
-                              Logg inn
-                            </Button>
-                      </SignInButton>
-                      <SignUpButton mode="modal">
-                            <Button className="justify-start bg-[#4CD964] hover:bg-[#3DAF50]">
-                              <User className="mr-2 h-4 w-4" />
-                              Registrer deg
-                            </Button>
-                      </SignUpButton>
-                        </div>
-                      )}
-                    </nav>
-
-                    {/* Help Links */}
-                    <div className="mt-auto pt-6 border-t">
-                      <div className="flex justify-between">
-                        <Link href="/help" className="text-sm text-gray-500 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                          Hjelp
-                        </Link>
-                        <Link href="/about" className="text-sm text-gray-500 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                          Om oss
-                        </Link>
-                        <Link href="/contact" className="text-sm text-gray-500 hover:text-[#4CD964]" onClick={() => setIsOpen(false)}>
-                          Kontakt
-                    </Link>
-                      </div>
-                    </div>
+              </SheetTrigger>
+              <SheetContent side="right" className="overflow-y-auto w-80 sm:w-96">
+                <div className="flex flex-col h-full">
+                  {/* Mobile Search */}
+                  <div className="mb-6">
+                    <form onSubmit={handleSearch} className="relative">
+                      <Input
+                        type="text"
+                        placeholder="Søk..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pr-10 rounded-xl text-base"
+                      />
+                      <Button 
+                        type="submit" 
+                        size="icon" 
+                        variant="ghost" 
+                        className="absolute right-0 top-0 h-full"
+                      >
+                        <Search className="h-4 w-4" />
+                      </Button>
+                    </form>
                   </div>
-                </SheetContent>
-              </Sheet>
-            </div>
+
+                  {/* Mobile Navigation */}
+                  <nav className="flex flex-col space-y-3 sm:space-y-4">
+                    <Link href="/categories" className="text-base font-medium text-gray-700 hover:text-gray-900" onClick={() => setIsOpen(false)}>
+                      Kategorier
+                    </Link>
+                    <Link href="/search?newest=true" className="text-base font-medium text-gray-700 hover:text-gray-900" onClick={() => setIsOpen(false)}>
+                      Nye annonser
+                    </Link>
+                    
+                    {user ? (
+                      <>
+                        <Link href="/rental-requests" className="text-base font-medium text-gray-700 hover:text-gray-900" onClick={() => setIsOpen(false)}>
+                          Forespørsler
+                        </Link>
+                        <Link href="/listings/new" className="text-base font-medium text-gray-700 hover:text-gray-900" onClick={() => setIsOpen(false)}>
+                          Legg ut annonse
+                        </Link>
+                        <div className="border-t pt-4 mt-4">
+                          <Link href="/profile" className="flex items-center text-base font-medium text-gray-700 hover:text-gray-900 py-2" onClick={() => setIsOpen(false)}>
+                            <Package className="mr-2 h-4 w-4" />
+                            Mine annonser
+                          </Link>
+                          <Link href="/profile/favorites" className="flex items-center text-base font-medium text-gray-700 hover:text-gray-900 py-2" onClick={() => setIsOpen(false)}>
+                            <Heart className="mr-2 h-4 w-4" />
+                            Favoritter
+                          </Link>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            handleSignOut()
+                            setIsOpen(false)
+                          }}
+                          className="flex items-center text-base font-medium text-red-600 text-left py-2"
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Logg ut
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex flex-col space-y-3 pt-4 border-t">
+                        <SignInButton mode="modal">
+                          <Button variant="outline" className="justify-start">
+                            <User className="mr-2 h-4 w-4" />
+                            Logg inn
+                          </Button>
+                        </SignInButton>
+                        <SignUpButton mode="modal">
+                          <Button className="justify-start bg-emerald-500 hover:bg-emerald-600">
+                            <User className="mr-2 h-4 w-4" />
+                            Registrer deg
+                          </Button>
+                        </SignUpButton>
+                      </div>
+                    )}
+                  </nav>
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>
@@ -1012,10 +756,10 @@ export default function Navigation() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.2 }}
-            className="absolute top-full left-0 right-0 bg-white border-t border-b border-gray-200 shadow-lg z-30"
+            className="absolute top-full left-0 right-0 bg-white border-t border-gray-100 shadow-lg z-30"
           >
             <div className="container mx-auto px-4 py-6">
-              <form onSubmit={handleSearch} className="max-w-xl mx-auto">
+              <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
                 <div className="relative">
                   <Input
                     ref={searchInputRef}
@@ -1023,11 +767,11 @@ export default function Navigation() {
                     placeholder="Søk etter gjenstander..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pr-10 border-[#4CD964] focus-visible:ring-[#4CD964] h-12 pl-4 text-lg"
+                    className="pr-12 h-12 text-lg rounded-2xl border-gray-200 focus:border-emerald-500 focus:ring-emerald-500"
                   />
                   <Button 
                     type="submit" 
-                    className="absolute right-0 top-0 h-full bg-[#4CD964] hover:bg-[#3DAF50] rounded-l-none"
+                    className="absolute right-1 top-1 h-10 w-10 bg-emerald-500 hover:bg-emerald-600 rounded-xl"
                   >
                     <Search className="h-5 w-5" />
                   </Button>
@@ -1039,7 +783,7 @@ export default function Navigation() {
                       key={term}
                       variant="outline"
                       size="sm"
-                      className="rounded-full border-gray-200 hover:border-[#4CD964] hover:bg-[#F2FFF8] hover:text-[#4CD964]"
+                      className="rounded-full border-gray-200 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-600"
                       onClick={() => {
                         setSearchQuery(term)
                         if (searchInputRef.current) {
@@ -1054,21 +798,6 @@ export default function Navigation() {
               </form>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Background overlay when mega menu is active */}
-      <AnimatePresence>
-        {activeMegaMenu && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/25 z-10"
-            onClick={() => setActiveMegaMenu(null)}
-            style={{ pointerEvents: activeMegaMenu ? 'auto' : 'none' }}
-          />
         )}
       </AnimatePresence>
     </header>

@@ -15,17 +15,31 @@ import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { MessageInput } from '@/components/enhanced-messaging/MessageInput'
+import { EnhancedMessage } from '@/components/enhanced-messaging/EnhancedMessage'
 
 type Message = {
   id: string;
   sender_id: string;
   content: string;
   timestamp: string;
-  type: 'text' | 'image';
+  type: string;
   sender_username: string;
   sender_avatar: string;
   conversation_id: string;
   created_at: string;
+  is_read?: boolean;
+  read_at?: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
+  file_type?: string;
+  location_lat?: number;
+  location_lng?: number;
+  location_name?: string;
+  reply_to_content?: string;
+  reply_to_username?: string;
+  is_template_response?: boolean;
 }
 
 type Conversation = {
@@ -76,6 +90,7 @@ function ChatContent() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({})
   const [initialLoad, setInitialLoad] = useState(true)
+  const [replyingTo, setReplyingTo] = useState<any>(null)
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -257,6 +272,44 @@ function ChatContent() {
     }
   }
 
+  const handleEnhancedSendMessage = async (messageData: any) => {
+    if (!user || !activeConversation) return
+
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(messageData),
+      })
+
+      if (response.ok) {
+        const newMsg = await response.json()
+        setMessages(prev => [...prev, newMsg])
+
+        // Update conversation list with last message
+        const displayContent = messageData.content || 
+          (messageData.type === 'file' ? `📎 ${messageData.fileName || 'File'}` : '') ||
+          (messageData.type === 'location' ? '📍 Location' : '') ||
+          'Message'
+
+        setConversations(conversations.map(conv => 
+          conv.id === activeConversation.id 
+            ? { ...conv, lastMessage: displayContent, lastMessageTime: new Date().toISOString() } 
+            : conv
+        ))
+      }
+    } catch (error) {
+      console.error('Error sending enhanced message:', error)
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -408,44 +461,25 @@ function ChatContent() {
               ) : (
                 <>
                   {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex mb-4 ${
-                        message.sender_id === user.id ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
-                      {message.sender_id !== user.id && (
-                        <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage src={message.sender_avatar} />
-                          <AvatarFallback>{message.sender_username[0]}</AvatarFallback>
-                        </Avatar>
-                      )}
-                      <div
-                        className={`max-w-[70%] ${
-                          message.sender_id === user.id
-                            ? 'bg-blue-500 text-white rounded-2xl rounded-br-none'
-                            : 'bg-gray-100 rounded-2xl rounded-bl-none'
-                        } p-3`}
-                      >
-                        {message.type === 'image' ? (
-                          <Image
-                            src={message.content}
-                            alt="Shared image"
-                            width={300}
-                            height={200}
-                            className="rounded-lg"
-                          />
-                        ) : (
-                          <p>{message.content}</p>
-                        )}
-                        <p
-                          className={`text-xs mt-1 ${
-                            message.sender_id === user.id ? 'text-blue-100' : 'text-gray-500'
-                          }`}
-                        >
-                          {formatDate(message.created_at)}
-                        </p>
-                      </div>
+                    <div key={message.id} className="mb-4">
+                      <EnhancedMessage
+                        message={message}
+                        isOwn={message.sender_id === user.id}
+                        onReply={(msg) => setReplyingTo(msg)}
+                        onMarkRead={async (messageId) => {
+                          try {
+                            await fetch('/api/messages/read-receipts', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ messageId })
+                            })
+                            // Refresh messages to show updated read status
+                            fetchMessages(activeConversation.id)
+                          } catch (error) {
+                            console.error('Error marking message as read:', error)
+                          }
+                        }}
+                      />
                     </div>
                   ))}
                   {Object.entries(typingUsers).map(([userId, isTyping]) => (
@@ -463,62 +497,13 @@ function ChatContent() {
               )}
             </ScrollArea>
 
-            {/* Message Input */}
-            <div className="p-4 border-t bg-white">
-              {selectedImage && (
-                <div className="mb-2 relative inline-block">
-                  <Image
-                    src={selectedImage}
-                    alt="Selected image"
-                    width={100}
-                    height={100}
-                    className="rounded-lg"
-                  />
-                  <button
-                    onClick={() => setSelectedImage(null)}
-                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-              <div className="flex items-center space-x-2">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => {
-                    setNewMessage(e.target.value)
-                    handleTyping()
-                  }}
-                  placeholder="Type a message..."
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="icon">
-                      <Smile className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0">
-                    <Picker
-                      data={data}
-                      onEmojiSelect={handleEmojiSelect}
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Button variant="outline" size="icon" className="relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
-                  <Camera className="h-4 w-4" />
-                </Button>
-                <Button onClick={handleSendMessage}>
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+            {/* Enhanced Message Input */}
+            <MessageInput
+              conversationId={activeConversation.id}
+              onSendMessage={handleEnhancedSendMessage}
+              replyingTo={replyingTo}
+              onCancelReply={() => setReplyingTo(null)}
+            />
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-center p-4">

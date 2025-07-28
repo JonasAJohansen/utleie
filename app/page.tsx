@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Check, MapPin, Star, Globe, Shield, CreditCard, Clock, Leaf, DollarSign, Zap, User, Package } from 'lucide-react'
+import { ArrowRight, MapPin, Star, Search, Shield, Clock, Leaf, Smartphone, CheckCircle, Users, Globe, Camera, Wrench, Gamepad2, TrendingUp, Heart, Zap, Award, Mail, Phone, MessageCircle, ChevronDown, Play, Target, Truck, Home as HomeIcon, Music, Tv, Shirt, Package } from 'lucide-react'
 import { sql } from '@vercel/postgres'
 import { SearchBar } from '@/components/SearchBar'
 import { Card, CardContent } from "@/components/ui/card"
@@ -37,20 +37,75 @@ async function getLatestListings() {
     return result.rows
   } catch (error) {
     console.error('Database Error:', error)
-    // Return empty array instead of throwing to prevent page crash
     return []
   }
 }
 
 async function getPopularCategories() {
   try {
-    const result = await sql`
+    // First try to get categories marked as popular
+    let result = await sql`
+      SELECT name, name as id, icon, description
+      FROM categories
+      WHERE is_active = true AND is_popular = true
+      ORDER BY RANDOM()
+      LIMIT 3
+    `
+    
+    // If no popular categories found, get random active categories as fallback
+    if (result.rows.length === 0) {
+      result = await sql`
       SELECT name, name as id, icon, description
       FROM categories
       WHERE is_active = true
-      ORDER BY name ASC
+        ORDER BY RANDOM()
+        LIMIT 3
+      `
+    }
+    
+    return result.rows
+  } catch (error) {
+    console.error('Database Error:', error)
+    return []
+  }
+}
+
+async function getPopularCategoriesWithCounts() {
+  try {
+    // Get popular categories with listing counts
+    let result = await sql`
+      SELECT 
+        c.name, 
+        c.name as id, 
+        c.icon, 
+        c.description,
+        COALESCE(COUNT(l.id), 0) as listing_count
+      FROM categories c
+      LEFT JOIN listings l ON c.name = l.category_id AND l.status = 'active'
+      WHERE c.is_active = true AND c.is_popular = true
+      GROUP BY c.name, c.icon, c.description
+      ORDER BY listing_count DESC, c.name ASC
       LIMIT 8
     `
+    
+    // If no popular categories found, get top categories by listing count as fallback
+    if (result.rows.length === 0) {
+      result = await sql`
+        SELECT 
+          c.name, 
+          c.name as id, 
+          c.icon, 
+          c.description,
+          COALESCE(COUNT(l.id), 0) as listing_count
+        FROM categories c
+        LEFT JOIN listings l ON c.name = l.category_id AND l.status = 'active'
+        WHERE c.is_active = true
+        GROUP BY c.name, c.icon, c.description
+        ORDER BY listing_count DESC, c.name ASC
+        LIMIT 8
+      `
+    }
+    
     return result.rows
   } catch (error) {
     console.error('Database Error:', error)
@@ -59,133 +114,497 @@ async function getPopularCategories() {
 }
 
 export default async function Home() {
-  const [latestListings, popularCategories] = await Promise.all([
+  const [latestListings, popularCategories, popularCategoriesWithCounts] = await Promise.all([
     getLatestListings(),
     getPopularCategories(),
+    getPopularCategoriesWithCounts(),
   ])
+
+  // Icon and color mapping for categories
+  const categoryStyles: { [key: string]: { icon: JSX.Element, color: string } } = {
+    "Kameraer": { icon: <Camera className="h-8 w-8" />, color: "bg-red-500" },
+    "Verktøy": { icon: <Wrench className="h-8 w-8" />, color: "bg-orange-500" },
+    "Gaming": { icon: <Gamepad2 className="h-8 w-8" />, color: "bg-purple-500" },
+    "Sport": { icon: <Target className="h-8 w-8" />, color: "bg-blue-500" },
+    "Transport": { icon: <Truck className="h-8 w-8" />, color: "bg-green-500" },
+    "Elektronikk": { icon: <Smartphone className="h-8 w-8" />, color: "bg-indigo-500" },
+    "Hjem": { icon: <HomeIcon className="h-8 w-8" />, color: "bg-emerald-500" },
+    "Hjem & Have": { icon: <Leaf className="h-8 w-8" />, color: "bg-emerald-500" },
+    "Reise": { icon: <Globe className="h-8 w-8" />, color: "bg-cyan-500" },
+    "Musikk": { icon: <Music className="h-8 w-8" />, color: "bg-pink-500" },
+    "TV og lyd": { icon: <Tv className="h-8 w-8" />, color: "bg-yellow-500" },
+    "Klær": { icon: <Shirt className="h-8 w-8" />, color: "bg-teal-500" },
+    "default": { icon: <Package className="h-8 w-8" />, color: "bg-gray-500" }
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <main className="flex-1">
-        {/* Hero Section - Green Color Scheme */}
-        <div className="bg-gradient-to-br from-[#E7F9EF] via-[#F2FFF8] to-[#E5F8EC] pt-28 pb-20 relative overflow-hidden">
-          {/* Decorative elements */}
-          <div className="absolute top-20 right-[10%] w-64 h-64 rounded-full bg-[#4CD964]/10 blur-3xl"></div>
-          <div className="absolute bottom-10 left-[5%] w-72 h-72 rounded-full bg-[#4CD964]/10 blur-3xl"></div>
-          <div className="absolute top-40 left-[15%] w-32 h-32 rounded-full bg-[#4CD964]/20 blur-xl"></div>
+        {/* Hero Section - Bold and Modern */}
+        <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white">
+          {/* Animated Floating 3D Elements - Hidden on mobile for better performance */}
+          <AnimatedSection
+            className="hidden md:block absolute top-20 right-[15%] w-20 h-20 lg:w-24 lg:h-24 bg-emerald-500 rounded-3xl rotate-12 opacity-90 shadow-2xl"
+            animate={{ 
+              y: [0, -10, 0], 
+              rotate: [12, 18, 12] 
+            }}
+            transition={{ 
+              duration: 4, 
+              repeat: Infinity, 
+              ease: "easeInOut"
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <Camera className="h-10 w-10 lg:h-12 lg:w-12 text-white" />
+            </div>
+          </AnimatedSection>
           
-          <div className="container mx-auto px-4 relative z-10">
+          <AnimatedSection
+            className="hidden lg:block absolute top-[30%] right-[5%] w-16 h-16 lg:w-18 lg:h-18 bg-blue-500 rounded-2xl -rotate-12 opacity-80 shadow-xl"
+            animate={{ 
+              x: [0, 8, 0], 
+              rotate: [-12, -18, -12] 
+            }}
+            transition={{ 
+              duration: 3.5, 
+              repeat: Infinity, 
+              ease: "easeInOut"
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <Wrench className="h-8 w-8 lg:h-9 lg:w-9 text-white" />
+            </div>
+          </AnimatedSection>
+          
+          <AnimatedSection
+            className="hidden md:block absolute bottom-[25%] left-[10%] w-20 h-20 lg:w-24 lg:h-24 bg-purple-500 rounded-3xl rotate-6 opacity-85 shadow-2xl"
+            animate={{ 
+              y: [0, -15, 0], 
+              rotate: [6, 12, 6] 
+            }}
+            transition={{ 
+              duration: 4.5, 
+              repeat: Infinity, 
+              ease: "easeInOut"
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <Gamepad2 className="h-10 w-10 lg:h-12 lg:w-12 text-white" />
+            </div>
+          </AnimatedSection>
+          
+          <AnimatedSection
+            className="hidden lg:block absolute top-[60%] left-[20%] w-14 h-14 lg:w-16 lg:h-16 bg-orange-500 rounded-2xl -rotate-6 opacity-75 shadow-lg"
+            animate={{ 
+              x: [0, -6, 0], 
+              rotate: [-6, -12, -6] 
+            }}
+            transition={{ 
+              duration: 3, 
+              repeat: Infinity, 
+              ease: "easeInOut"
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <Globe className="h-7 w-7 lg:h-8 lg:w-8 text-white" />
+            </div>
+          </AnimatedSection>
+          
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <AnimatedSection 
-              className="grid md:grid-cols-2 gap-12 items-center"
+              className="max-w-6xl mx-auto"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.8 }}
             >
               <AnimatedSection 
-                className="space-y-8"
-                initial={{ opacity: 0, y: 20 }}
+                className="space-y-6 sm:space-y-8 lg:space-y-10"
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
               >
-                <div>
-                  <span className="inline-flex items-center rounded-full bg-[#4CD964]/20 px-4 py-1.5 text-sm font-medium text-[#1A8D3B]">
-                    <Check className="mr-1.5 h-4 w-4" /> Stoles av over 500k+ brukere
-                  </span>
-                </div>
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900">
-                  Lei hva som helst <br />
-                  <span className="text-[#4CD964] relative">
-                    fra hvem som helst
-                    <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M1 5.5C32.3333 2.16667 154.4 -0.7 299 8.5" stroke="#4CD964" strokeWidth="3" strokeLinecap="round"/>
-                    </svg>
-                  </span>
+                <AnimatedSection
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.4 }}
+                >
+                  <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight text-gray-900 leading-none px-2 sm:px-0">
+                    LEI ALT DU TRENGER,{' '}
+                    <br className="hidden sm:block" />
+                    <AnimatedSection
+                      as="span"
+                      className="text-emerald-500"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.6, delay: 0.8 }}
+                    >
+                      NÅR DU TRENGER DET
+                    </AnimatedSection>
                 </h1>
+                </AnimatedSection>
                 
-                <p className="text-xl md:text-2xl text-gray-600">
-                  Spar penger og reduser avfall ved å leie istedenfor å kjøpe.
-                  Tusenvis av gjenstander fra pålitelige eiere over hele Norge.
-                </p>
+                <AnimatedSection
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
+                >
+                  <p className="text-lg sm:text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto font-medium px-4 sm:px-0">
+                    Fra kameraer til verktøy, campingutstyr til elektronikk. 
+                    Lei istedenfor å kjøpe – smart, bærekraftig og rimelig.
+                  </p>
+                </AnimatedSection>
                 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" className="bg-[#4CD964] hover:bg-[#3DAF50] text-white px-8 py-6 text-lg rounded-xl shadow-lg shadow-[#4CD964]/20 hover:shadow-xl hover:shadow-[#4CD964]/30 transform transition-all duration-300 hover:-translate-y-1" asChild>
-                    <Link href="/listings">Begynn å leie</Link>
-                  </Button>
-                  <Button size="lg" variant="outline" className="border-2 border-[#4CD964] text-[#4CD964] px-8 py-6 text-lg rounded-xl hover:bg-[#4CD964]/10 transition-all duration-300" asChild>
-                    <Link href="/listings/new">List gjenstandene dine</Link>
-                  </Button>
-                </div>
-                
-                <div className="flex items-center flex-wrap gap-6 text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <div className="bg-[#E7F9EF] p-2 rounded-full mr-2">
-                      <Shield className="h-5 w-5 text-[#4CD964]" />
-                    </div>
-                    Fullt forsikret
-                  </div>
-                  <div className="flex items-center">
-                    <div className="bg-[#E7F9EF] p-2 rounded-full mr-2">
-                      <CreditCard className="h-5 w-5 text-[#4CD964]" />
-                    </div>
-                    Sikre betalinger
-                  </div>
-                  <div className="flex items-center">
-                    <div className="bg-[#E7F9EF] p-2 rounded-full mr-2">
-                      <Clock className="h-5 w-5 text-[#4CD964]" />
-                    </div>
-                    24/7 kundestøtte
-          </div>
-        </div>
+                {/* Integrated Search */}
+                <AnimatedSection
+                  className="max-w-4xl mx-auto pt-6 sm:pt-8 px-4 sm:px-0"
+                  initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.8, delay: 0.8 }}
+                >
+                  <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 p-4 sm:p-6 md:p-8 backdrop-blur-sm hover:shadow-3xl transition-all duration-300">
+                    <AnimatedSection
+                      className="mb-4 sm:mb-6"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 1 }}
+                    >
+                      <SearchBar />
               </AnimatedSection>
               
               <AnimatedSection 
-                className="relative"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.3 }}
-              >
-                <div className="bg-white p-8 md:p-10 rounded-3xl shadow-xl border border-gray-100">
-                  <h2 className="text-2xl font-bold mb-6 text-gray-800">Finn det du trenger</h2>
-                  
-                  <div className="mb-8">
-                    <SearchBar />
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h3 className="font-medium text-gray-700">Populære søk:</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {popularCategories.slice(0, 5).map((category) => (
-                        <Link key={category.id} href={`/category/${category.id}`} className="px-4 py-2 rounded-full bg-[#F2FFF8] hover:bg-[#4CD964]/10 text-[#1A8D3B] transition-colors duration-200 text-sm font-medium">
+                      className="text-center"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 1.2 }}
+                    >
+                      <p className="text-gray-500 mb-3 sm:mb-4 font-medium text-sm sm:text-base">Eller utforsk populære kategorier:</p>
+                      <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+                        {popularCategories.map((category, index) => (
+                          <AnimatedSection
+                            key={category.id}
+                            as={Link}
+                            href={`/category/${category.id}`}
+                            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 hover:text-emerald-800 transition-all duration-200 font-medium border border-emerald-200 text-xs sm:text-sm hover:scale-105 hover:shadow-md"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 1.4 + index * 0.1 }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
                           {category.name}
-              </Link>
+                          </AnimatedSection>
             ))}
                     </div>
+                    </AnimatedSection>
                   </div>
-                </div>
-                
-                {/* Floating elements */}
-                <div className="absolute -top-10 -right-10 w-20 h-20 bg-[#4CD964]/10 rounded-full border border-[#4CD964]/20 flex items-center justify-center">
-                  <Leaf className="h-8 w-8 text-[#4CD964]" />
-                </div>
-                <div className="absolute -bottom-6 -left-6 w-12 h-12 bg-[#4CD964]/10 rounded-full border border-[#4CD964]/20 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-[#4CD964]" />
-                </div>
+                </AnimatedSection>
               </AnimatedSection>
             </AnimatedSection>
           </div>
         </div>
         
-        {/* Trust Metrics - Green Theme */}
-        <div className="py-16 bg-white relative z-10">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+
+
+
+
+        {/* How It Works - Step by Step */}
+        <div className="py-16 sm:py-20 lg:py-24 bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <AnimatedSection 
+              className="text-center mb-12 sm:mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 text-gray-900">
+                Slik fungerer det
+              </h2>
+              <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4 sm:px-0">
+                Tre enkle steg til å leie det du trenger
+              </p>
+            </AnimatedSection>
+            
+            <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto relative">
+              {/* Connecting Lines - Only show on desktop */}
+              <div className="hidden lg:block absolute top-16 left-[16.67%] right-[16.67%] h-0.5 bg-emerald-300"></div>
+              
               {[
-                { value: "500K+", label: "Vellykkede utleier", icon: <Check className="h-6 w-6" /> },
-                { value: "100K+", label: "Aktive brukere", icon: <User className="h-6 w-6" /> },
-                { value: "50K+", label: "Tilgjengelige gjenstander", icon: <Package className="h-6 w-6" /> },
-                { value: "4.9", label: "Gjennomsnittlig vurdering", icon: <Star className="h-6 w-6" /> },
-                { value: "24/7", label: "Kundestøtte", icon: <Clock className="h-6 w-6" /> }
-              ].map((stat, index) => (
+                {
+                  step: "01",
+                  icon: <Search className="h-10 w-10" />,
+                  title: "Søk og finn",
+                  description: "Bla gjennom tusenvis av gjenstander. Bruk filtre for å finne akkurat det du trenger, når du trenger det.",
+                  color: "bg-emerald-500"
+                },
+                {
+                  step: "02", 
+                  icon: <MessageCircle className="h-10 w-10" />,
+                  title: "Book og betal",
+                  description: "Send booking-forespørsel til eier. Betal trygt gjennom vår plattform med innebygd forsikring.",
+                  color: "bg-blue-500"
+                },
+                {
+                  step: "03",
+                  icon: <CheckCircle className="h-10 w-10" />,
+                  title: "Hent og nyt",
+                  description: "Møt eier på avtalt sted og tid. Bruk gjenstanden og returner den i samme stand som mottatt.",
+                  color: "bg-emerald-600"
+                }
+              ].map((step, index) => (
+                <AnimatedSection 
+                  key={index}
+                  className="text-center relative group"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.2 }}
+                >
+                  <div className="bg-gray-50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 relative z-10 group-hover:shadow-xl transition-all duration-300">
+                    {/* Step Number */}
+                    <div className="text-4xl sm:text-5xl font-black text-emerald-500 mb-4 sm:mb-6">{step.step}</div>
+                    
+                    {/* Icon */}
+                    <div className={`${step.color} w-16 h-16 sm:w-20 sm:h-20 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 mx-auto text-white shadow-lg`}>
+                      <div className="scale-75 sm:scale-100">
+                        {step.icon}
+                      </div>
+                    </div>
+                    
+                    {/* Content */}
+                    <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900">{step.title}</h3>
+                    <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
+                      {step.description}
+                    </p>
+                  </div>
+                </AnimatedSection>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* Features Grid */}
+        <div className="py-16 sm:py-20 lg:py-24 bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <AnimatedSection 
+              className="text-center mb-12 sm:mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6 text-gray-900 px-4 sm:px-0">
+                Derfor velger tusenvis av nordmenn å leie
+              </h2>
+              <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4 sm:px-0">
+                Smart økonomi møter bærekraftig forbruk
+              </p>
+            </AnimatedSection>
+            
+            <div className="grid sm:grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+              {[
+                {
+                  icon: <Leaf className="h-10 w-10 sm:h-12 sm:w-12" />,
+                  title: "Bærekraftig",
+                  description: "Reduser miljøpåvirkningen din ved å dele ressurser istedenfor å kjøpe nytt",
+                  color: "bg-emerald-500"
+                },
+                {
+                  icon: <Shield className="h-10 w-10 sm:h-12 sm:w-12" />,
+                  title: "Trygt og enkelt",
+                  description: "Sikre betalinger, forsikring og verifiserte brukere gir deg fullstendig trygghet",
+                  color: "bg-blue-500"
+                },
+                {
+                  icon: <Clock className="h-10 w-10 sm:h-12 sm:w-12" />,
+                  title: "Når du trenger det",
+                  description: "Tilgang til kvalitetsutstyr uten langsiktige forpliktelser eller oppbevaring",
+                  color: "bg-purple-500"
+                }
+              ].map((feature, index) => (
+                <AnimatedSection 
+                  key={index}
+                  className="text-center"
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                >
+                  <div className={`${feature.color} w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl flex items-center justify-center mb-6 sm:mb-8 mx-auto text-white shadow-xl`}>
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900">{feature.title}</h3>
+                  <p className="text-gray-600 text-base sm:text-lg leading-relaxed px-4 sm:px-0">
+                    {feature.description}
+                  </p>
+                </AnimatedSection>
+            ))}
+            </div>
+          </div>
+        </div>
+        
+        {/* Popular Categories Showcase */}
+        <div className="py-16 sm:py-20 lg:py-24 bg-gray-50">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <AnimatedSection 
+              className="text-center mb-12 sm:mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6 text-gray-900 px-4 sm:px-0">
+                Populære kategorier
+              </h2>
+              <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4 sm:px-0">
+                Utforsk våre mest populære utleiekategorier
+              </p>
+            </AnimatedSection>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
+              {popularCategoriesWithCounts.map((category, index) => {
+                const style = categoryStyles[category.name] || categoryStyles.default
+                const displayCount = category.listing_count > 0 ? `${category.listing_count}+` : '0'
+                
+                return (
+                  <AnimatedSection 
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: index * 0.1 }}
+                  >
+                    <Link href={`/category/${category.name.toLowerCase()}`}>
+                      <Card className="p-4 sm:p-6 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white border-0 shadow-lg rounded-xl sm:rounded-2xl">
+                        <div className="text-center">
+                          <div className={`${style.color} w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl flex items-center justify-center mb-3 sm:mb-4 mx-auto text-white shadow-lg`}>
+                            <div className="scale-75 sm:scale-100">
+                              {style.icon}
+                            </div>
+                          </div>
+                          <h3 className="font-bold text-gray-900 mb-1 text-sm sm:text-base">{category.name}</h3>
+                          <p className="text-xs sm:text-sm text-gray-500">{displayCount} annonser</p>
+                        </div>
+                      </Card>
+                    </Link>
+                  </AnimatedSection>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* App Mockup Section */}
+        <div className="py-16 sm:py-20 lg:py-24 bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center">
+              <AnimatedSection
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="space-y-6 sm:space-y-8">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900">
+                    Alt du trenger i lomma
+                  </h2>
+                  <p className="text-lg sm:text-xl text-gray-600 leading-relaxed">
+                    Vår mobile app gjør det enkelt å søke, book og administrere utleier. 
+                    Tilgjengelig for iOS og Android.
+                  </p>
+                  
+                  <div className="space-y-3 sm:space-y-4">
+                    {[
+                      "Søk blant tusenvis av gjenstander",
+                      "Book direkte med eiere",
+                      "Sikre betalinger og forsikring",
+                      "Meldings- og vurderingssystem"
+                    ].map((feature, index) => (
+                      <div key={index} className="flex items-center gap-3">
+                        <CheckCircle className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-500 flex-shrink-0" />
+                        <span className="text-base sm:text-lg text-gray-700 font-medium">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex gap-4 pt-4">
+                    <Button className="bg-gray-900 hover:bg-gray-800 text-white px-6 sm:px-8 py-4 sm:py-6 text-base sm:text-lg font-bold rounded-xl sm:rounded-2xl">
+                      Last ned appen
+                    </Button>
+                  </div>
+                </div>
+              </AnimatedSection>
+              
+              <AnimatedSection
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
+                <div className="relative">
+                  <div className="bg-white rounded-3xl shadow-2xl p-8 transform rotate-3">
+                    <div className="bg-gray-100 rounded-2xl p-6 mb-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <Search className="h-5 w-5 text-gray-500" />
+                        <span className="text-gray-500">Søk etter kamera...</span>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      {[
+                        { name: "Canon EOS R5", price: "450 kr/dag", location: "Oslo" },
+                        { name: "Sony A7 III", price: "350 kr/dag", location: "Bergen" },
+                        { name: "DJI Mavic Pro", price: "250 kr/dag", location: "Trondheim" }
+                      ].map((item, index) => (
+                        <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+                          <div className="w-12 h-12 bg-emerald-500 rounded-lg"></div>
+                          <div className="flex-1">
+                            <p className="font-bold text-gray-900">{item.name}</p>
+                            <p className="text-sm text-gray-500">{item.location}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-emerald-600">{item.price}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </AnimatedSection>
+            </div>
+          </div>
+        </div>
+
+        {/* Norwegian Cities Highlight */}
+        <div className="py-24 bg-gradient-to-br from-blue-50 to-indigo-50">
+          <div className="container mx-auto px-4">
+            <AnimatedSection 
+              className="text-center mb-16"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h2 className="text-4xl md:text-5xl font-black mb-6 text-gray-900">
+                Tilgjengelig over hele Norge
+              </h2>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Fra nord til sør - finn utleiere i din by
+              </p>
+            </AnimatedSection>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 max-w-6xl mx-auto">
+              {[
+                { city: "Oslo", listings: "1,200+" },
+                { city: "Bergen", listings: "800+" },
+                { city: "Trondheim", listings: "600+" },
+                { city: "Stavanger", listings: "500+" },
+                { city: "Kristiansand", listings: "400+" },
+                { city: "Fredrikstad", listings: "300+" },
+                { city: "Tromsø", listings: "250+" },
+                { city: "Drammen", listings: "350+" }
+              ].map((location, index) => (
                 <AnimatedSection 
                   key={index}
                   className="text-center"
@@ -194,125 +613,48 @@ export default async function Home() {
                   viewport={{ once: true }}
                   transition={{ duration: 0.4, delay: index * 0.1 }}
                 >
-                  <div className="inline-flex items-center justify-center w-16 h-16 mb-4 rounded-full bg-[#E7F9EF] text-[#4CD964]">
-                    {stat.icon}
+                  <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
+                    <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mb-3 mx-auto">
+                      <MapPin className="h-6 w-6 text-white" />
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-1">{location.city}</h3>
+                    <p className="text-sm text-gray-500">{location.listings}</p>
                   </div>
-                  <div className="text-4xl font-bold text-gray-900">{stat.value}</div>
-                  <div className="text-sm text-gray-500 mt-1">{stat.label}</div>
                 </AnimatedSection>
               ))}
             </div>
           </div>
         </div>
-        
-        {/* How It Works - Green Theme */}
-        <div className="py-24 bg-[#FAFFFE] relative">
-          <div className="absolute inset-0 bg-[url('/pattern-light.svg')] bg-repeat opacity-5"></div>
-          <div className="container mx-auto px-4 relative z-10">
-            <AnimatedSection 
+
+        {/* Latest Listings */}
+        <section className="py-24 bg-white">
+          <div className="container mx-auto px-4">
+            <AnimatedSection
               className="text-center mb-16"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
+              transition={{ duration: 0.6 }}
             >
-              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Hvordan Price Tag fungerer</h2>
+              <h2 className="text-4xl md:text-5xl font-black mb-6 text-gray-900">
+                Tilgjengelig for leie nå
+              </h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Å leie gjenstander har aldri vært enklere. Følg disse enkle trinnene for å komme i gang.
+                Utforsk våre nyeste tilbud fra verifiserte utleiere
               </p>
             </AnimatedSection>
             
-            <div className="grid md:grid-cols-3 gap-8 relative">
-              {/* Connecting line */}
-              <div className="hidden md:block absolute top-1/3 left-[16.67%] right-[16.67%] h-0.5 bg-[#4CD964]/30"></div>
-              
-              {[
-                {
-                  step: 1,
-                  title: "Søk etter gjenstander",
-                  description: "Bla gjennom tusenvis av gjenstander på tvers av flere kategorier. Finn akkurat det du trenger.",
-                  link: "/listings",
-                  linkText: "Begynn å søke"
-                },
-                {
-                  step: 2,
-                  title: "Be om utleie",
-                  description: "Velg datoene dine og send en forespørsel til eieren. Vårt sikre meldingssystem gjør kommunikasjonen enkel.",
-                  link: "/help",
-                  linkText: "Lær mer"
-                },
-                {
-                  step: 3,
-                  title: "Betal trygt og nyt",
-                  description: "Bruk vårt sikre betalingssystem. Hent gjenstanden, bruk den, og returner den når du er ferdig.",
-                  link: "/about",
-                  linkText: "Sikkerhet og betalinger"
-                }
-              ].map((step, index) => (
-                <AnimatedSection 
-                  key={index}
-                  className="bg-white p-10 rounded-3xl shadow-lg border border-gray-100 relative z-10"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.2 }}
-                >
-                  <div className="w-16 h-16 rounded-2xl bg-[#4CD964] text-white flex items-center justify-center mb-8 text-xl font-bold shadow-lg shadow-[#4CD964]/20">
-                    {step.step}
-                  </div>
-                  <h3 className="text-2xl font-bold mb-4 text-gray-900">{step.title}</h3>
-                  <p className="text-gray-600 mb-6">
-                    {step.description}
-                  </p>
-                  <Link href={step.link} className="text-[#4CD964] hover:text-[#3DAF50] font-medium inline-flex items-center group">
-                    {step.linkText} 
-                    <ArrowRight className="h-4 w-4 ml-2 transform transition-transform group-hover:translate-x-1" />
-              </Link>
-                </AnimatedSection>
-            ))}
-            </div>
-          </div>
-        </div>
-        
-        {/* Latest Listings - Green Theme */}
-        <section className="py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16">
-              <AnimatedSection
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
-              >
-                <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Nylig lagt til gjenstander</h2>
-                <p className="text-xl text-gray-600 max-w-2xl">
-                  Sjekk ut de nyeste gjenstandene tilgjengelig for utleie
-                </p>
-              </AnimatedSection>
-              <AnimatedSection
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <Link href="/listings" className="text-[#4CD964] hover:text-[#3DAF50] font-medium inline-flex items-center text-lg group mt-6 md:mt-0">
-                  Se alle 
-                  <ArrowRight className="h-5 w-5 ml-2 transform transition-transform group-hover:translate-x-1" />
-                </Link>
-              </AnimatedSection>
-            </div>
-            
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
               {latestListings.length > 0 ? latestListings.map((listing, index) => (
                 <AnimatedSection
                   key={listing.id}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
                 >
                   <Link href={`/listings/${listing.id}`}>
-                    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 h-full flex flex-col transform hover:-translate-y-1 rounded-2xl border-0 shadow-lg">
+                    <Card className="overflow-hidden hover:shadow-2xl transition-all duration-500 h-full flex flex-col transform hover:-translate-y-2 rounded-3xl border-0 shadow-lg bg-white">
                       <div className="aspect-[4/3] relative">
                   <Image
                     src={listing.image || '/placeholder.svg'}
@@ -322,52 +664,49 @@ export default async function Home() {
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                         {listing.category_name && (
-                          <Badge className="absolute top-4 left-4 bg-white/90 text-gray-800 hover:bg-white/90 px-3 py-1.5 rounded-full text-sm font-medium">
+                          <Badge className="absolute top-4 left-4 bg-white/95 text-gray-800 hover:bg-white/95 px-4 py-2 rounded-full text-sm font-bold shadow-lg">
                             {listing.category_name}
                           </Badge>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
                       
                       <CardContent className="p-6 flex-grow flex flex-col">
                         <div className="flex-grow">
-                          <h3 className="text-xl font-bold mb-2 line-clamp-2 text-gray-900">{listing.name}</h3>
+                          <h3 className="text-xl font-bold mb-3 line-clamp-2 text-gray-900">{listing.name}</h3>
                           
-                          <div className="flex items-center gap-1 text-sm text-gray-500 mb-4">
+                          <div className="flex items-center gap-2 text-gray-500 mb-4">
                             <MapPin className="h-4 w-4" />
-                            {listing.location || 'Lokasjon ikke spesifisert'}
+                            <span className="text-sm">{listing.location || 'Lokasjon ikke spesifisert'}</span>
                           </div>
                 </div>
                         
                         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                          <div className="flex items-center gap-2">
-                            <div className="relative">
+                          <div className="flex items-center gap-3">
                               <Image
                                 src={listing.user_image || '/placeholder.svg'}
                                 alt={listing.username}
-                                width={36}
-                                height={36}
-                                className="rounded-full border-2 border-white"
-                              />
-                              <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-[#4CD964] rounded-full border-2 border-white"></div>
-                  </div>
+                              width={40}
+                              height={40}
+                              className="rounded-full border-2 border-gray-200"
+                            />
                             <span className="text-sm font-medium text-gray-700">{listing.username}</span>
                   </div>
                           
-                          <div className="bg-[#F2FFF8] px-3 py-1.5 rounded-full">
-                            <p className="font-bold text-[#1A8D3B]">{listing.price} kr/dag</p>
+                          <div className="text-right">
+                            <p className="font-black text-xl text-gray-900">{listing.price} kr</p>
+                            <p className="text-sm text-gray-500 font-medium">per dag</p>
                 </div>
               </div>
                         
                         {listing.rating > 0 && (
-                          <div className="flex items-center gap-1 text-sm mt-3 text-gray-700">
+                          <div className="flex items-center gap-1 text-sm mt-4">
                             <div className="flex">
                               {[...Array(5)].map((_, i) => (
                                 <Star key={i} className={`h-4 w-4 ${i < Math.round(Number(listing.rating)) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`} />
                               ))}
                             </div>
-                            <span className="ml-1">{Number(listing.rating).toFixed(1)}</span>
-                            <span className="text-gray-500">({listing.review_count})</span>
+                            <span className="ml-2 font-medium text-gray-600">{Number(listing.rating).toFixed(1)}</span>
+                            <span className="text-gray-400">({listing.review_count})</span>
                           </div>
                         )}
                       </CardContent>
@@ -376,247 +715,191 @@ export default async function Home() {
                 </AnimatedSection>
               )) : (
                 <div className="col-span-full text-center py-12">
-                  <p className="text-gray-500 text-lg">Ingen annonser tilgjengelig for øyeblikket.</p>
-                  <p className="text-gray-400 text-sm mt-2">Prøv igjen senere eller sjekk nettverkstilkoblingen din.</p>
+                  <p className="text-gray-500 text-xl">Ingen annonser tilgjengelig for øyeblikket.</p>
                 </div>
               )}
         </div>
-        </div>
-      </section>
 
-        {/* Features Section - Green Theme */}
-        <section className="py-24 bg-[#F2FFF8]">
-          <div className="container mx-auto px-4">
-            <AnimatedSection 
-              className="text-center mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Hvorfor velge Price Tag?</h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Vi gjør utleie enkelt, trygt og rimelig for alle i Norge.
-              </p>
-            </AnimatedSection>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[
-                {
-                  icon: <Shield className="h-10 w-10" />,
-                  title: "Fullt forsikrede utleie",
-                  description: "Hver utleie er automatisk forsikret gjennom vår partner, som gir begge parter trygghet."
-                },
-                {
-                  icon: <CreditCard className="h-10 w-10" />,
-                  title: "Sikre betalinger",
-                  description: "Vårt sikre betalingssystem beskytter både leietakere og eiere med escrow-funksjonalitet."
-                },
-                {
-                  icon: <Clock className="h-10 w-10" />,
-                  title: "Fleksible varigheter",
-                  description: "Lei for en dag, en uke eller lenger. Du velger tidsrammen som passer for deg."
-                },
-                {
-                  icon: <Star className="h-10 w-10" />,
-                  title: "Verifiserte anmeldelser",
-                  description: "Alle anmeldelser kommer fra reelle utleier, som hjelper deg med å velge pålitelige eiere og kvalitetsgjenstander."
-                },
-                {
-                  icon: <MapPin className="h-10 w-10" />,
-                  title: "Lokale utleier",
-                  description: "Finn gjenstander i nærheten av deg med vår smarte lokasjonsbaserte søkefunksjonalitet."
-                },
-                {
-                  icon: <Leaf className="h-10 w-10" />,
-                  title: "Bærekraftig valg",
-                  description: "Reduser avfall og ditt miljøavtrykk ved å leie istedenfor å kjøpe."
-                }
-              ].map((feature, index) => (
-                <AnimatedSection 
-                  key={index}
-                  className="bg-white p-8 rounded-3xl shadow-lg"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <div className="bg-[#E7F9EF] w-16 h-16 rounded-2xl flex items-center justify-center mb-6 text-[#4CD964]">
-                    {feature.icon}
-                  </div>
-                  <h3 className="text-xl font-bold mb-3 text-gray-900">{feature.title}</h3>
-                  <p className="text-gray-600">
-                    {feature.description}
-                  </p>
-                </AnimatedSection>
-              ))}
-            </div>
-          </div>
-        </section>
-        
-        {/* CTA Section - Green Theme */}
-        <section className="py-24 bg-[#4CD964] relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('/pattern-dark.svg')] bg-repeat opacity-5"></div>
-          <div className="absolute top-0 right-0 w-96 h-96 bg-[#E7F9EF]/20 rounded-full translate-x-1/2 -translate-y-1/2 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#E7F9EF]/20 rounded-full -translate-x-1/2 translate-y-1/2 blur-3xl"></div>
-          
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
-              <AnimatedSection 
-                className="text-white"
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <h2 className="text-3xl md:text-5xl font-bold mb-6">Klar til å tjene penger på gjenstandene dine?</h2>
-                <p className="text-xl opacity-90 mb-8">
-                  Den gjennomsnittlige norske husstanden har 300 000 kr verdt av sjelden brukte gjenstander.
-                  Gjør dine ubrukte eiendeler til passiv inntekt.
-                </p>
-                <Button size="lg" className="bg-white text-[#4CD964] hover:bg-gray-100 px-8 py-6 text-lg rounded-xl shadow-lg" asChild>
-                  <Link href="/listings/new">Bli utleier</Link>
+            <div className="text-center mt-12">
+              <Link href="/listings">
+                <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-12 py-6 text-xl font-bold rounded-2xl shadow-xl hover:shadow-2xl transform transition-all duration-300 hover:-translate-y-1">
+                  Se alle tilbud
+                  <ArrowRight className="h-6 w-6 ml-3" />
                 </Button>
-              </AnimatedSection>
-              
-              <AnimatedSection 
-                className="space-y-6"
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                {[
-                  {
-                    icon: <DollarSign className="h-6 w-6" />,
-                    title: "Tjen ekstra inntekt",
-                    text: "Gjenstander som ikke brukes? Lei dem ut og tjen penger."
-                  },
-                  {
-                    icon: <Zap className="h-6 w-6" />,
-                    title: "Enkel annonseringsprosess",
-                    text: "Lag din annonse på minutter med vårt enkle grensesnitt."
-                  },
-                  {
-                    icon: <User className="h-6 w-6" />,
-                    title: "Du har kontrollen",
-                    text: "Sett din egen tilgjengelighet, pris og leiebetingelser."
-                  }
-                ].map((item, index) => (
-                  <AnimatedSection 
-                    key={index}
-                    className="bg-white/10 backdrop-blur-sm p-6 rounded-xl border border-white/20"
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.4, delay: 0.4 + (index * 0.1) }}
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="bg-white w-12 h-12 rounded-full flex items-center justify-center text-[#4CD964] shrink-0">
-                        {item.icon}
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-white mb-2">{item.title}</h3>
-                        <p className="text-white/90">{item.text}</p>
-                      </div>
-                    </div>
-                  </AnimatedSection>
-                ))}
-              </AnimatedSection>
-            </div>
-          </div>
-        </section>
-        
-        {/* Testimonials - Green Theme */}
-        <section className="py-24 bg-white">
-          <div className="container mx-auto px-4">
-            <AnimatedSection 
-              className="text-center mb-16"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-            >
-              <h2 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900">Hva våre brukere sier</h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Bli med tusenvis av fornøyde brukere over hele Norge som allerede bruker Price Tag.
-              </p>
-            </AnimatedSection>
-            
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                {
-                  quote: "Jeg sparte over 5000 kr ved å leie et kamera til ferien min istedenfor å kjøpe et. Prosessen var så enkel!",
-                  user: "Jonas D.",
-                  location: "Oslo",
-                  initials: "JD"
-                },
-                {
-                  quote: "Som eier har jeg tjent over 15 000 kr på 3 måneder ved å leie ut verktøy jeg sjelden bruker. Plattformen er fantastisk!",
-                  user: "Marte H.",
-                  location: "Bergen",
-                  initials: "MH"
-                },
-                {
-                  quote: "Jeg leier alt fra elektroverktøy til campingutstyr. Det har gjort livet mitt så mye enklere og mer rimelig.",
-                  user: "Kristian J.",
-                  location: "Trondheim",
-                  initials: "KJ"
-                }
-              ].map((testimonial, index) => (
-                <AnimatedSection 
-                  key={index}
-                  className="bg-white p-8 rounded-3xl shadow-lg border border-gray-100"
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <div className="flex items-center mb-6">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400 mr-1" />
-                    ))}
-                  </div>
-                  <p className="text-lg mb-8 text-gray-700 italic">
-                    "{testimonial.quote}"
-                  </p>
-                  <div className="flex items-center">
-                    <div className="w-14 h-14 rounded-full bg-[#E7F9EF] flex items-center justify-center text-lg font-bold text-[#4CD964] mr-4">
-                      {testimonial.initials}
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-900">{testimonial.user}</p>
-                      <p className="text-sm text-gray-500">{testimonial.location}</p>
-                    </div>
-                  </div>
-                </AnimatedSection>
-              ))}
+              </Link>
             </div>
         </div>
       </section>
 
-        {/* Final CTA - Green Theme */}
-        <section className="py-20 bg-[#FAFFFE]">
-          <div className="container mx-auto px-4 text-center">
-            <AnimatedSection
+        {/* Testimonials */}
+        <div className="py-16 sm:py-20 lg:py-24 bg-gray-50">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <AnimatedSection 
+              className="text-center mb-12 sm:mb-16"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-3xl md:text-5xl font-bold mb-6 text-gray-900">Bli med på utleierevolusjonen i dag</h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-10">
-                Registrer deg på minutter og begynn å leie eller liste gjenstandene dine.
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-4 sm:mb-6 text-gray-900 px-4 sm:px-0">
+                Hva våre brukere sier
+              </h2>
+              <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto px-4 sm:px-0">
+                Ekte tilbakemeldinger fra fornøyde leietakere og utleiere
               </p>
-              <div className="flex flex-col sm:flex-row justify-center gap-4">
-                <Button size="lg" className="bg-[#4CD964] hover:bg-[#3DAF50] text-white px-8 py-6 text-lg rounded-xl shadow-lg transform transition-all duration-300 hover:-translate-y-1" asChild>
-                  <Link href="/listings">Opprett en konto</Link>
+            </AnimatedSection>
+            
+            <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
+              {[
+                {
+                  quote: "Fantastisk service! Leide et profesjonelt kamera til bryllupet og sparte tusenvis av kroner. Eieren var super hjelpsom.",
+                  name: "Maria Johansen",
+                  location: "Oslo",
+                  rating: 5,
+                  category: "Kameraer"
+                },
+                {
+                  quote: "Som utleier har jeg tjent over 25 000 kr på å leie ut verktøy og utstyr jeg sjelden bruker. Enkel og trygg plattform!",
+                  name: "Lars Eriksen", 
+                  location: "Bergen",
+                  rating: 5,
+                  category: "Verktøy"
+                },
+                {
+                  quote: "Perfekt for camping-turer! Leier alt av utstyr istedenfor å fylle loftet med ting jeg bruker en gang i året.",
+                  name: "Ingrid Nilsen",
+                  location: "Trondheim", 
+                  rating: 5,
+                  category: "Camping"
+                }
+              ].map((testimonial, index) => (
+                <AnimatedSection 
+                  key={index}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                >
+                  <Card className="p-6 sm:p-8 h-full bg-white border-0 shadow-lg rounded-2xl sm:rounded-3xl">
+                    <div className="flex items-center mb-4 sm:mb-6">
+                      {[...Array(testimonial.rating)].map((_, i) => (
+                        <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400 mr-1" />
+                      ))}
+                  </div>
+                    <p className="text-base sm:text-lg mb-6 sm:mb-8 text-gray-700 italic leading-relaxed">
+                      "{testimonial.quote}"
+                    </p>
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold mr-3 sm:mr-4 flex-shrink-0">
+                        <span className="text-sm sm:text-base">
+                          {testimonial.name.split(' ').map(n => n[0]).join('')}
+                        </span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-gray-900 text-sm sm:text-base">{testimonial.name}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">{testimonial.location} • {testimonial.category}</p>
+                      </div>
+                    </div>
+                  </Card>
+                </AnimatedSection>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* FAQ Section */}
+        <div className="py-16 sm:py-20 lg:py-24 bg-white">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-start">
+              <AnimatedSection 
+                initial={{ opacity: 0, x: -30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mb-6 sm:mb-8 text-gray-900">
+                  Ofte stilte spørsmål
+                </h2>
+                <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 leading-relaxed">
+                  Har du spørsmål? Vi har svarene! Her er de mest vanlige spørsmålene vi får.
+                </p>
+                <Button className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-bold rounded-xl sm:rounded-2xl">
+                  <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
+                  Kontakt oss
                 </Button>
-                <Button size="lg" variant="outline" className="border-2 border-[#4CD964] text-[#4CD964] px-8 py-6 text-lg rounded-xl hover:bg-[#4CD964]/10 transition-all duration-300" asChild>
+              </AnimatedSection>
+              
+              <AnimatedSection 
+                initial={{ opacity: 0, x: 30 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+              >
+                <div className="space-y-3 sm:space-y-4">
+                  {[
+                    {
+                      question: "Hvordan fungerer forsikringen?",
+                      answer: "Alle utleier er automatisk dekket av vår forsikring. Ved skader eller tyveri er både utleier og leietaker beskyttet."
+                    },
+                    {
+                      question: "Hva koster det å leie?",
+                      answer: "Prisene settes av utleiere selv. Plattformen tar en liten provisjon på 10% for å dekke betalingsbehandling og forsikring."
+                    },
+                    {
+                      question: "Hvordan blir brukerne verifisert?",
+                      answer: "Alle brukere må verifisere identitet med BankID og telefonnummer. Vi sjekker også tidligere anmeldelser og aktivitet."
+                    },
+                    {
+                      question: "Kan jeg avbestille en booking?",
+                      answer: "Ja, du kan avbestille inntil 24 timer før start. Ved tidligere avbestilling får du full refusjon."
+                    }
+                  ].map((faq, index) => (
+                    <div key={index} className="bg-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <h3 className="font-bold text-gray-900 text-base sm:text-lg pr-4">{faq.question}</h3>
+                        <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 flex-shrink-0 mt-1" />
+                      </div>
+                      <p className="text-gray-600 mt-3 sm:mt-4 leading-relaxed text-sm sm:text-base">{faq.answer}</p>
+                    </div>
+                ))}
+                </div>
+              </AnimatedSection>
+            </div>
+            </div>
+        </div>
+
+
+
+        {/* CTA Section */}
+        <section className="py-16 sm:py-20 lg:py-24 bg-gradient-to-br from-emerald-500 to-emerald-600 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[url('/pattern-dark.svg')] bg-repeat opacity-10"></div>
+          
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="max-w-4xl mx-auto text-center">
+            <AnimatedSection
+                className="text-white"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+                transition={{ duration: 0.8 }}
+              >
+                <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-6 sm:mb-8 px-4 sm:px-0">
+                  Har du noe å leie ut?
+                </h2>
+                <p className="text-lg sm:text-xl lg:text-2xl opacity-95 mb-8 sm:mb-12 leading-relaxed px-4 sm:px-0">
+                  Gjør dine ubrukte eiendeler til en inntektskilde. 
+                  Opprett en annonse på minutter og begynn å tjene.
+                </p>
+                <div className="flex flex-col sm:flex-row justify-center gap-4 sm:gap-6 px-4 sm:px-0">
+                  <Button size="lg" className="bg-white text-emerald-600 hover:bg-gray-100 px-8 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl font-bold rounded-xl sm:rounded-2xl shadow-xl">
+                    <Link href="/listings/new">Opprett annonse</Link>
+                </Button>
+                  <Button size="lg" className="bg-white/20 backdrop-blur-sm border-2 border-white/40 text-white hover:bg-white hover:text-emerald-600 px-8 sm:px-12 py-4 sm:py-6 text-lg sm:text-xl font-bold rounded-xl sm:rounded-2xl transition-all duration-300">
                   <Link href="/about">Lær mer</Link>
         </Button>
               </div>
             </AnimatedSection>
+            </div>
           </div>
       </section>
       </main>

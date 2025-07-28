@@ -58,7 +58,7 @@ export function MultiStepForm({
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#4CD964] shadow-lg"
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 shadow-lg"
                           >
                             <Check className="h-4 w-4 text-white" />
                           </motion.div>
@@ -66,9 +66,9 @@ export function MultiStepForm({
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#4CD964] bg-white shadow-md"
+                                          className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-emerald-500 bg-white shadow-md"
                           >
-                            <span className="text-xs font-semibold text-[#4CD964]">
+              <span className="text-xs font-semibold text-emerald-500">
                               {index + 1}
                             </span>
                           </motion.div>
@@ -87,9 +87,9 @@ export function MultiStepForm({
                           className={cn(
                             'text-sm font-medium transition-colors duration-200',
                             step.isCompleted
-                              ? 'text-[#4CD964]'
+                              ? 'text-emerald-500'
                               : index === currentStep
-                              ? 'text-[#4CD964]'
+                              ? 'text-emerald-500'
                               : 'text-gray-500'
                           )}
                         >
@@ -117,7 +117,7 @@ export function MultiStepForm({
                       <div
                         className={cn(
                           'w-0.5 h-4 transition-colors duration-300',
-                          step.isCompleted ? 'bg-[#4CD964]' : 'bg-gray-200'
+                          step.isCompleted ? 'bg-emerald-500' : 'bg-gray-200'
                         )}
                       />
                     </div>
@@ -145,7 +145,7 @@ export function MultiStepForm({
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4CD964] shadow-lg"
+                          className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-500 shadow-lg"
                         >
                           <Check className="h-5 w-5 text-white" />
                         </motion.div>
@@ -153,9 +153,9 @@ export function MultiStepForm({
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#4CD964] bg-white shadow-md"
+                          className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-emerald-500 bg-white shadow-md"
                         >
-                          <span className="text-sm font-semibold text-[#4CD964]">
+                          <span className="text-sm font-semibold text-emerald-500">
                             {index + 1}
                           </span>
                         </motion.div>
@@ -203,7 +203,7 @@ export function MultiStepForm({
                       <div
                         className={cn(
                           'h-full w-full transition-colors duration-300',
-                          step.isCompleted ? 'bg-[#4CD964]' : 'bg-gray-200'
+                          step.isCompleted ? 'bg-emerald-500' : 'bg-gray-200'
                         )}
                       />
                     </div>
@@ -278,7 +278,7 @@ export function MultiStepForm({
           <Button
             onClick={() => onStepChange(currentStep + 1)}
             disabled={currentStep === steps.length - 1}
-            className="bg-[#4CD964] hover:bg-[#3DAF50] px-4 md:px-6 py-2 shadow-lg shadow-[#4CD964]/20 transition-all duration-200 hover:shadow-xl hover:shadow-[#4CD964]/30"
+            className="bg-emerald-500 hover:bg-emerald-600 px-4 md:px-6 py-2 shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:shadow-xl hover:shadow-emerald-500/30"
           >
             {currentStep === steps.length - 2 ? 'Forhåndsvisning' : 'Neste'}
             <ChevronRight className="ml-2 h-4 w-4" />

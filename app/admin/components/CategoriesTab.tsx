@@ -80,15 +80,16 @@ export default function CategoriesTab() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const response = await fetch('/api/admin/categories', {
+      const url = selectedCategory 
+        ? `/api/admin/categories/${encodeURIComponent(selectedCategory.name)}`
+        : '/api/admin/categories'
+      
+      const response = await fetch(url, {
         method: selectedCategory ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(selectedCategory ? {
-          id: selectedCategory.id,
-          ...formData
-        } : formData),
+        body: JSON.stringify(formData),
       })
 
       if (response.ok) {

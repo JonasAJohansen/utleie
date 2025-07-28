@@ -115,7 +115,7 @@ export function ListingPreview({
                       )}
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-[#4CD964]">
+                  <div className="text-2xl font-bold text-emerald-500">
                     {listing.price} kr<span className="text-sm font-normal text-muted-foreground">/dag</span>
                   </div>
                 </div>
@@ -166,7 +166,7 @@ export function ListingPreview({
         <Button variant="outline" onClick={() => onEdit(3)}>
           Tilbake
         </Button>
-        <Button onClick={onPublish} className="bg-[#4CD964] hover:bg-[#3DAF50]">
+                  <Button onClick={onPublish} className="bg-emerald-500 hover:bg-emerald-600">
           Publiser annonse
         </Button>
       </div>

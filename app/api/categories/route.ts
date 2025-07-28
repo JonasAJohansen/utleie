@@ -6,26 +6,26 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type')
 
-    // Since is_popular and is_featured columns don't exist yet, 
-    // we'll return all active categories for now
     let query = sql`
-      SELECT name as id, name, description, icon, 
-             false as is_popular, false as is_featured
+      SELECT name as id, name, description, icon, is_popular, is_featured
       FROM categories
       WHERE is_active = true
       ORDER BY name ASC
     `
 
-    // For now, return the same results regardless of type
-    // until the database schema is updated with is_popular and is_featured columns
-    if (type === 'popular' || type === 'featured') {
+    if (type === 'popular') {
       query = sql`
-        SELECT name as id, name, description, icon, 
-               false as is_popular, false as is_featured
+        SELECT name as id, name, description, icon, is_popular, is_featured
         FROM categories
-        WHERE is_active = true
+        WHERE is_active = true AND is_popular = true
         ORDER BY name ASC
-        LIMIT 6
+      `
+    } else if (type === 'featured') {
+      query = sql`
+        SELECT name as id, name, description, icon, is_popular, is_featured
+        FROM categories
+        WHERE is_active = true AND is_featured = true
+        ORDER BY name ASC
       `
     }
 

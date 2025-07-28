@@ -159,9 +159,9 @@ export function PhotoUpload({
             <div
               className={cn(
                 'relative aspect-[4/3] rounded-lg border-2 border-dashed',
-                'hover:border-[#4CD964] hover:bg-[#4CD964]/5 transition-colors cursor-pointer',
+                'hover:border-emerald-500 hover:bg-emerald-500/5 transition-colors cursor-pointer',
                 'flex items-center justify-center',
-                isDragging && 'border-[#4CD964] bg-[#4CD964]/5'
+                                  isDragging && 'border-emerald-500 bg-emerald-500/5'
               )}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}

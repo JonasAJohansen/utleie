@@ -162,7 +162,7 @@ export function EnhancedLocationSelector({
           onBlur={handleBlur}
           placeholder={placeholder}
           className={cn(
-            "pl-10",
+            "pl-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0",
             showDetectLocation && query ? "pr-20" : query ? "pr-12" : showDetectLocation ? "pr-12" : "pr-3"
           )}
         />

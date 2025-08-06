@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sanitizeMessageContent } from '@/lib/phone-utils'
 import { sendMessage } from '@/lib/websocket'
-import { sendSSEMessage } from './events/route'
+import { sendSSEMessage } from '@/lib/sse-messaging'
 
 export async function GET(request: Request) {
   try {

@@ -17,8 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { MessageInput } from '@/components/enhanced-messaging/MessageInput'
 import { EnhancedMessage } from '@/components/enhanced-messaging/EnhancedMessage'
-import { useWebSocket } from '@/hooks/use-websocket'
-import { useSSE } from '@/hooks/use-sse'
+import { useRealTimeMessaging } from '@/hooks/use-real-time-messaging'
 
 type Message = {
   id: string;
@@ -116,24 +115,11 @@ function ChatContent() {
     fetchConversations()
   }
 
-  // Initialize WebSocket connection
-  const { isConnected: wsConnected, sendMessage: wsMessage } = useWebSocket({
+  // Initialize comprehensive real-time messaging
+  const { isConnected, connectionType, isRealTime } = useRealTimeMessaging({
     onNewMessage: handleNewMessage,
+    pollingInterval: 15000 // 15 seconds for active chat
   })
-
-  // Initialize SSE connection as backup
-  const { isConnected: sseConnected } = useSSE({
-    onNewMessage: handleNewMessage,
-  })
-
-  const isConnected = wsConnected || sseConnected
-
-  // Authenticate WebSocket when user changes
-  useEffect(() => {
-    if (user && wsConnected) {
-      wsMessage('auth_check', {})
-    }
-  }, [user, wsConnected, wsMessage])
 
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
@@ -349,7 +335,7 @@ function ChatContent() {
         
         toast({
           title: "Message sent",
-          description: isConnected ? "Delivered instantly" : "Will be delivered when recipient is online",
+          description: isRealTime ? "Delivered instantly" : "Message sent successfully",
         })
       } else {
         const errorText = await response.text()
@@ -505,8 +491,13 @@ function ChatContent() {
                     </p>
                   )}
                   <div className="flex items-center text-xs text-gray-400 mt-1">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                    {isConnected ? 'Real-time messaging' : 'Messages may be delayed'}
+                    <div className={`w-2 h-2 rounded-full mr-2 ${
+                      isRealTime ? 'bg-green-500' : 
+                      isConnected ? 'bg-yellow-500' : 'bg-gray-400'
+                    }`}></div>
+                    {isRealTime ? `Real-time (${connectionType})` : 
+                     isConnected ? `Checking for messages (${connectionType})` : 
+                     'Offline'}
                   </div>
                 </div>
               </div>

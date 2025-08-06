@@ -45,8 +45,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { useWebSocket } from '@/hooks/use-websocket'
-import { useSSE } from '@/hooks/use-sse'
+import { useRealTimeMessaging } from '@/hooks/use-real-time-messaging'
 
 interface Notification {
   id: string
@@ -177,21 +176,13 @@ export default function Navigation() {
     }
   }
 
-  // Initialize WebSocket connection
-  const { isConnected: wsConnected } = useWebSocket({
+  // Initialize comprehensive real-time messaging
+  const { isConnected } = useRealTimeMessaging({
     onNewNotification: handleNewNotification,
     onNewMessage: handleNewMessage,
-    onMessageRead: handleMessageRead
+    onMessageRead: handleMessageRead,
+    pollingInterval: 60000 // 1 minute for general notifications
   })
-
-  // Initialize SSE connection as backup
-  const { isConnected: sseConnected } = useSSE({
-    onNewNotification: handleNewNotification,
-    onNewMessage: handleNewMessage,
-    onMessageRead: handleMessageRead
-  })
-
-  const isConnected = wsConnected || sseConnected
 
   useEffect(() => {
     if (user && !hasFetchedRef.current) {

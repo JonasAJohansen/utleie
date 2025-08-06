@@ -77,7 +77,7 @@ export function useWebSocket({
           // Route messages to appropriate handlers with null checks
           if (data.type === 'notification' && onNewNotification) {
             onNewNotification(data.data || {}) // Pass empty object if data is null
-          } else if (data.type === 'message' && onNewMessage) {
+          } else if ((data.type === 'message' || data.type === 'new_message') && onNewMessage) {
             onNewMessage(data.data || {})
           } else if (data.type === 'message_read' && onMessageRead) {
             onMessageRead(data.data || {})

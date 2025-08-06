@@ -17,6 +17,8 @@ import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { MessageInput } from '@/components/enhanced-messaging/MessageInput'
 import { EnhancedMessage } from '@/components/enhanced-messaging/EnhancedMessage'
+import { useWebSocket } from '@/hooks/use-websocket'
+import { useSSE } from '@/hooks/use-sse'
 
 type Message = {
   id: string;
@@ -92,6 +94,47 @@ function ChatContent() {
   const [initialLoad, setInitialLoad] = useState(true)
   const [replyingTo, setReplyingTo] = useState<any>(null)
 
+  // WebSocket handlers for real-time messaging
+  const handleNewMessage = (data: any) => {
+    if (!data || !data.message) {
+      console.log('Received empty message data')
+      return
+    }
+    
+    console.log('Received new message via WebSocket:', data)
+    
+    // Only update if the message is for the active conversation
+    if (data.conversationId === activeConversation?.id) {
+      setMessages(prev => {
+        // Check if message already exists to prevent duplicates
+        const exists = prev.some(msg => msg.id === data.message.id)
+        return exists ? prev : [...prev, data.message]
+      })
+    }
+    
+    // Also refresh conversations to update last message
+    fetchConversations()
+  }
+
+  // Initialize WebSocket connection
+  const { isConnected: wsConnected, sendMessage: wsMessage } = useWebSocket({
+    onNewMessage: handleNewMessage,
+  })
+
+  // Initialize SSE connection as backup
+  const { isConnected: sseConnected } = useSSE({
+    onNewMessage: handleNewMessage,
+  })
+
+  const isConnected = wsConnected || sseConnected
+
+  // Authenticate WebSocket when user changes
+  useEffect(() => {
+    if (user && wsConnected) {
+      wsMessage('auth_check', {})
+    }
+  }, [user, wsConnected, wsMessage])
+
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
       const scrollArea = scrollAreaRef.current
@@ -111,13 +154,17 @@ function ChatContent() {
     if (activeConversation) {
       setInitialLoad(true)
       fetchMessages(activeConversation.id)
+      // Reduced polling since we have WebSocket for real-time updates
       const messagesInterval = setInterval(() => {
-        fetchMessages(activeConversation.id)
         fetchTypingStatus()
-      }, 3000)
+        // Only fetch messages occasionally as a fallback
+        if (!isConnected) {
+          fetchMessages(activeConversation.id)
+        }
+      }, 10000)
       return () => clearInterval(messagesInterval)
     }
-  }, [activeConversation])
+  }, [activeConversation, isConnected])
 
   const createOrFetchConversation = async (otherUserId: string, listingId?: string | null, listingName?: string | null) => {
     try {
@@ -299,12 +346,24 @@ function ChatContent() {
             ? { ...conv, lastMessage: displayContent, lastMessageTime: new Date().toISOString() } 
             : conv
         ))
+        
+        toast({
+          title: "Message sent",
+          description: isConnected ? "Delivered instantly" : "Will be delivered when recipient is online",
+        })
+      } else {
+        const errorText = await response.text()
+        toast({
+          title: "Failed to send message",
+          description: errorText || "Please try again",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error('Error sending enhanced message:', error)
       toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
+        title: "Network error",
+        description: "Please check your connection and try again",
         variant: "destructive",
       })
     }
@@ -445,6 +504,10 @@ function ChatContent() {
                       Discussing: {activeConversation.listingName}
                     </p>
                   )}
+                  <div className="flex items-center text-xs text-gray-400 mt-1">
+                    <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    {isConnected ? 'Real-time messaging' : 'Messages may be delayed'}
+                  </div>
                 </div>
               </div>
             </div>

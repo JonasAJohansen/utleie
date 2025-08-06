@@ -46,6 +46,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useWebSocket } from '@/hooks/use-websocket'
+import { useSSE } from '@/hooks/use-sse'
 
 interface Notification {
   id: string
@@ -177,11 +178,20 @@ export default function Navigation() {
   }
 
   // Initialize WebSocket connection
-  const { isConnected } = useWebSocket({
+  const { isConnected: wsConnected } = useWebSocket({
     onNewNotification: handleNewNotification,
     onNewMessage: handleNewMessage,
     onMessageRead: handleMessageRead
   })
+
+  // Initialize SSE connection as backup
+  const { isConnected: sseConnected } = useSSE({
+    onNewNotification: handleNewNotification,
+    onNewMessage: handleNewMessage,
+    onMessageRead: handleMessageRead
+  })
+
+  const isConnected = wsConnected || sseConnected
 
   useEffect(() => {
     if (user && !hasFetchedRef.current) {

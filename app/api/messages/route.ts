@@ -3,6 +3,8 @@ import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { sanitizeMessageContent } from '@/lib/phone-utils'
+import { sendMessage } from '@/lib/websocket'
+import { sendSSEMessage } from './events/route'
 
 export async function GET(request: Request) {
   try {
@@ -204,6 +206,36 @@ export async function POST(request: Request) {
         SET usage_count = usage_count + 1 
         WHERE id = $1 OR template_id = $1
       `, [templateId])
+    }
+
+    // Send real-time notification to the recipient
+    const conversation = conversationRows[0]
+    const recipientId = conversation.user1_id === userId ? conversation.user2_id : conversation.user1_id
+    
+    if (recipientId) {
+      const messageData = {
+        type: 'new_message',
+        message: messageRows[0],
+        conversationId: conversationId
+      }
+      
+      console.log(`[MESSAGE_DELIVERY] Sending message from ${userId} to ${recipientId} in conversation ${conversationId}`)
+      
+      // Try WebSocket first, fallback to SSE
+      const wsSuccess = sendMessage(recipientId, messageData)
+      if (wsSuccess) {
+        console.log(`[MESSAGE_DELIVERY] WebSocket delivery successful to ${recipientId}`)
+      } else {
+        console.log(`[MESSAGE_DELIVERY] WebSocket failed, trying SSE for ${recipientId}`)
+        const sseSuccess = sendSSEMessage(recipientId, messageData)
+        if (sseSuccess) {
+          console.log(`[MESSAGE_DELIVERY] SSE delivery successful to ${recipientId}`)
+        } else {
+          console.log(`[MESSAGE_DELIVERY] Both WebSocket and SSE failed for ${recipientId}`)
+        }
+      }
+    } else {
+      console.warn(`[MESSAGE_DELIVERY] No recipient found for conversation ${conversationId}`)
     }
 
     return NextResponse.json(messageRows[0])

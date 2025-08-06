@@ -7,6 +7,10 @@ import { SearchBar } from '@/components/SearchBar'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { AnimatedSection, AnimatedCard } from "@/app/components/AnimatedSection"
+import { motion } from 'framer-motion'
+import { StatsCounter } from '@/components/StatsCounter'
+import { PremiumCTA } from '@/components/PremiumCTA'
+import { LiveActivity } from '@/components/LiveActivity'
 
 async function getLatestListings() {
   try {
@@ -141,7 +145,13 @@ export default async function Home() {
     <div className="flex min-h-screen flex-col bg-white">
       <main className="flex-1">
         {/* Hero Section - Bold and Modern */}
-        <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-white">
+        <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-white via-emerald-50/30 to-blue-50/20">
+          {/* Animated gradient orbs */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full opacity-20 animate-pulse blur-3xl"></div>
+            <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full opacity-15 animate-pulse blur-3xl" style={{ animationDelay: '2s' }}></div>
+            <div className="absolute top-1/3 right-1/4 w-64 h-64 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full opacity-10 animate-pulse blur-3xl" style={{ animationDelay: '4s' }}></div>
+          </div>
           {/* Animated Floating 3D Elements - Hidden on mobile for better performance */}
           <AnimatedSection
             className="hidden md:block absolute top-20 right-[15%] w-20 h-20 lg:w-24 lg:h-24 bg-emerald-500 rounded-3xl rotate-12 opacity-90 shadow-2xl"
@@ -210,6 +220,41 @@ export default async function Home() {
               <Globe className="h-7 w-7 lg:h-8 lg:w-8 text-white" />
             </div>
           </AnimatedSection>
+
+          {/* Additional floating elements */}
+          <AnimatedSection
+            className="hidden xl:block absolute top-[15%] left-[15%] w-12 h-12 bg-yellow-500 rounded-xl rotate-45 opacity-70 shadow-lg"
+            animate={{ 
+              y: [0, -12, 0], 
+              rotate: [45, 60, 45] 
+            }}
+            transition={{ 
+              duration: 3.8, 
+              repeat: Infinity, 
+              ease: "easeInOut"
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <Zap className="h-6 w-6 text-white" />
+            </div>
+          </AnimatedSection>
+
+          <AnimatedSection
+            className="hidden xl:block absolute bottom-[15%] right-[25%] w-10 h-10 bg-pink-500 rounded-lg -rotate-12 opacity-60 shadow-md"
+            animate={{ 
+              x: [0, 8, 0], 
+              rotate: [-12, -24, -12] 
+            }}
+            transition={{ 
+              duration: 2.8, 
+              repeat: Infinity, 
+              ease: "easeInOut"
+            }}
+          >
+            <div className="w-full h-full flex items-center justify-center">
+              <Heart className="h-5 w-5 text-white" />
+            </div>
+          </AnimatedSection>
           
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
             <AnimatedSection 
@@ -262,7 +307,10 @@ export default async function Home() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   transition={{ duration: 0.8, delay: 0.8 }}
                 >
-                  <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-gray-200 p-4 sm:p-6 md:p-8 backdrop-blur-sm hover:shadow-3xl transition-all duration-300">
+                  <div className="bg-white/90 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-white/20 p-4 sm:p-6 md:p-8 hover:shadow-3xl hover:bg-white/95 transition-all duration-500 relative overflow-hidden">
+                    {/* Subtle inner glow */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 via-transparent to-blue-50/30 rounded-2xl sm:rounded-3xl"></div>
+                    <div className="relative z-10">
                     <AnimatedSection
                       className="mb-4 sm:mb-6"
                       initial={{ opacity: 0 }}
@@ -297,6 +345,7 @@ export default async function Home() {
             ))}
                     </div>
                     </AnimatedSection>
+                    </div>
                   </div>
                 </AnimatedSection>
               </AnimatedSection>
@@ -304,9 +353,8 @@ export default async function Home() {
           </div>
         </div>
         
-
-
-
+        {/* Dynamic Stats Counter */}
+        <StatsCounter />
 
         {/* How It Works - Step by Step */}
         <div className="py-16 sm:py-20 lg:py-24 bg-white">
@@ -355,13 +403,17 @@ export default async function Home() {
               ].map((step, index) => (
                 <AnimatedSection 
                   key={index}
-                  className="text-center relative group"
+                  className="text-center relative group cursor-pointer"
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.2 }}
+                  whileHover={{ y: -5 }}
                 >
-                  <div className="bg-gray-50 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 relative z-10 group-hover:shadow-xl transition-all duration-300">
+                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-lg border border-gray-100 relative z-10 group-hover:shadow-2xl group-hover:border-emerald-200 transition-all duration-500 overflow-hidden">
+                    {/* Hover overlay effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/0 via-emerald-50/20 to-emerald-50/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="relative z-10">
                     {/* Step Number */}
                     <div className="text-4xl sm:text-5xl font-black text-emerald-500 mb-4 sm:mb-6">{step.step}</div>
                     
@@ -374,9 +426,10 @@ export default async function Home() {
                     
                     {/* Content */}
                     <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900">{step.title}</h3>
-                    <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
+                    <p className="text-gray-600 text-base sm:text-lg leading-relaxed group-hover:text-gray-700 transition-colors duration-300">
                       {step.description}
                     </p>
+                    </div>
                   </div>
                 </AnimatedSection>
               ))}
@@ -425,15 +478,20 @@ export default async function Home() {
               ].map((feature, index) => (
                 <AnimatedSection 
                   key={index}
-                  className="text-center"
+                  className="text-center group cursor-pointer"
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
+                  whileHover={{ y: -8 }}
                 >
-                  <div className={`${feature.color} w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl flex items-center justify-center mb-6 sm:mb-8 mx-auto text-white shadow-xl`}>
+                  <motion.div 
+                    className={`${feature.color} w-20 h-20 sm:w-24 sm:h-24 rounded-2xl sm:rounded-3xl flex items-center justify-center mb-6 sm:mb-8 mx-auto text-white shadow-xl group-hover:shadow-2xl transition-all duration-500`}
+                    whileHover={{ rotate: [0, -5, 5, 0], scale: 1.1 }}
+                    transition={{ duration: 0.5 }}
+                  >
                     {feature.icon}
-                  </div>
+                  </motion.div>
                   <h3 className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4 text-gray-900">{feature.title}</h3>
                   <p className="text-gray-600 text-base sm:text-lg leading-relaxed px-4 sm:px-0">
                     {feature.description}
@@ -779,8 +837,13 @@ export default async function Home() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: index * 0.1 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  className="group cursor-pointer"
                 >
-                  <Card className="p-6 sm:p-8 h-full bg-white border-0 shadow-lg rounded-2xl sm:rounded-3xl">
+                  <Card className="p-6 sm:p-8 h-full bg-gradient-to-br from-white to-gray-50/50 border-0 shadow-lg rounded-2xl sm:rounded-3xl group-hover:shadow-2xl group-hover:border group-hover:border-emerald-200 transition-all duration-500 relative overflow-hidden">
+                    {/* Subtle hover glow */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/0 via-emerald-50/10 to-blue-50/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div className="relative z-10">
                     <div className="flex items-center mb-4 sm:mb-6">
                       {[...Array(testimonial.rating)].map((_, i) => (
                         <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400 mr-1" />
@@ -800,12 +863,16 @@ export default async function Home() {
                         <p className="text-xs sm:text-sm text-gray-500">{testimonial.location} • {testimonial.category}</p>
                       </div>
                     </div>
+                    </div>
                   </Card>
                 </AnimatedSection>
               ))}
             </div>
           </div>
         </div>
+
+        {/* Premium CTA Section */}
+        <PremiumCTA />
 
         {/* FAQ Section */}
         <div className="py-16 sm:py-20 lg:py-24 bg-white">
@@ -903,6 +970,9 @@ export default async function Home() {
           </div>
       </section>
       </main>
+
+      {/* Live Activity Feed */}
+      <LiveActivity />
     </div>
   )
 }

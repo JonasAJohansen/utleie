@@ -187,7 +187,8 @@ export function EnhancedMessage({
                     {message.location_name || 'Shared Location'}
                   </p>
                   <p className="text-sm text-blue-600">
-                    {message.location_lat?.toFixed(4)}, {message.location_lng?.toFixed(4)}
+                    {typeof message.location_lat === 'number' ? message.location_lat.toFixed(4) : parseFloat(message.location_lat as any).toFixed(4)}, {' '}
+                    {typeof message.location_lng === 'number' ? message.location_lng.toFixed(4) : parseFloat(message.location_lng as any).toFixed(4)}
                   </p>
                   <p className="text-xs text-blue-500">Click to open in maps</p>
                 </div>

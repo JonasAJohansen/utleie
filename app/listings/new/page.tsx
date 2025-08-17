@@ -123,7 +123,12 @@ export default function AddListing() {
   const handleCategoryChange = (value: string) => {
     const category = categories.find(cat => cat.id === value)
     setSelectedCategory(category || null)
-    setListing({ ...listing, categoryId: value })
+    setListing({ 
+      ...listing, 
+      categoryId: value,
+      // Auto-set price to 0 if Gis Bort is selected
+      price: value === 'Gis Bort' ? '0' : listing.price
+    })
     
     // Reset brand when category changes
     setSelectedBrand(null)
@@ -175,8 +180,9 @@ export default function AddListing() {
       return
     }
     
-    // Validate required fields
-    if (!listing.name || !listing.description || !listing.price || !listing.categoryId || !listing.location) {
+    // Validate required fields (price not required for Gis Bort)
+    const isPriceRequired = listing.categoryId !== 'Gis Bort'
+    if (!listing.name || !listing.description || (isPriceRequired && !listing.price) || !listing.categoryId || !listing.location) {
       toast({
         title: "Manglende informasjon",
         description: "Vennligst fyll ut alle påkrevde felt.",
@@ -472,29 +478,45 @@ export default function AddListing() {
               />
             </div>
 
-            <div>
-              <Label htmlFor="price">Pris per dag (NOK)</Label>
-              <div className="relative">
-                <Input
-                  id="price"
-                  name="price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={listing.price}
-                  onChange={handleChange}
-                  className="pl-8"
-                  required
-                />
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">kr</span>
+            {/* Only show price field if not Gis Bort */}
+            {listing.categoryId !== 'Gis Bort' && (
+              <div>
+                <Label htmlFor="price">Pris per dag (NOK)</Label>
+                <div className="relative">
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={listing.price}
+                    onChange={handleChange}
+                    className="pl-8"
+                    required
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">kr</span>
+                </div>
+                <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
+                  <HelpCircle className="h-4 w-4 mt-0.5" />
+                  <p>
+                    Sett en konkurransedyktig pris. Du kan sjekke lignende annonser for å få en idé om prisnivået.
+                  </p>
+                </div>
               </div>
-              <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
-                <HelpCircle className="h-4 w-4 mt-0.5" />
-                <p>
-                  Sett en konkurransedyktig pris. Du kan sjekke lignende annonser for å få en idé om prisnivået.
-                </p>
+            )}
+
+            {/* Show free message when Gis Bort is selected */}
+            {listing.categoryId === 'Gis Bort' && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <span className="text-xl">🎁</span>
+                  <div>
+                    <p className="font-semibold">Gratis å gi bort</p>
+                    <p className="text-sm">Dette er en gratis gjenstand som gis bort uten kostnad.</p>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 

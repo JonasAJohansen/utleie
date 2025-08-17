@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils"
 import { MessageInput } from '@/components/enhanced-messaging/MessageInput'
 import { EnhancedMessage } from '@/components/enhanced-messaging/EnhancedMessage'
 import { useWebSocket } from '@/hooks/use-websocket'
-import { useSSE } from '@/hooks/use-sse'
 
 type Message = {
   id: string;
@@ -97,36 +96,53 @@ function ChatContent() {
   // WebSocket handlers for real-time messaging
   const handleNewMessage = (data: any) => {
     if (!data || !data.message) {
-      console.log('Received empty message data')
-      return
+      console.log('Received empty message data');
+      return;
     }
+
+    const newMessage: Message = data.message;
     
-    console.log('Received new message via WebSocket:', data)
-    
-    // Only update if the message is for the active conversation
-    if (data.conversationId === activeConversation?.id) {
+    // Update messages if it's for the active conversation
+    if (newMessage.conversation_id === activeConversation?.id) {
       setMessages(prev => {
-        // Check if message already exists to prevent duplicates
-        const exists = prev.some(msg => msg.id === data.message.id)
-        return exists ? prev : [...prev, data.message]
-      })
+        const exists = prev.some(msg => msg.id === newMessage.id);
+        return exists ? prev : [...prev, newMessage];
+      });
     }
-    
-    // Also refresh conversations to update last message
-    fetchConversations()
-  }
+
+    // Update conversations list
+    setConversations(prev => {
+      const updatedConversations = prev.map(conv => {
+        if (conv.id === newMessage.conversation_id) {
+          return {
+            ...conv,
+            lastMessage: newMessage.content,
+            lastMessageTime: newMessage.created_at,
+          };
+        }
+        return conv;
+      });
+
+      // Sort to bring the updated conversation to the top
+      return updatedConversations.sort((a, b) => {
+        if (!a.lastMessageTime) return 1;
+        if (!b.lastMessageTime) return -1;
+        return new Date(b.lastMessageTime).getTime() - new Date(a.lastMessageTime).getTime();
+      });
+    });
+  };
 
   // Initialize WebSocket connection
   const { isConnected: wsConnected, sendMessage: wsMessage } = useWebSocket({
     onNewMessage: handleNewMessage,
-  })
+    onTyping: (data: { conversationId: string; userId: string; isTyping: boolean }) => {
+        if (data.conversationId === activeConversation?.id) {
+            setTypingUsers(prev => ({ ...prev, [data.userId]: data.isTyping }));
+        }
+    }
+  });
 
-  // Initialize SSE connection as backup
-  const { isConnected: sseConnected } = useSSE({
-    onNewMessage: handleNewMessage,
-  })
-
-  const isConnected = wsConnected || sseConnected
+  const isConnected = wsConnected
 
   // Authenticate WebSocket when user changes
   useEffect(() => {
@@ -138,33 +154,32 @@ function ChatContent() {
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
       const scrollArea = scrollAreaRef.current
-      setTimeout(() => {
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
         scrollArea.scrollTop = scrollArea.scrollHeight
-      }, 100)
+      })
     }
   }
 
+  // Auto-scroll when messages change
   useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom()
-    }
+    scrollToBottom()
   }, [messages])
+
+  // Auto-scroll when typing users change (to show typing indicators)
+  useEffect(() => {
+    scrollToBottom()
+  }, [typingUsers])
 
   useEffect(() => {
     if (activeConversation) {
       setInitialLoad(true)
       fetchMessages(activeConversation.id)
-      // Reduced polling since we have WebSocket for real-time updates
-      const messagesInterval = setInterval(() => {
-        fetchTypingStatus()
-        // Only fetch messages occasionally as a fallback
-        if (!isConnected) {
-          fetchMessages(activeConversation.id)
-        }
-      }, 10000)
-      return () => clearInterval(messagesInterval)
+      
+      // We will rely on WebSockets for real-time updates
+      // The polling interval has been removed.
     }
-  }, [activeConversation, isConnected])
+  }, [activeConversation])
 
   const createOrFetchConversation = async (otherUserId: string, listingId?: string | null, listingName?: string | null) => {
     try {
@@ -222,8 +237,7 @@ function ChatContent() {
     if (!user) return
 
     fetchConversations()
-    const conversationsInterval = setInterval(fetchConversations, 10000)
-    return () => clearInterval(conversationsInterval)
+    // Polling removed, will update conversations on new messages
   }, [user])
 
   const fetchConversations = async () => {
@@ -307,6 +321,9 @@ function ChatContent() {
         setMessages(prev => [...prev, newMsg])
         setNewMessage('')
         setSelectedImage(null)
+        
+        // Auto-scroll after sending message
+        setTimeout(scrollToBottom, 50)
 
         setConversations(conversations.map(conv => 
           conv.id === activeConversation.id 
@@ -334,6 +351,9 @@ function ChatContent() {
       if (response.ok) {
         const newMsg = await response.json()
         setMessages(prev => [...prev, newMsg])
+        
+        // Auto-scroll after sending message
+        setTimeout(scrollToBottom, 50)
 
         // Update conversation list with last message
         const displayContent = messageData.content || 
@@ -384,38 +404,7 @@ function ChatContent() {
     setNewMessage(prev => prev + emoji.native)
   }
 
-  const handleTyping = async () => {
-    if (!activeConversation) return
-    
-    try {
-      await fetch('/api/typing-status', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          conversationId: activeConversation.id,
-          isTyping: true,
-        }),
-      })
-    } catch (error) {
-      console.error('Error updating typing status:', error)
-    }
-  }
 
-  const fetchTypingStatus = async () => {
-    if (!activeConversation) return
-
-    try {
-      const response = await fetch(`/api/typing-status?conversationId=${activeConversation.id}`)
-      if (response.ok) {
-        const data = await response.json()
-        setTypingUsers(data)
-      }
-    } catch (error) {
-      console.error('Error fetching typing status:', error)
-    }
-  }
 
   if (!user) {
     return (
@@ -505,8 +494,8 @@ function ChatContent() {
                     </p>
                   )}
                   <div className="flex items-center text-xs text-gray-400 mt-1">
-                    <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                    {isConnected ? 'Real-time messaging' : 'Messages may be delayed'}
+                    <div className={`w-2 h-2 rounded-full mr-2 ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    {isConnected ? 'Connected' : 'Disconnected'}
                   </div>
                 </div>
               </div>

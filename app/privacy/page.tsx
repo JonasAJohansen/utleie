@@ -1,190 +1,369 @@
 import { Metadata } from 'next'
+import { Shield, Eye, Lock, Users, FileText, CheckCircle, Mail, Phone, MapPin, ArrowRight } from 'lucide-react'
+import { AnimatedSection } from '@/app/components/AnimatedSection'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 export const metadata: Metadata = {
   title: 'Personvernpolicy | Utleie',
   description: 'Les om hvordan vi behandler dine personopplysninger på Utleie-plattformen',
 }
 
-export default function PrivacyPage() {
+interface SectionProps {
+  icon: React.ReactNode
+  title: string
+  children: React.ReactNode
+  delay?: number
+}
+
+function PolicySection({ icon, title, children, delay = 0 }: SectionProps) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-lg shadow-sm p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Personvernpolicy</h1>
-          
-          <div className="prose prose-gray max-w-none">
-            <p className="text-lg text-gray-600 mb-8">
-              Sist oppdatert: {new Date().toLocaleDateString('nb-NO')}
+    <AnimatedSection
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.6, delay }}
+    >
+      <Card className="p-8 hover:shadow-lg transition-all duration-300 border-0 shadow-sm">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600">
+            {icon}
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
+        </div>
+        <CardContent className="p-0">
+          {children}
+        </CardContent>
+      </Card>
+    </AnimatedSection>
+  )
+}
+
+export default function PrivacyPage() {
+  const lastUpdated = new Date().toLocaleDateString('nb-NO', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-emerald-600 text-white">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-emerald-700" />
+        <div className="relative max-w-6xl mx-auto px-4 py-24">
+          <AnimatedSection
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-6 py-3 mb-8">
+              <Shield className="h-6 w-6" />
+              <span className="font-medium">GDPR Compliant</span>
+            </div>
+            
+            <h1 className="text-5xl md:text-6xl font-black mb-6">
+              Personvernpolicy
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-emerald-100 max-w-3xl mx-auto mb-8">
+              Vi respekterer ditt privatliv og beskytter dine personopplysninger med høyeste sikkerhetsstandarder
             </p>
+            
+            <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30 px-4 py-2 text-sm">
+              Sist oppdatert: {lastUpdated}
+            </Badge>
+          </AnimatedSection>
+        </div>
+      </div>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">1. Innledning</h2>
-              <p className="text-gray-700 mb-4">
-                Utleie tar ditt personvern på alvor. Denne personvernpolicyen forklarer hvordan vi samler inn, 
-                bruker og beskytter dine personopplysninger når du bruker vår plattform.
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">2. Hvilke opplysninger vi samler</h2>
+      {/* Quick Overview */}
+      <div className="max-w-6xl mx-auto px-4 -mt-12 relative z-10">
+        <AnimatedSection
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.2 }}
+        >
+          <Card className="p-8 bg-white shadow-xl border-0">
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock className="h-8 w-8 text-emerald-600" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Sikker lagring</h3>
+                <p className="text-gray-600">All data krypteres og lagres sikkert</p>
+              </div>
               
-              <h3 className="text-xl font-medium text-gray-900 mb-3">Informasjon du gir oss</h3>
-              <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li>Navn, e-postadresse og telefonnummer</li>
-                <li>Profilinformasjon og bilder</li>
-                <li>Betalingsinformasjon (behandles av sikre tredjeparts betalingstjenester)</li>
-                <li>Produktbeskrivelser og bilder du laster opp</li>
-                <li>Kommunikasjon med andre brukere</li>
-              </ul>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Eye className="h-8 w-8 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Full transparens</h3>
+                <p className="text-gray-600">Du har full kontroll over dine data</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-8 w-8 text-purple-600" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">GDPR-kompatibel</h3>
+                <p className="text-gray-600">Følger alle europeiske personvernregler</p>
+              </div>
+            </div>
+          </Card>
+        </AnimatedSection>
+      </div>
 
-              <h3 className="text-xl font-medium text-gray-900 mb-3">Informasjon vi samler automatisk</h3>
-              <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li>IP-adresse og enhetsinformasjon</li>
-                <li>Nettleserstype og versjon</li>
-                <li>Bruksmønstre og navigasjon på plattformen</li>
-                <li>Lokasjonsinformasjon (med ditt samtykke)</li>
-                <li>Cookies og lignende teknologier</li>
-              </ul>
-            </section>
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-4 py-16 space-y-8">
+        
+        <PolicySection 
+          icon={<FileText className="h-6 w-6" />} 
+          title="Innledning"
+          delay={0.1}
+        >
+          <p className="text-gray-700 text-lg leading-relaxed">
+            Utleie tar ditt personvern på alvor. Denne personvernpolicyen forklarer hvordan vi samler inn, 
+            bruker og beskytter dine personopplysninger når du bruker vår plattform. Vi følger strenge 
+            sikkerhetsstandarder og gir deg full kontroll over dine data.
+          </p>
+        </PolicySection>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">3. Hvordan vi bruker informasjonen</h2>
-              <p className="text-gray-700 mb-4">
-                Vi bruker dine personopplysninger til å:
-              </p>
-              <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li>Levere og forbedre våre tjenester</li>
-                <li>Behandle transaksjoner og betalinger</li>
-                <li>Kommunisere med deg om bookinger og kontoaktivitet</li>
-                <li>Gi kundesupport</li>
-                <li>Forhindre svindel og misbruk</li>
-                <li>Sende deg relevante oppdateringer og markedsføring (med samtykke)</li>
-                <li>Overholde juridiske forpliktelser</li>
-              </ul>
-            </section>
+        <PolicySection 
+          icon={<Users className="h-6 w-6" />} 
+          title="Hvilke opplysninger vi samler"
+          delay={0.2}
+        >
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                Informasjon du gir oss
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {[
+                  "Navn, e-postadresse og telefonnummer",
+                  "Profilinformasjon og bilder",
+                  "Betalingsinformasjon (sikker behandling)",
+                  "Produktbeskrivelser og bilder",
+                  "Kommunikasjon med andre brukere"
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <CheckCircle className="h-5 w-5 text-emerald-500" />
+                    <span className="text-gray-700">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">4. Deling av informasjon</h2>
-              <p className="text-gray-700 mb-4">
-                Vi deler dine personopplysninger i følgende tilfeller:
-              </p>
-              <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li><strong>Med andre brukere:</strong> Nødvendig kontaktinformasjon for å gjennomføre leietransaksjoner</li>
-                <li><strong>Med tjenesteleverandører:</strong> Betaling, hosting, analyse og andre nødvendige tjenester</li>
-                <li><strong>Ved juridisk krav:</strong> Når det kreves av lov eller myndigheter</li>
-                <li><strong>Ved virksomhetsoverdragelse:</strong> I forbindelse med salg eller sammenslåing av selskapet</li>
-              </ul>
-              <p className="text-gray-700 mb-4">
-                Vi selger aldri dine personopplysninger til tredjeparter for markedsføringsformål.
-              </p>
-            </section>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                Informasjon vi samler automatisk
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {[
+                  "IP-adresse og enhetsinformasjon",
+                  "Nettleserstype og versjon",
+                  "Bruksmønstre og navigasjon",
+                  "Lokasjonsinformasjon (med samtykke)",
+                  "Cookies og lignende teknologier"
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <Eye className="h-5 w-5 text-blue-500" />
+                    <span className="text-gray-700">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </PolicySection>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">5. Datasikkerhet</h2>
-              <p className="text-gray-700 mb-4">
-                Vi implementerer tekniske og organisatoriske sikkerhetstiltak for å beskytte dine personopplysninger:
-              </p>
-              <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li>Kryptering av data under overføring og lagring</li>
-                <li>Sikker autentisering og tilgangskontroll</li>
-                <li>Regelmessige sikkerhetsvurderinger</li>
-                <li>Begrenset tilgang til personopplysninger basert på behov</li>
-              </ul>
-            </section>
+        <PolicySection 
+          icon={<Shield className="h-6 w-6" />} 
+          title="Hvordan vi bruker informasjonen"
+          delay={0.3}
+        >
+          <p className="text-gray-700 mb-6 text-lg">
+            Vi bruker dine personopplysninger utelukkende for å levere bedre tjenester:
+          </p>
+          <div className="grid md:grid-cols-2 gap-4">
+            {[
+              "Levere og forbedre våre tjenester",
+              "Behandle transaksjoner og betalinger",
+              "Kommunisere om bookinger og aktivitet",
+              "Gi kundesupport",
+              "Forhindre svindel og misbruk",
+              "Sende relevante oppdateringer",
+              "Overholde juridiske forpliktelser"
+            ].map((item, index) => (
+              <div key={index} className="flex items-center gap-3 p-4 border border-gray-200 rounded-xl hover:border-emerald-300 transition-colors">
+                <ArrowRight className="h-5 w-5 text-emerald-500" />
+                <span className="text-gray-700">{item}</span>
+              </div>
+            ))}
+          </div>
+        </PolicySection>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">6. Cookies</h2>
-              <p className="text-gray-700 mb-4">
-                Vi bruker cookies og lignende teknologier for å:
-              </p>
-              <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li>Holde deg innlogget</li>
-                <li>Huske dine preferanser</li>
-                <li>Analysere bruk av plattformen</li>
-                <li>Forbedre brukeropplevelsen</li>
-              </ul>
-              <p className="text-gray-700 mb-4">
-                Du kan administrere cookie-innstillinger gjennom nettleseren din.
-              </p>
-            </section>
+        <PolicySection 
+          icon={<Lock className="h-6 w-6" />} 
+          title="Datasikkerhet"
+          delay={0.4}
+        >
+          <div className="space-y-6">
+            <p className="text-gray-700 text-lg">
+              Vi implementerer tekniske og organisatoriske sikkerhetstiltak av høyeste standard:
+            </p>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card className="p-6 bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
+                <h4 className="font-semibold text-emerald-900 mb-3">Teknisk sikkerhet</h4>
+                <ul className="space-y-2 text-sm text-emerald-800">
+                  <li>• Kryptering av data (AES-256)</li>
+                  <li>• Sikker autentisering (OAuth)</li>
+                  <li>• HTTPS for all kommunikasjon</li>
+                </ul>
+              </Card>
+              
+              <Card className="p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-3">Organisatorisk sikkerhet</h4>
+                <ul className="space-y-2 text-sm text-blue-800">
+                  <li>• Begrenset tilgang basert på behov</li>
+                  <li>• Regelmessige sikkerhetsvurderinger</li>
+                  <li>• Opplæring av ansatte</li>
+                </ul>
+              </Card>
+            </div>
+          </div>
+        </PolicySection>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">7. Dine rettigheter</h2>
-              <p className="text-gray-700 mb-4">
-                I henhold til GDPR har du følgende rettigheter:
-              </p>
-              <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li><strong>Tilgangsrett:</strong> Be om kopi av dine personopplysninger</li>
-                <li><strong>Retting:</strong> Be om retting av unøyaktige opplysninger</li>
-                <li><strong>Sletting:</strong> Be om sletting av dine personopplysninger</li>
-                <li><strong>Begrensning:</strong> Be om begrensning av behandlingen</li>
-                <li><strong>Dataportabilitet:</strong> Få dine opplysninger i et strukturert format</li>
-                <li><strong>Innsigelse:</strong> Protestere mot behandling av dine opplysninger</li>
-                <li><strong>Tilbaketrekking:</strong> Trekke tilbake samtykke når som helst</li>
-              </ul>
-            </section>
+        <PolicySection 
+          icon={<CheckCircle className="h-6 w-6" />} 
+          title="Dine rettigheter"
+          delay={0.5}
+        >
+          <p className="text-gray-700 mb-6 text-lg">
+            I henhold til GDPR har du omfattende rettigheter over dine personopplysninger:
+          </p>
+          
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              { title: "Tilgangsrett", desc: "Be om kopi av dine data" },
+              { title: "Retting", desc: "Rett opp feil informasjon" },
+              { title: "Sletting", desc: "Be om sletting av data" },
+              { title: "Begrensning", desc: "Begrens behandlingen" },
+              { title: "Dataportabilitet", desc: "Få data i strukturert format" },
+              { title: "Innsigelse", desc: "Protester mot behandling" }
+            ].map((right, index) => (
+              <Card key={index} className="p-4 border-gray-200 bg-gray-50 hover:shadow-md transition-shadow">
+                <h4 className="font-semibold text-gray-900 mb-2">{right.title}</h4>
+                <p className="text-sm text-gray-700">{right.desc}</p>
+              </Card>
+            ))}
+          </div>
+        </PolicySection>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">8. Dataoppbevaring</h2>
-              <p className="text-gray-700 mb-4">
-                Vi oppbevarer dine personopplysninger så lenge det er nødvendig for å:
+        {/* Contact Section */}
+        <AnimatedSection
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+        >
+          <Card className="p-8 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-4">Har du spørsmål?</h2>
+              <p className="text-emerald-100 text-lg">
+                Vi er her for å hjelpe deg med alle personvernrelaterte spørsmål
               </p>
-              <ul className="list-disc pl-6 text-gray-700 mb-4">
-                <li>Levere våre tjenester</li>
-                <li>Overholde juridiske forpliktelser</li>
-                <li>Løse tvister</li>
-                <li>Håndheve våre avtaler</li>
-              </ul>
-              <p className="text-gray-700 mb-4">
-                Når du sletter kontoen din, vil vi anonymisere eller slette dine personopplysninger, 
-                med unntak av informasjon vi er pålagt å oppbevare av juridiske årsaker.
-              </p>
-            </section>
+            </div>
+            
+            <div className="grid md:grid-cols-3 gap-6 mb-8">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Mail className="h-6 w-6" />
+                </div>
+                <p className="font-medium">E-post</p>
+                <p className="text-emerald-100">privacy@utleie.no</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Phone className="h-6 w-6" />
+                </div>
+                <p className="font-medium">Telefon</p>
+                <p className="text-emerald-100">+47 123 45 678</p>
+              </div>
+              
+              <div className="text-center">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <MapPin className="h-6 w-6" />
+                </div>
+                <p className="font-medium">Personvernansvarlig</p>
+                <p className="text-emerald-100">Tilgjengelig 9-17</p>
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <Button variant="secondary" size="lg" className="bg-white text-emerald-600 hover:bg-gray-100">
+                Kontakt oss
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </div>
+          </Card>
+        </AnimatedSection>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Internasjonale overføringer</h2>
-              <p className="text-gray-700 mb-4">
-                Dine personopplysninger kan behandles i land utenfor EØS. Vi sikrer at slike overføringer 
-                skjer i samsvar med gjeldende lovgivning og med passende beskyttelse.
-              </p>
-            </section>
+        {/* Additional Sections - Condensed */}
+        <div className="grid md:grid-cols-2 gap-8">
+          <PolicySection 
+            icon={<FileText className="h-5 w-5" />} 
+            title="Dataoppbevaring"
+            delay={0.7}
+          >
+            <p className="text-gray-700">
+              Vi oppbevarer data kun så lenge det er nødvendig for å levere tjenester, 
+              overholde juridiske forpliktelser og løse eventuelle tvister. Ved sletting 
+              av konto anonymiseres eller slettes personopplysninger.
+            </p>
+          </PolicySection>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">10. Mindreårige</h2>
-              <p className="text-gray-700 mb-4">
-                Våre tjenester er ikke rettet mot personer under 18 år. Vi samler ikke bevisst 
-                personopplysninger fra mindreårige uten foreldresamtykke.
-              </p>
-            </section>
+          <PolicySection 
+            icon={<Shield className="h-5 w-5" />} 
+            title="Mindreårige"
+            delay={0.8}
+          >
+            <p className="text-gray-700">
+              Våre tjenester er ikke rettet mot personer under 18 år. Vi samler ikke 
+              bevisst personopplysninger fra mindreårige uten foreldresamtykke og 
+              følger strenge retningslinjer for beskyttelse av barn online.
+            </p>
+          </PolicySection>
+        </div>
 
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">11. Endringer i personvernpolicyen</h2>
-              <p className="text-gray-700 mb-4">
-                Vi kan oppdatere denne personvernpolicyen fra tid til annen. Vi vil varsle deg om 
-                vesentlige endringer via e-post eller gjennom plattformen.
-              </p>
-            </section>
-
-            <section className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">12. Kontakt oss</h2>
-              <p className="text-gray-700 mb-4">
-                Hvis du har spørsmål om denne personvernpolicyen eller ønsker å utøve dine rettigheter, 
-                kan du kontakte oss på:
-              </p>
-              <p className="text-gray-700 mb-4">
-                <strong>Personvernansvarlig:</strong><br />
-                E-post: privacy@utleie.no<br />
-                Telefon: +47 123 45 678<br />
-                Adresse: [Adresse til selskapet]
-              </p>
-              <p className="text-gray-700">
-                Du har også rett til å klage til Datatilsynet hvis du mener vi behandler 
+        {/* Compliance Footer */}
+        <AnimatedSection
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6, delay: 0.9 }}
+        >
+          <Card className="p-6 bg-gray-50 border-gray-200">
+            <div className="text-center">
+              <p className="text-gray-600 mb-4">
+                Du har også rett til å klage til <strong>Datatilsynet</strong> hvis du mener vi behandler 
                 dine personopplysninger i strid med loven.
               </p>
-            </section>
-          </div>
-        </div>
+              <div className="flex justify-center items-center gap-4 text-sm text-gray-500">
+                <span>• GDPR Compliant</span>
+                <span>• Sikker behandling</span>
+                <span>• Full transparens</span>
+              </div>
+            </div>
+          </Card>
+        </AnimatedSection>
       </div>
     </div>
   )
-} 
+}

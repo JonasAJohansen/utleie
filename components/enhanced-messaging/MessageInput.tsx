@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/popover'
 import { useToast } from '@/hooks/use-toast'
 import { useGeolocation } from '@/hooks/use-geolocation'
+import { useWebSocket } from '@/hooks/use-websocket'
 
 interface QuickTemplate {
   id: string
@@ -53,13 +54,73 @@ export function MessageInput({
   const [quickTemplates, setQuickTemplates] = useState<QuickTemplate[]>([])
   const [showTemplates, setShowTemplates] = useState(false)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [isWaitingForLocation, setIsWaitingForLocation] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const { toast } = useToast()
-  const { getCurrentPosition } = useGeolocation()
+  const { getCurrentPosition, coordinates, city, isLoading, error } = useGeolocation()
+  const { sendMessage } = useWebSocket({})
+
+  const handleTyping = (isTyping: boolean) => {
+    sendMessage('typing', { conversationId, isTyping })
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value)
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    } else {
+      handleTyping(true)
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      handleTyping(false)
+      typingTimeoutRef.current = null
+    }, 2000)
+  }
+
 
   useEffect(() => {
     fetchQuickTemplates()
   }, [])
+
+  // Auto-share location once coordinates are obtained
+  useEffect(() => {
+    if (coordinates && isWaitingForLocation) {
+      setIsWaitingForLocation(false)
+      shareLocationWithCoordinates()
+    }
+  }, [coordinates])
+
+  const shareLocationWithCoordinates = async () => {
+    if (!coordinates) return
+
+    try {
+      const locationData = {
+        conversationId,
+        content: `📍 Shared location`,
+        type: 'location',
+        locationLat: coordinates.latitude,
+        locationLng: coordinates.longitude,
+        locationName: city || 'Unknown Location',
+        replyToMessageId: replyingTo?.id
+      }
+
+      await onSendMessage(locationData)
+      toast({
+        title: "Location Shared",
+        description: `Your location${city ? ` in ${city}` : ''} has been shared`
+      })
+    } catch (error) {
+      console.error('Error sharing location:', error)
+      toast({
+        title: "Location Error",
+        description: "Failed to share your location",
+        variant: "destructive"
+      })
+    }
+  }
 
   const fetchQuickTemplates = async () => {
     try {
@@ -174,23 +235,19 @@ export function MessageInput({
 
   const shareLocation = async () => {
     try {
-      await getCurrentPosition()
-      // You would get coordinates from the geolocation hook
-      // For demo, using Oslo coordinates
-      const locationData = {
-        conversationId,
-        content: '📍 Shared location',
-        type: 'location',
-        locationLat: 59.9139,
-        locationLng: 10.7522,
-        locationName: 'Oslo, Norway',
-        replyToMessageId: replyingTo?.id
+      // If we already have coordinates, share immediately
+      if (coordinates) {
+        await shareLocationWithCoordinates()
+        return
       }
 
-      await onSendMessage(locationData)
+      // Otherwise, request location and wait for it
+      setIsWaitingForLocation(true)
+      getCurrentPosition()
+      
       toast({
-        title: "Location Shared",
-        description: "Your location has been shared"
+        title: "Getting Location",
+        description: "Please wait while we get your location..."
       })
     } catch (error) {
       console.error('Error sharing location:', error)
@@ -199,6 +256,7 @@ export function MessageInput({
         description: "Failed to get your location",
         variant: "destructive"
       })
+      setIsWaitingForLocation(false)
     }
   }
 
@@ -319,7 +377,7 @@ export function MessageInput({
         <div className="flex-1 flex items-center space-x-2">
           <Input
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={handleInputChange}
             placeholder="Type a message..."
             onKeyPress={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {

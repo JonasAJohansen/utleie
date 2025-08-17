@@ -50,6 +50,10 @@ export function CategorySelect({ value, onChange }: CategorySelectProps) {
         <SelectValue placeholder="Select a category" />
       </SelectTrigger>
       <SelectContent>
+        {/* Hardcoded Gis Bort option - always available */}
+        <SelectItem key="gis-bort" value="Gis Bort">
+          🎁 Gis Bort (Gratis)
+        </SelectItem>
         {categories.map((category) => (
           <SelectItem key={category.id} value={category.id}>
             {category.name}

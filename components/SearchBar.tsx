@@ -18,7 +18,7 @@ interface SearchBarProps {
 
 interface Category {
   value: string
-  label: string
+                                                  label: string
 }
 
 function SearchBarContent({ initialQuery = '' }: SearchBarProps) {

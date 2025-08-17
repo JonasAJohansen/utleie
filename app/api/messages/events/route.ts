@@ -1,8 +1,6 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextRequest } from 'next/server'
-
-// Store active SSE connections
-const connections = new Map<string, ReadableStreamDefaultController[]>()
+import { addSSEConnection, removeSSEConnection } from '@/lib/sse-utils'
 
 export async function GET(request: NextRequest) {
   const session = await auth()
@@ -16,26 +14,14 @@ export async function GET(request: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
       // Store this connection
-      if (!connections.has(userId)) {
-        connections.set(userId, [])
-      }
-      connections.get(userId)?.push(controller)
+      addSSEConnection(userId, controller)
 
       // Send initial connection message
       controller.enqueue(`data: ${JSON.stringify({ type: 'connected', userId })}\n\n`)
 
       // Set up cleanup when connection closes
       request.signal.addEventListener('abort', () => {
-        const userConnections = connections.get(userId)
-        if (userConnections) {
-          const index = userConnections.indexOf(controller)
-          if (index > -1) {
-            userConnections.splice(index, 1)
-          }
-          if (userConnections.length === 0) {
-            connections.delete(userId)
-          }
-        }
+        removeSSEConnection(userId, controller)
       })
     }
   })
@@ -49,26 +35,4 @@ export async function GET(request: NextRequest) {
       'Access-Control-Allow-Headers': 'Cache-Control',
     },
   })
-}
-
-// Function to send message to a specific user via SSE
-export function sendSSEMessage(userId: string, message: any) {
-  const userConnections = connections.get(userId)
-  if (!userConnections || userConnections.length === 0) {
-    return false
-  }
-
-  const data = `data: ${JSON.stringify(message)}\n\n`
-  
-  userConnections.forEach((controller, index) => {
-    try {
-      controller.enqueue(data)
-    } catch (error) {
-      console.error(`Error sending SSE message to user ${userId}:`, error)
-      // Remove broken connection
-      userConnections.splice(index, 1)
-    }
-  })
-
-  return true
 }

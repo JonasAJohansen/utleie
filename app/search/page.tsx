@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { SearchBar } from '@/components/SearchBar'
 import { SearchFilters as SearchFiltersComponent } from '@/components/SearchFilters'
+import { CategoryFilter } from '@/components/ui/category-filter'
 import { ItemGrid } from '@/components/ItemGrid'
 import { Pagination } from '@/components/ui/pagination'
 import { SearchResultsGrid, FiltersSkeleton } from "@/components/ui/search-skeleton"
@@ -23,6 +24,11 @@ interface SearchFiltersState {
 
 interface SearchResponse {
   items: any[]
+  categoryCount: {
+    name: string
+    id: string
+    count: number
+  }[]
   pagination: {
     currentPage: number
     totalPages: number
@@ -112,6 +118,21 @@ function SearchContent() {
     router.push(`/search?${params.toString()}`)
   }
 
+  const handleCategorySelect = (categoryName: string | null) => {
+    const params = new URLSearchParams(searchParams)
+    
+    // Reset page when category changes
+    params.delete('page')
+    
+    if (categoryName) {
+      params.set('category', categoryName)
+    } else {
+      params.delete('category')
+    }
+    
+    router.push(`/search?${params.toString()}`)
+  }
+
   return (
     <div className="min-h-screen">
       <div className="sticky top-16 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 border-b">
@@ -124,7 +145,29 @@ function SearchContent() {
 
       <div className="container mx-auto py-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <aside className="md:col-span-1 relative z-30">
+          <aside className="md:col-span-1 relative z-30 space-y-6">
+            {/* Category Filter */}
+            <AnimatedContainer isLoading={isLoading}>
+              {isLoading ? (
+                <div className="space-y-3">
+                  <div className="h-8 bg-gray-200 rounded animate-pulse" />
+                  <div className="space-y-2">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
+                    ))}
+                  </div>
+                </div>
+              ) : searchResults?.categoryCount && searchResults.categoryCount.length > 0 ? (
+                <CategoryFilter
+                  categories={searchResults.categoryCount}
+                  selectedCategory={searchParams.get('category') || undefined}
+                  onCategorySelect={handleCategorySelect}
+                  totalResults={searchResults.pagination.totalItems}
+                />
+              ) : null}
+            </AnimatedContainer>
+
+            {/* Other Filters */}
             <AnimatedContainer isLoading={isLoading}>
               {isLoading ? (
                 <FiltersSkeleton />
@@ -150,12 +193,26 @@ function SearchContent() {
                     </>
                   ) : searchResults?.items.length ? (
                     <>
-                      <p className="mb-4 transition-opacity duration-300">
-                        {searchResults.pagination.totalItems} results found
-                        {searchResults.pagination.totalPages > 1 && 
-                          ` - Page ${searchResults.pagination.currentPage} of ${searchResults.pagination.totalPages}`
-                        }
-                      </p>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <p className="transition-opacity duration-300">
+                            {searchResults.pagination.totalItems} results found
+                            {searchParams.get('category') && (
+                              <span className="text-emerald-600 font-medium">
+                                {' '}in {searchParams.get('category')}
+                              </span>
+                            )}
+                            {searchResults.pagination.totalPages > 1 && 
+                              ` - Page ${searchResults.pagination.currentPage} of ${searchResults.pagination.totalPages}`
+                            }
+                          </p>
+                          {searchParams.get('q') && (
+                            <p className="text-sm text-gray-500 mt-1">
+                              Search results for "{searchParams.get('q')}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
                       <div className="transition-all duration-300">
                         <ItemGrid items={searchResults.items} />
                       </div>

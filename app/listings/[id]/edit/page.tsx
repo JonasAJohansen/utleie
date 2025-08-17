@@ -19,9 +19,19 @@ import Image from 'next/image'
 const listingSchema = z.object({
   name: z.string().min(1, 'Title is required').max(100, 'Title must be under 100 characters'),
   description: z.string().min(10, 'Description must be at least 10 characters').max(2000, 'Description must be under 2000 characters'),
-  price: z.number().min(1, 'Price must be greater than 0'),
+  price: z.number().min(0, 'Price cannot be negative'),
   location: z.string().min(1, 'Location is required'),
   categoryId: z.string().min(1, 'Category is required'),
+}).refine((data) => {
+  // If Gis Bort is selected, price must be 0
+  if (data.categoryId === 'Gis Bort') {
+    return data.price === 0
+  }
+  // For other categories, price must be greater than 0
+  return data.price > 0
+}, {
+  message: 'Price must be greater than 0 for regular listings, or 0 for Gis Bort items',
+  path: ['price']
 })
 
 type ListingFormValues = z.infer<typeof listingSchema>
@@ -77,6 +87,16 @@ export default function EditListingPage({ params }: EditListingPageProps) {
     },
   })
 
+  // Watch categoryId to conditionally show/hide price field
+  const watchedCategoryId = form.watch('categoryId')
+
+  // Auto-set price to 0 when Gis Bort is selected
+  useEffect(() => {
+    if (watchedCategoryId === 'Gis Bort') {
+      form.setValue('price', 0)
+    }
+  }, [watchedCategoryId, form])
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -120,7 +140,12 @@ export default function EditListingPage({ params }: EditListingPageProps) {
 
         if (categoriesResponse.ok) {
           const categoriesData = await categoriesResponse.json()
-          setCategories(categoriesData)
+          // Deduplicate categories by name to prevent React key conflicts
+          const uniqueCategories = categoriesData.filter((category: Category, index: number, self: Category[]) => 
+            index === self.findIndex(c => c.name === category.name)
+          )
+          console.log('Categories data:', { original: categoriesData.length, unique: uniqueCategories.length })
+          setCategories(uniqueCategories)
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -304,26 +329,29 @@ export default function EditListingPage({ params }: EditListingPageProps) {
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Price per day (NOK)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          min="1"
-                          step="1"
-                          placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* Only show price field if not Gis Bort */}
+                {watchedCategoryId !== 'Gis Bort' && (
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Price per day (NOK)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1"
+                            step="1"
+                            placeholder="0"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -338,8 +366,12 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
+                          {/* Hardcoded Gis Bort option - always available */}
+                          <SelectItem key="gis-bort" value="Gis Bort">
+                            🎁 Gis Bort (Gratis)
+                          </SelectItem>
+                          {categories.map((category, index) => (
+                            <SelectItem key={`${category.id}-${index}`} value={category.id}>
                               {category.name}
                             </SelectItem>
                           ))}
@@ -350,6 +382,19 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                   )}
                 />
               </div>
+
+              {/* Show free message when Gis Bort is selected */}
+              {watchedCategoryId === 'Gis Bort' && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-emerald-700">
+                    <span className="text-xl">🎁</span>
+                    <div>
+                      <p className="font-semibold">Gratis å gi bort</p>
+                      <p className="text-sm">Dette er en gratis gjenstand som gis bort uten kostnad.</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <FormField
                 control={form.control}

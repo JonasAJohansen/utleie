@@ -117,6 +117,8 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 - When encountering "column does not exist" database errors in production, the database schema may be missing columns that exist in the schema.sql file. Use temporary API routes with sql template literals to add missing columns dynamically: `ALTER TABLE table_name ADD COLUMN IF NOT EXISTS column_name BOOLEAN DEFAULT false`. Always check for all missing columns (is_active, is_popular, is_featured) when implementing dynamic content features.
 - When removing unwanted features from messaging systems: systematically remove all related components (UI buttons, message types, API endpoints, database fields), update message handling functions, and clean up migration files to prevent future confusion. For video chat removal: remove Video button from MessageInput, remove 'video_call' case from message rendering, delete video call API routes, and remove video call database columns from migrations.
 - When implementing phone number blocking for Norwegian numbers: create comprehensive regex patterns covering all formats (+47, 47, local 8-digit, with spaces/dashes/parentheses), sanitize content in API routes before database storage, use meaningful replacement text in Norwegian ("[Telefonnummer fjernet av sikkerhetsgrunner]"), add debug logging for monitoring, and create test scripts to verify all phone number formats are detected and blocked correctly.
+- When fixing listing edit functionality: ensure field name mapping between database (snake_case like user_id, category_id) and frontend expectations (camelCase like userId, categoryId). API responses should include both formats or transform database fields to camelCase to match frontend code expectations. The edit page expects userId/categoryId but database returns user_id/category_id, causing access control failures.
+- When fixing React duplicate key errors: deduplicate arrays in the frontend using `filter()` with `findIndex()`, and use unique keys that combine the item identifier with the array index (`${item.id}-${index}`) to prevent React conflicts when the same data is loaded multiple times from API calls.
 
 ## Cursor learned
 
@@ -136,35 +138,53 @@ If needed, you can further use the `web_scraper.py` file to scrape the web page 
 
 # Scratchpad
 
-## Current Task: Implement Phone Number Blocking for Norwegian Numbers ✅ COMPLETED
+## Current Task: Fix WooCommerce Category and Product CSS Styling ✅ IN PROGRESS
 
 ### Task Overview:
-User reported that Norwegian phone numbers are not being blocked/masked in the messaging system. Need to implement phone number detection and masking functionality.
+Working on creating clean, professional styling for both WooCommerce product categories (with overlay style) and regular products (with white card style). The main issue is CSS conflicts between the two sections where product CSS overrides category CSS.
 
 ### Steps to Complete:
-[X] Create utility function to detect Norwegian phone numbers
-[X] Implement phone number masking/blocking logic  
-[X] Integrate into messages API route
-[X] Test with various Norwegian phone number formats
-[X] Update lessons learned
-[X] Fix TypeScript build errors and verify compilation
+[X] Create custom category section with image overlay and "SE PRODUKTER" buttons
+[X] Create clean product grid styling with white cards
+[X] Identify CSS conflicts between category and product sections
+[ ] Provide complete, working CSS for both sections without conflicts
+[ ] Test and verify both sections work independently
 
 ### Implementation Details:
-- Created comprehensive `lib/phone-utils.ts` with Norwegian phone number detection
-- Supports all major Norwegian phone number formats: +47, 47, local 8-digit, with spaces/dashes/parentheses
-- Integrated sanitization into `app/api/messages/route.ts` POST endpoint
-- Phone numbers are replaced with "[Telefonnummer fjernet av sikkerhetsgrunner]" 
-- Added debug logging when phone numbers are blocked
-- Created `test-phone-blocking.js` script for verification
-- Fixed TypeScript type compatibility issues in EnhancedMessage component
-- Fixed Home icon naming conflict in homepage
-- Project builds successfully ✅
+- Categories section uses `.custom-product-categories` class wrapper
+- Categories have image overlay style with transparent backgrounds and green buttons
+- Products section uses standard WooCommerce styling with white card backgrounds
+- Main issue: CSS specificity conflicts where later product CSS overrides category CSS
+- Need to provide complete, working CSS that keeps sections separate
 
-### Norwegian Phone Number Patterns to Block:
-- +47 followed by 8 digits (international format)
-- 47 followed by 8 digits (without +)
-- 8 digits starting with 4, 9, 2, 3, 5, 6, 7 (local format)
-- Variations with spaces, dashes, parentheses
+### Current Status:
+The user needs the complete, working CSS for both:
+1. Custom product categories (overlay style)
+2. Regular products (white card style)
+Both sections must work without interfering with each other.
+
+### Latest Update:
+[X] Provided complete working CSS for both sections
+[X] Create sleek, minimalistic full-width CTA section for the same page
+[X] Fix CTA title styling to match the rest of the page design
+
+## Current Task: Added Hardcoded "Gis Bort" Category ✅ COMPLETED
+Successfully implemented a hardcoded "Gis Bort" (give away) category that users can select when creating or editing listings. This special category is not stored in the database and cannot be removed by admins.
+
+**Implementation:**
+- ✅ Added "Gis Bort" as hardcoded option in CategorySelect component and edit listing form
+- ✅ Added "Gis Bort" as prominent link in navbar navigation (both desktop and mobile) 
+- ✅ Updated search API to handle hardcoded "Gis Bort" category properly in all database queries
+- ✅ Hide price field when "Gis Bort" is selected and automatically set price to 0
+- ✅ Updated validation logic in both forms to handle free items correctly
+- ✅ Added visual feedback showing "Gratis å gi bort" message when Gis Bort is selected
+- ✅ Messaging functionality works automatically for all listings regardless of category
+- ✅ Users can now easily find and list free items in the dedicated "Gis Bort" section
+
+## Previous Task: Fixed Listing Edit Issue ✅ COMPLETED
+Successfully identified and fixed the listing edit functionality issue. The problem was a field name mismatch between database fields (user_id, category_id) and frontend expectations (userId, categoryId). Updated the API response to include both field name formats to ensure proper access control.
+
+**Additional Fix:** Resolved React duplicate key errors in category dropdown by adding deduplication logic and using unique keys with index (`${category.id}-${index}`) to prevent React conflicts when categories are loaded multiple times.
 
 ## Previous Tasks: COMPLETED ✅
 

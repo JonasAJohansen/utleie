@@ -43,8 +43,15 @@ export async function GET(request: Request) {
     const category = searchParams.get('category')
     if (category && category !== 'All Categories') {
       paramCount++
-      whereConditions.push(`l.category_id = $${paramCount}::uuid`)
-      values.push(category)
+      if (category === 'Gis Bort') {
+        // Handle hardcoded Gis Bort category
+        whereConditions.push(`l.category_id = $${paramCount}`)
+        values.push(category)
+      } else {
+        // Handle regular database categories
+        whereConditions.push(`l.category_id = $${paramCount}::uuid`)
+        values.push(category)
+      }
     }
 
     // Location
@@ -72,6 +79,7 @@ export async function GET(request: Request) {
         l.price, 
         l.location, 
         l.created_at,
+        l.category_id,
         u.username,
         u.image_url,
         c.name
@@ -105,7 +113,7 @@ export async function GET(request: Request) {
       SELECT COUNT(DISTINCT l.id) as total_count
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      LEFT JOIN categories c ON l.category_id::uuid = c.id
+      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id::uuid = c.id)
       LEFT JOIN reviews r ON r.listing_id = l.id
       WHERE ${whereConditions.join(' AND ')}
     `
@@ -123,7 +131,10 @@ export async function GET(request: Request) {
         l.*,
         u.username,
         u.image_url as user_image,
-        c.name as category_name,
+        CASE 
+          WHEN l.category_id = 'Gis Bort' THEN 'Gis Bort'
+          ELSE c.name 
+        END as category_name,
         COALESCE(AVG(r.rating), 0) as avg_rating,
         COUNT(r.id) as review_count,
         (
@@ -135,7 +146,7 @@ export async function GET(request: Request) {
         ) as image
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      LEFT JOIN categories c ON l.category_id::uuid = c.id
+      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id::uuid = c.id)
       LEFT JOIN reviews r ON r.listing_id = l.id
       WHERE ${whereConditions.join(' AND ')}
       ${groupByClause}
@@ -149,6 +160,47 @@ export async function GET(request: Request) {
     console.log('Values:', values)
 
     const result = await sql.query(query, values)
+
+    // Get category counts for current search
+    const categoryCountQuery = `
+      SELECT 
+        CASE 
+          WHEN l.category_id = 'Gis Bort' THEN 'Gis Bort'
+          ELSE c.name 
+        END as category_name,
+        CASE 
+          WHEN l.category_id = 'Gis Bort' THEN 'Gis Bort'
+          ELSE c.id::text 
+        END as category_id,
+        COUNT(DISTINCT l.id) as count
+      FROM listings l
+      JOIN users u ON l.user_id = u.id
+      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id::uuid = c.id)
+      LEFT JOIN reviews r ON r.listing_id = l.id
+      WHERE ${whereConditions.join(' AND ')}
+      ${havingClause ? havingClause.replace('HAVING', 'AND') : ''}
+      GROUP BY 
+        CASE 
+          WHEN l.category_id = 'Gis Bort' THEN 'Gis Bort'
+          ELSE c.name 
+        END,
+        CASE 
+          WHEN l.category_id = 'Gis Bort' THEN 'Gis Bort'
+          ELSE c.id::text 
+        END
+      HAVING COUNT(DISTINCT l.id) > 0
+      ORDER BY COUNT(DISTINCT l.id) DESC, category_name ASC
+    `
+
+    console.log('Category Count Query:', categoryCountQuery)
+    
+    const categoryCountResult = await sql.query(categoryCountQuery, values)
+    
+    const categoryCount = categoryCountResult.rows.map(row => ({
+      name: row.category_name,
+      id: row.category_id,
+      count: parseInt(row.count)
+    }))
 
     // Transform the results
     const listings = result.rows.map(listing => ({
@@ -171,6 +223,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       items: listings,
+      categoryCount,
       pagination: {
         currentPage: page,
         totalPages,

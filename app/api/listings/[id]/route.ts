@@ -108,13 +108,20 @@ export async function GET(
       ORDER BY display_order
     `
 
-    // Add photos to the listing object
+    // Add photos to the listing object and map field names to camelCase
     const listingWithPhotos = {
       ...listing,
+      userId: listing.user_id,
+      categoryId: listing.category_id,
       photos: photosResult.rows
     }
 
-    return NextResponse.json(listingWithPhotos)
+    const response = NextResponse.json(listingWithPhotos)
+    // Prevent caching to ensure fresh data
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    return response
   } catch (error) {
     console.error('Error fetching listing:', error)
     return new NextResponse('Internal Server Error', { status: 500 })

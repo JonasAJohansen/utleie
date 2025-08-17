@@ -11,6 +11,7 @@ interface UseWebSocketOptions {
   onNewNotification?: (data: any) => void
   onNewMessage?: (data: any) => void
   onMessageRead?: (data: any) => void
+  onTyping?: (data: any) => void
   enabled?: boolean
 }
 
@@ -18,6 +19,7 @@ export function useWebSocket({
   onNewNotification,
   onNewMessage,
   onMessageRead,
+  onTyping,
   enabled = true
 }: UseWebSocketOptions) {
   const [isConnected, setIsConnected] = useState(false)
@@ -81,6 +83,8 @@ export function useWebSocket({
             onNewMessage(data.data || {})
           } else if (data.type === 'message_read' && onMessageRead) {
             onMessageRead(data.data || {})
+          } else if (data.type === 'typing' && onTyping) {
+            onTyping(data.data || {})
           }
           
           setLastEvent({ type: data.type, data: data.data || null })
@@ -127,7 +131,7 @@ export function useWebSocket({
       
       setIsConnected(false)
     }
-  }, [enabled, onNewMessage, onNewNotification, onMessageRead])
+  }, [enabled, onNewMessage, onNewNotification, onMessageRead, onTyping])
   
   // Connect on component mount
   useEffect(() => {

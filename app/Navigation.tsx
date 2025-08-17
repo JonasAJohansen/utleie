@@ -46,7 +46,6 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useWebSocket } from '@/hooks/use-websocket'
-import { useSSE } from '@/hooks/use-sse'
 
 interface Notification {
   id: string
@@ -80,6 +79,7 @@ const categoryIcons: { [key: string]: JSX.Element } = {
   "Klær": <Shirt className="h-4 w-4" />,
   "Hjem": <Home className="h-4 w-4" />,
   "Gaming": <Gamepad className="h-4 w-4" />,
+  "Gis Bort": <span className="text-emerald-500">🎁</span>,
   "default": <Package className="h-4 w-4" />
 }
 
@@ -184,14 +184,7 @@ export default function Navigation() {
     onMessageRead: handleMessageRead
   })
 
-  // Initialize SSE connection as backup
-  const { isConnected: sseConnected } = useSSE({
-    onNewNotification: handleNewNotification,
-    onNewMessage: handleNewMessage,
-    onMessageRead: handleMessageRead
-  })
-
-  const isConnected = wsConnected || sseConnected
+  const isConnected = wsConnected
 
   useEffect(() => {
     if (user && !hasFetchedRef.current) {
@@ -392,6 +385,14 @@ export default function Navigation() {
               className="text-gray-700 hover:text-gray-900 font-medium transition-colors"
             >
               Nye annonser
+            </Link>
+
+            <Link 
+              href="/search?category=Gis+Bort" 
+              className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors flex items-center space-x-1"
+            >
+              <span className="text-lg">🎁</span>
+              <span>Gis Bort</span>
             </Link>
 
             {user && (
@@ -703,6 +704,10 @@ export default function Navigation() {
                     </Link>
                     <Link href="/search?newest=true" className="text-base font-medium text-gray-700 hover:text-gray-900" onClick={() => setIsOpen(false)}>
                       Nye annonser
+                    </Link>
+                    <Link href="/search?category=Gis+Bort" className="text-base font-medium text-emerald-600 hover:text-emerald-700 flex items-center space-x-2" onClick={() => setIsOpen(false)}>
+                      <span className="text-lg">🎁</span>
+                      <span>Gis Bort</span>
                     </Link>
                     
                     {user ? (

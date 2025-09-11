@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { sql } from '@vercel/postgres'
-import { verifyStripeWebhook, SPONSORSHIP_PACKAGES } from '@/lib/stripe'
+import { verifyStripeWebhook, SPONSORSHIP_PACKAGES, stripe } from '@/lib/stripe'
 import Stripe from 'stripe'
 
 export async function POST(request: NextRequest) {
   try {
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe is not configured' },
+        { status: 500 }
+      )
+    }
+
     const body = await request.text()
     const headersList = await headers()
     const signature = headersList.get('stripe-signature')
@@ -53,13 +60,24 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   try {
     console.log('Processing successful payment:', paymentIntent.id)
 
+    // Get payment method information
+    let paymentMethodType = null
+    if (paymentIntent.latest_charge && stripe) {
+      try {
+        const charge = await stripe.charges.retrieve(paymentIntent.latest_charge as string)
+        paymentMethodType = charge.payment_method_details?.type || null
+      } catch (error) {
+        console.error('Error retrieving charge details:', error)
+      }
+    }
+
     // Update payment record
     const paymentResult = await sql`
       UPDATE payments 
       SET 
         status = 'succeeded',
         stripe_webhook_received = true,
-        payment_method_type = ${paymentIntent.charges.data[0]?.payment_method_details?.type || null},
+        payment_method_type = ${paymentMethodType},
         updated_at = CURRENT_TIMESTAMP
       WHERE stripe_payment_intent_id = ${paymentIntent.id}
       RETURNING id, user_id, listing_id, metadata

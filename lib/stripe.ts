@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 // Initialize Stripe with Norwegian market configuration (optional for testing)
 export const stripe = process.env.STRIPE_SECRET_KEY 
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: '2024-12-18.acacia', // Latest API version
+      apiVersion: '2025-08-27.basil', // Latest API version
       typescript: true,
     })
   : null

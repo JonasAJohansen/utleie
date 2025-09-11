@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import Image from 'next/image'
 import { Star, MapPin } from 'lucide-react'
 import Link from 'next/link'
+import { SponsoredListingCard } from '@/components/sponsorship/SponsoredBadge'
 
 interface AnimatedSearchCardProps {
   item: {
@@ -14,6 +15,8 @@ interface AnimatedSearchCardProps {
     rating: number | string | null
     location: string
     features: string[]
+    isSponsored?: boolean
+    sponsoredUntil?: string | null
   }
   index: number
 }
@@ -26,6 +29,21 @@ export function AnimatedSearchCard({ item, index }: AnimatedSearchCardProps) {
     return !isNaN(numRating) ? numRating.toFixed(1) : 'N/A';
   };
 
+  // Handle sponsored listing click tracking
+  const handleSponsoredClick = async () => {
+    if (item.isSponsored) {
+      try {
+        await fetch('/api/sponsorship/track-click', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ listingId: item.id })
+        });
+      } catch (error) {
+        console.error('Failed to track sponsored click:', error);
+      }
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -36,12 +54,20 @@ export function AnimatedSearchCard({ item, index }: AnimatedSearchCardProps) {
         ease: [0.25, 0.1, 0.25, 1],
       }}
     >
-      <Link href={`/listings/${item.id}`}>
-        <motion.div 
-          className="bg-white rounded-lg shadow-md overflow-hidden h-full"
-          whileHover={{ y: -4 }}
-          whileTap={{ scale: 0.98 }}
+      <Link href={`/listings/${item.id}`} onClick={handleSponsoredClick}>
+        <SponsoredListingCard 
+          isSponsored={item.isSponsored || false}
+          badgePosition="top-right"
+          badgeVariant="small"
+          className="h-full"
         >
+          <motion.div 
+            className={`bg-white rounded-lg shadow-md overflow-hidden h-full ${
+              item.isSponsored ? 'ring-2 ring-yellow-200 shadow-lg' : ''
+            }`}
+            whileHover={{ y: -4 }}
+            whileTap={{ scale: 0.98 }}
+          >
           <div className="relative h-48">
             <Image
               src={item.image || '/placeholder.svg?height=200&width=300'}
@@ -98,7 +124,8 @@ export function AnimatedSearchCard({ item, index }: AnimatedSearchCardProps) {
               </div>
             )}
           </div>
-        </motion.div>
+          </motion.div>
+        </SponsoredListingCard>
       </Link>
     </motion.div>
   )

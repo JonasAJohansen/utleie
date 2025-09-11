@@ -15,6 +15,7 @@ import { MultiStepForm } from '@/components/ui/multi-step-form'
 import { PhotoUpload } from '@/components/ui/photo-upload'
 import { AlertCircle, HelpCircle, Loader2 } from 'lucide-react'
 import { ListingPreview } from '@/components/ui/listing-preview'
+import { SponsorshipModal } from '@/components/sponsorship/SponsorshipModal'
 
 // Import locations from location selector
 import { locations } from '@/components/ui/location-selector'
@@ -70,6 +71,8 @@ export default function AddListing() {
   const [isFetchingBrands, setIsFetchingBrands] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null)
   const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null)
+  const [createdListingId, setCreatedListingId] = useState<string | null>(null)
+  const [showSponsorshipModal, setShowSponsorshipModal] = useState(false)
 
   const steps = [
     {
@@ -261,8 +264,9 @@ export default function AddListing() {
         description: "Din annonse er nå publisert og synlig for alle.",
       })
       
-      // Redirect to listing page
-      router.push(`/listings/${listingId}`)
+      // Store the created listing ID and show sponsorship modal
+      setCreatedListingId(listingId)
+      setShowSponsorshipModal(true)
       
     } catch (error) {
       console.error('Error creating listing:', error)
@@ -310,6 +314,26 @@ export default function AddListing() {
     const brand = brands.find(b => b.id === value)
     setSelectedBrand(brand || null)
     setListing({ ...listing, brandId: value })
+  }
+
+  const handleSponsorshipModalClose = () => {
+    setShowSponsorshipModal(false)
+    // Redirect to listing page after modal closes
+    if (createdListingId) {
+      router.push(`/listings/${createdListingId}`)
+    }
+  }
+
+  const handleSponsorshipSuccess = () => {
+    setShowSponsorshipModal(false)
+    toast({
+      title: "Sponsorert plassering aktivert!",
+      description: "Din annonse vil nå vises øverst i søkeresultatene.",
+    })
+    // Redirect to listing page
+    if (createdListingId) {
+      router.push(`/listings/${createdListingId}`)
+    }
   }
 
   const handleStepChange = (step: number) => {
@@ -549,6 +573,19 @@ export default function AddListing() {
           />
         )}
       </MultiStepForm>
+
+      {/* Sponsorship Modal */}
+      {createdListingId && (
+        <SponsorshipModal
+          isOpen={showSponsorshipModal}
+          onClose={handleSponsorshipModalClose}
+          listingId={createdListingId}
+          listingTitle={listing.name}
+          userEmail={user?.primaryEmailAddress?.emailAddress}
+          userName={user?.fullName || user?.firstName || ''}
+          onSuccess={handleSponsorshipSuccess}
+        />
+      )}
     </div>
   )
 }

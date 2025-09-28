@@ -29,10 +29,17 @@ export async function GET(request: Request) {
       `
     }
 
-    const result = await query
+    const result = await Promise.race([
+      query,
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database timeout')), 8000)
+      )
+    ]) as any
+    
     return NextResponse.json(result.rows)
   } catch (error) {
     console.error('Error fetching categories:', error)
-    return new NextResponse('Error fetching categories', { status: 500 })
+    // Return empty array instead of error to prevent page crashes
+    return NextResponse.json([])
   }
 } 

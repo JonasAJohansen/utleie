@@ -200,7 +200,7 @@ export function SearchableDropdown({
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
             className={cn(
-              'absolute z-50 w-full mt-1 bg-white rounded-lg shadow-lg border',
+              'absolute z-[99999] w-full mt-1 bg-white rounded-lg shadow-lg border',
               'max-h-60 overflow-hidden',
               contentClassName
             )}

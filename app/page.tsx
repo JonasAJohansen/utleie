@@ -31,8 +31,9 @@ async function getLatestListings() {
         ) as image
       FROM listings l
       JOIN users u ON l.user_id = u.id
+      WHERE l.status = 'active'
       ORDER BY l.created_at DESC
-      LIMIT 6
+      LIMIT 12
     `
     return result.rows
   } catch (error) {
@@ -637,10 +638,10 @@ export default async function Home() {
               transition={{ duration: 0.6 }}
             >
               <h2 className="text-4xl md:text-5xl font-black mb-6 text-gray-900">
-                Tilgjengelig for leie nå
+                Nye annonser
               </h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Utforsk våre nyeste tilbud fra verifiserte utleiere
+                Se de nyeste annonsene som er lagt ut
               </p>
             </AnimatedSection>
             

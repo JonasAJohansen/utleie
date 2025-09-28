@@ -14,17 +14,17 @@ export function SponsoredBadge({ variant = 'default', className = '' }: Sponsore
     small: {
       badge: 'text-xs px-2 py-1',
       icon: 'h-3 w-3',
-      text: 'Sponsored'
+      text: 'Sponset'
     },
     default: {
       badge: 'text-sm px-3 py-1',
       icon: 'h-4 w-4', 
-      text: 'Sponsored'
+      text: 'Sponset'
     },
     large: {
       badge: 'text-base px-4 py-2',
       icon: 'h-5 w-5',
-      text: 'Sponsored Listing'
+      text: 'Sponset annonse'
     }
   }
 
@@ -97,7 +97,7 @@ export function SponsoredSearchResult({
   return (
     <div className={`flex items-center gap-2 text-sm text-orange-600 ${className}`}>
       <Star className="h-4 w-4 fill-current" />
-      <span className="font-medium">Sponsored Result</span>
+      <span className="font-medium">Sponset resultat</span>
       {priority > 1 && (
         <Badge variant="outline" className="text-xs border-orange-200 text-orange-600">
           Premium

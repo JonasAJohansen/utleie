@@ -24,7 +24,8 @@ export async function GET() {
         email,
         created_at,
         status,
-        image_url
+        image_url,
+        is_admin
       FROM users
       ORDER BY created_at DESC
     `

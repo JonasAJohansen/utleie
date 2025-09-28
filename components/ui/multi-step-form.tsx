@@ -234,7 +234,7 @@ export function MultiStepForm({
       </div>
 
       {/* Step Content */}
-      <Card className="relative overflow-hidden shadow-sm border border-gray-100">
+      <Card className="relative shadow-sm border border-gray-100">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentStep}

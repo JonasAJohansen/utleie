@@ -10,6 +10,7 @@ import { toast } from "@/components/ui/use-toast"
 import { useUser } from "@clerk/nextjs"
 import { CategorySelect } from '@/components/CategorySelect'
 import { LocationSelector, getLocationByValue } from '@/components/ui/location-selector'
+import { EnhancedLocationSelector } from '@/components/ui/enhanced-location-selector'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MultiStepForm } from '@/components/ui/multi-step-form'
 import { PhotoUpload } from '@/components/ui/photo-upload'
@@ -66,6 +67,7 @@ export default function AddListing() {
   })
   const [photos, setPhotos] = useState<ListingPhoto[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasSubmitted, setHasSubmitted] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [brands, setBrands] = useState<Brand[]>([])
   const [isFetchingBrands, setIsFetchingBrands] = useState(false)
@@ -174,6 +176,11 @@ export default function AddListing() {
   }
 
   const handleSubmit = async () => {
+    // Prevent duplicate submissions
+    if (isSubmitting || hasSubmitted) {
+      return
+    }
+
     if (!user) {
       toast({
         title: "Ikke pålogget",
@@ -205,6 +212,7 @@ export default function AddListing() {
     }
     
     setIsSubmitting(true)
+    setHasSubmitted(true)
     
     try {
       // First create the listing
@@ -277,6 +285,7 @@ export default function AddListing() {
       })
     } finally {
       setIsSubmitting(false)
+      // Don't reset hasSubmitted on error to prevent retry
     }
   }
 
@@ -548,9 +557,11 @@ export default function AddListing() {
           <div className="space-y-6">
             <div>
               <Label htmlFor="location">Sted</Label>
-              <LocationSelector
+              <EnhancedLocationSelector
                 value={listing.location}
                 onChange={handleLocationChange}
+                placeholder="Velg sted..."
+                showDetectLocation={true}
               />
               <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
                 <AlertCircle className="h-4 w-4 mt-0.5" />

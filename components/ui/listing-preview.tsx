@@ -166,7 +166,11 @@ export function ListingPreview({
         <Button variant="outline" onClick={() => onEdit(3)}>
           Tilbake
         </Button>
-                  <Button onClick={onPublish} className="bg-emerald-500 hover:bg-emerald-600">
+                  <Button 
+          onClick={onPublish} 
+          className="bg-emerald-500 hover:bg-emerald-600"
+          type="button"
+        >
           Publiser annonse
         </Button>
       </div>

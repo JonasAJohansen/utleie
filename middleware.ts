@@ -10,10 +10,13 @@ export default clerkMiddleware(async (auth, req) => {
   
   if (userId) {
     try {
-      // Check if user exists in our database
-      const existingUser = await sql`
-        SELECT id FROM users WHERE id = ${userId}
-      `
+      // Check if user exists in our database with timeout
+      const existingUser = await Promise.race([
+        sql`SELECT id FROM users WHERE id = ${userId}`,
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Database timeout')), 5000)
+        )
+      ]) as any
 
       if (existingUser.rows.length === 0) {
         // Get user details from Clerk
@@ -21,20 +24,26 @@ export default clerkMiddleware(async (auth, req) => {
         const user = await client.users.getUser(userId)
         
         if (user) {
-          // Create user in our database
-          await sql`
-            INSERT INTO users (id, username, email, image_url)
-            VALUES (
-              ${userId}, 
-              ${user.username || `user_${userId.split('_')[1]}`}, 
-              ${user.emailAddresses[0]?.emailAddress || ''}, 
-              ${user.imageUrl || ''}
+          // Create user in our database with timeout
+          await Promise.race([
+            sql`
+              INSERT INTO users (id, username, email, image_url)
+              VALUES (
+                ${userId}, 
+                ${user.username || `user_${userId.split('_')[1]}`}, 
+                ${user.emailAddresses[0]?.emailAddress || ''}, 
+                ${user.imageUrl || ''}
+              )
+            `,
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('Database timeout')), 5000)
             )
-          `
+          ])
         }
       }
     } catch (error) {
       console.error('Error syncing user:', error)
+      // Continue without failing the request
     }
   }
 

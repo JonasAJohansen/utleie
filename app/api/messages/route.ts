@@ -160,11 +160,12 @@ export async function POST(request: Request) {
       fields.push('is_template_response')
       values.push(isTemplateResponse)
       valueIndex++
-      if (templateId) {
-        fields.push('template_id')
-        values.push(templateId)
-        valueIndex++
-      }
+      // Note: template_id column doesn't exist in messages table
+      // if (templateId) {
+      //   fields.push('template_id')
+      //   values.push(templateId)
+      //   valueIndex++
+      // }
     }
 
     if (videoCallUrl) {
@@ -200,13 +201,14 @@ export async function POST(request: Request) {
     `, values)
 
     // Update template usage count if this was a template response
-    if (isTemplateResponse && templateId) {
-      await sql.query(`
-        UPDATE quick_response_templates 
-        SET usage_count = usage_count + 1 
-        WHERE id = $1 OR template_id = $1
-      `, [templateId])
-    }
+    // Note: quick_response_templates table may not exist
+    // if (isTemplateResponse && templateId) {
+    //   await sql.query(`
+    //     UPDATE quick_response_templates 
+    //     SET usage_count = usage_count + 1 
+    //     WHERE id = $1 OR template_id = $1
+    //   `, [templateId])
+    // }
 
     // Send real-time notification to the recipient
     const conversation = conversationRows[0]

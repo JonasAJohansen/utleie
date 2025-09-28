@@ -6,6 +6,20 @@ const ITEMS_PER_PAGE = 12
 // Helper function to get a random sponsored listing for a category
 async function getRandomSponsoredListing(categoryId?: string) {
   try {
+    // Check if sponsored_listings table exists first
+    const tableCheck = await sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'sponsored_listings'
+      );
+    `
+    
+    if (!tableCheck.rows[0]?.exists) {
+      console.log('sponsored_listings table does not exist, skipping sponsored listings')
+      return null
+    }
+
     const query = categoryId && categoryId !== 'All Categories' 
       ? sql`
           SELECT 
@@ -29,7 +43,7 @@ async function getRandomSponsoredListing(categoryId?: string) {
           FROM sponsored_listings sl
           JOIN listings l ON sl.listing_id = l.id
           JOIN users u ON l.user_id = u.id
-          LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id::uuid = c.id)
+          LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id = c.name)
           LEFT JOIN reviews r ON r.listing_id = l.id
           WHERE sl.is_active = true
             AND sl.expires_at > CURRENT_TIMESTAMP
@@ -63,7 +77,7 @@ async function getRandomSponsoredListing(categoryId?: string) {
           FROM sponsored_listings sl
           JOIN listings l ON sl.listing_id = l.id
           JOIN users u ON l.user_id = u.id
-          LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id::uuid = c.id)
+          LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id = c.name)
           LEFT JOIN reviews r ON r.listing_id = l.id
           WHERE sl.is_active = true
             AND sl.expires_at > CURRENT_TIMESTAMP
@@ -123,15 +137,9 @@ export async function GET(request: Request) {
     const category = searchParams.get('category')
     if (category && category !== 'All Categories') {
       paramCount++
-      if (category === 'Gis Bort') {
-        // Handle hardcoded Gis Bort category
-        whereConditions.push(`l.category_id = $${paramCount}`)
-        values.push(category)
-      } else {
-        // Handle regular database categories
-        whereConditions.push(`l.category_id = $${paramCount}::uuid`)
-        values.push(category)
-      }
+      // All categories are stored as names, not UUIDs
+      whereConditions.push(`l.category_id = $${paramCount}`)
+      values.push(category)
     }
 
     // Location
@@ -195,7 +203,7 @@ export async function GET(request: Request) {
       SELECT COUNT(DISTINCT l.id) as total_count
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id::uuid = c.id)
+      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id = c.name)
       LEFT JOIN reviews r ON r.listing_id = l.id
       WHERE ${whereConditions.join(' AND ')}
     `
@@ -230,7 +238,7 @@ export async function GET(request: Request) {
         ) as image
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id::uuid = c.id)
+      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id = c.name)
       LEFT JOIN reviews r ON r.listing_id = l.id
       WHERE ${whereConditions.join(' AND ')}
       ${groupByClause}
@@ -259,7 +267,7 @@ export async function GET(request: Request) {
         COUNT(DISTINCT l.id) as count
       FROM listings l
       JOIN users u ON l.user_id = u.id
-      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id::uuid = c.id)
+      LEFT JOIN categories c ON (l.category_id != 'Gis Bort' AND l.category_id = c.name)
       LEFT JOIN reviews r ON r.listing_id = l.id
       WHERE ${whereConditions.join(' AND ')}
       ${havingClause ? havingClause.replace('HAVING', 'AND') : ''}

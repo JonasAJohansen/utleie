@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Ban, Search, AlertTriangle } from 'lucide-react'
+import { Ban, Search, AlertTriangle, Shield, ShieldCheck } from 'lucide-react'
 import { Card } from "@/components/ui/card"
 
 interface User {
@@ -15,6 +15,7 @@ interface User {
   created_at: string
   status: string
   image_url: string | null
+  is_admin?: boolean
 }
 
 export function UsersTab() {
@@ -65,6 +66,26 @@ export function UsersTab() {
     }
   }
 
+  const handleAdminToggle = async (id: string, isAdmin: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/users/${id}/admin`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_admin: !isAdmin }),
+      })
+
+      if (response.ok) {
+        setUsers(users.map(user =>
+          user.id === id ? { ...user, is_admin: !isAdmin } : user
+        ))
+      }
+    } catch (error) {
+      console.error('Error updating admin status:', error)
+    }
+  }
+
   if (isLoading) {
     return <div>Loading...</div>
   }
@@ -90,6 +111,7 @@ export function UsersTab() {
               <TableHead>Email</TableHead>
               <TableHead>Join Date</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Role</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -105,18 +127,37 @@ export function UsersTab() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleStatusChange(user.id, user.status === 'active' ? 'banned' : 'active')}
-                  >
-                    {user.status === 'active' ? (
-                      <Ban className="h-4 w-4 mr-2" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                    )}
-                    {user.status === 'active' ? 'Ban User' : 'Unban User'}
-                  </Button>
+                  <Badge variant={user.is_admin ? 'default' : 'secondary'}>
+                    {user.is_admin ? 'Admin' : 'User'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleStatusChange(user.id, user.status === 'active' ? 'banned' : 'active')}
+                    >
+                      {user.status === 'active' ? (
+                        <Ban className="h-4 w-4 mr-2" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                      )}
+                      {user.status === 'active' ? 'Ban' : 'Unban'}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleAdminToggle(user.id, user.is_admin || false)}
+                    >
+                      {user.is_admin ? (
+                        <ShieldCheck className="h-4 w-4 mr-2" />
+                      ) : (
+                        <Shield className="h-4 w-4 mr-2" />
+                      )}
+                      {user.is_admin ? 'Remove Admin' : 'Make Admin'}
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}

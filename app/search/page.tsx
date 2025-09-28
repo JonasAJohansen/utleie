@@ -145,7 +145,7 @@ function SearchContent() {
 
       <div className="container mx-auto py-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <aside className="md:col-span-1 relative z-30 space-y-6">
+          <aside className="md:col-span-1 relative space-y-6">
             {/* Category Filter */}
             <AnimatedContainer isLoading={isLoading}>
               {isLoading ? (

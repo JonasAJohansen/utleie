@@ -119,19 +119,19 @@ export function PaymentForm({ onSuccess, onBack, packageName, amount }: PaymentF
         <CardContent className="pt-6">
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <span className="font-medium">Package:</span>
+              <span className="font-medium">Pakke:</span>
               <span>{packageName}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="font-medium">Amount:</span>
+              <span className="font-medium">Beløp:</span>
               <span className="text-lg font-bold text-emerald-600">
                 {formatNOK(amount)}
               </span>
             </div>
             <div className="text-xs text-gray-500 pt-2">
-              <p>• Payment will be processed in NOK (Norwegian Kroner)</p>
-              <p>• Your listing will be promoted immediately after payment</p>
-              <p>• You will receive an email confirmation</p>
+              <p>• Betaling vil bli behandlet i NOK (Norske Kroner)</p>
+              <p>• Annonsen din vil bli fremhevet umiddelbart etter betaling</p>
+              <p>• Du vil motta en e-postbekreftelse</p>
             </div>
           </div>
         </CardContent>
@@ -146,7 +146,7 @@ export function PaymentForm({ onSuccess, onBack, packageName, amount }: PaymentF
           className="flex-1"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back
+          Tilbake
         </Button>
         
         <Button
@@ -155,13 +155,13 @@ export function PaymentForm({ onSuccess, onBack, packageName, amount }: PaymentF
           className="flex-1"
         >
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isLoading ? 'Processing...' : `Pay ${formatNOK(amount)}`}
+          {isLoading ? 'Behandler...' : `Betal ${formatNOK(amount)}`}
         </Button>
       </div>
 
       <div className="text-center text-xs text-gray-500">
-        <p>By completing this payment, you agree to our terms of service.</p>
-        <p>All payments are secure and encrypted.</p>
+        <p>Ved å fullføre denne betalingen godtar du våre vilkår for tjenesten.</p>
+        <p>Alle betalinger er sikre og krypterte.</p>
       </div>
     </form>
   )

@@ -505,6 +505,7 @@ function ChatContent() {
             <ScrollArea 
               ref={scrollAreaRef}
               className="flex-1 p-4 bg-gray-50"
+              style={{ maxHeight: 'calc(100vh - 20rem)' }}
             >
               {initialLoad && isLoadingMessages ? (
                 <div className="flex justify-center items-center h-full">

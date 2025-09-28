@@ -43,7 +43,7 @@ export async function GET() {
         result.rows.map(async (listing) => {
           const [userResult, categoryResult] = await Promise.all([
             sql`SELECT username FROM users WHERE id = ${listing.user_id}`,
-            sql`SELECT name FROM categories WHERE id = ${listing.category_id}`
+            sql`SELECT name FROM categories WHERE name = ${listing.category_id}`
           ])
 
           return {

@@ -75,8 +75,8 @@ export function SponsorshipModal({
       } catch (error) {
         console.error('Error fetching packages:', error)
         toast({
-          title: 'Error',
-          description: 'Failed to load sponsorship packages. Please try again.',
+          title: 'Feil',
+          description: 'Kunne ikke laste sponsorpakker. Prøv igjen.',
           variant: 'destructive'
         })
       }
@@ -162,12 +162,12 @@ export function SponsorshipModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-emerald-500" />
-            {step === 'select' ? 'Boost Your Listing' : 'Complete Payment'}
+            {step === 'select' ? 'Fremhev annonsen din' : 'Fullfør betaling'}
           </DialogTitle>
           <DialogDescription>
             {step === 'select' 
-              ? `Make "${listingTitle}" stand out with sponsored placement`
-              : `Complete payment for ${selectedPackage?.name}`
+              ? `Få "${listingTitle}" til å skille seg ut med sponset plassering`
+              : `Fullfør betaling for ${selectedPackage?.name}`
             }
           </DialogDescription>
         </DialogHeader>
@@ -185,7 +185,7 @@ export function SponsorshipModal({
                 >
                   {pkg.position_priority === 2 && (
                     <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-emerald-500">
-                      Most Popular
+                      Mest populær
                     </Badge>
                   )}
                   
@@ -197,7 +197,7 @@ export function SponsorshipModal({
                     <div className="text-3xl font-bold text-emerald-600">
                       {formatNOK(pkg.price_nok)}
                     </div>
-                    <p className="text-sm text-gray-500">{pkg.duration_days} days</p>
+                    <p className="text-sm text-gray-500">{pkg.duration_days} dager</p>
                   </CardHeader>
                   
                   <CardContent className="text-center">
@@ -208,20 +208,20 @@ export function SponsorshipModal({
                     <div className="space-y-2 text-sm">
                       <div className="flex items-center justify-center gap-2">
                         <Check className="h-4 w-4 text-emerald-500" />
-                        <span>Priority placement</span>
+                        <span>Prioritert plassering</span>
                       </div>
                       <div className="flex items-center justify-center gap-2">
                         <Check className="h-4 w-4 text-emerald-500" />
-                        <span>Sponsored badge</span>
+                        <span>Sponset merke</span>
                       </div>
                       <div className="flex items-center justify-center gap-2">
                         <Check className="h-4 w-4 text-emerald-500" />
-                        <span>Increased visibility</span>
+                        <span>Økt synlighet</span>
                       </div>
                       {pkg.position_priority >= 2 && (
                         <div className="flex items-center justify-center gap-2">
                           <Check className="h-4 w-4 text-emerald-500" />
-                          <span>Top position priority</span>
+                          <span>Topp posisjon prioritet</span>
                         </div>
                       )}
                     </div>
@@ -232,7 +232,7 @@ export function SponsorshipModal({
                       disabled={isLoading}
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Select Package
+                      Velg pakke
                     </Button>
                   </CardContent>
                 </Card>
@@ -240,13 +240,13 @@ export function SponsorshipModal({
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">How Sponsored Listings Work</h3>
+              <h3 className="font-semibold text-blue-900 mb-2">Slik fungerer sponsede annonser</h3>
               <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Your listing appears at the top of search results in your category</li>
-                <li>• Clear "Sponsored" badge increases trust and visibility</li>
-                <li>• Random rotation ensures fair exposure among sponsored listings</li>
-                <li>• Analytics tracking shows performance metrics</li>
-                <li>• Automatic deactivation when sponsorship expires</li>
+                <li>• Annonsen din vises øverst i søkeresultatene i din kategori</li>
+                <li>• Tydelig "Sponset" merke øker tillit og synlighet</li>
+                <li>• Tilfeldig rotasjon sikrer rettferdig eksponering blant sponsede annonser</li>
+                <li>• Analyse sporing viser ytelsesmålinger</li>
+                <li>• Automatisk deaktivering når sponsing utløper</li>
               </ul>
             </div>
           </div>
@@ -255,13 +255,13 @@ export function SponsorshipModal({
         {step === 'payment' && clientSecret && (
           <div className="space-y-6">
             <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-semibold mb-2">Order Summary</h3>
+              <h3 className="font-semibold mb-2">Ordre sammendrag</h3>
               <div className="flex justify-between items-center">
                 <span>{selectedPackage?.name}</span>
                 <span className="font-semibold">{formatNOK(selectedPackage?.price_nok || 0)}</span>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                {selectedPackage?.duration_days} days of sponsored placement
+                {selectedPackage?.duration_days} dager med sponset plassering
               </p>
             </div>
 
@@ -276,12 +276,12 @@ export function SponsorshipModal({
               </Elements>
             ) : (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <h3 className="font-semibold text-red-900 mb-2">Payment System Not Available</h3>
+                <h3 className="font-semibold text-red-900 mb-2">Betalingssystem ikke tilgjengelig</h3>
                 <p className="text-red-800 text-sm">
-                  The payment system is currently not configured. Please contact support to enable sponsored listings.
+                  Betalingssystemet er for øyeblikket ikke konfigurert. Kontakt support for å aktivere sponsede annonser.
                 </p>
                 <Button variant="outline" onClick={handleBack} className="mt-3">
-                  Back to Packages
+                  Tilbake til pakker
                 </Button>
               </div>
             )}

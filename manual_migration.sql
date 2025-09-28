@@ -58,7 +58,26 @@
     ALTER TABLE listings 
     ADD COLUMN IF NOT EXISTS sponsored_until TIMESTAMP WITH TIME ZONE;
 
-    -- 5. Create indexes for performance
+    -- 5. Add missing columns to categories table
+    ALTER TABLE categories 
+    ADD COLUMN IF NOT EXISTS is_popular BOOLEAN DEFAULT false;
+
+    ALTER TABLE categories 
+    ADD COLUMN IF NOT EXISTS is_featured BOOLEAN DEFAULT false;
+
+    -- 6. Create quick response templates table
+    CREATE TABLE IF NOT EXISTS quick_response_templates (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id VARCHAR(255) REFERENCES users(id),
+    category VARCHAR(100) NOT NULL,
+    template_text TEXT NOT NULL,
+    usage_count INTEGER DEFAULT 0,
+    is_system_template BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- 7. Create indexes for performance
     CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
     CREATE INDEX IF NOT EXISTS idx_payments_listing_id ON payments(listing_id);
     CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
@@ -73,12 +92,36 @@
     CREATE INDEX IF NOT EXISTS idx_listings_is_sponsored ON listings(is_sponsored);
     CREATE INDEX IF NOT EXISTS idx_listings_sponsored_until ON listings(sponsored_until);
 
-    -- 6. Insert default sponsorship packages
+    CREATE INDEX IF NOT EXISTS idx_quick_response_templates_user_id ON quick_response_templates(user_id);
+    CREATE INDEX IF NOT EXISTS idx_quick_response_templates_category ON quick_response_templates(category);
+
+    -- 8. Insert default sponsorship packages
     INSERT INTO sponsorship_packages (name, description, price_nok, duration_days, position_priority) 
     VALUES 
     ('Basic Sponsorship', 'Featured placement for 7 days in your category', 199.00, 7, 1),
     ('Premium Sponsorship', 'Top placement for 30 days with enhanced visibility', 699.00, 30, 2),
     ('Extended Sponsorship', 'Maximum visibility for 90 days with priority positioning', 1899.00, 90, 3)
+    ON CONFLICT DO NOTHING;
+
+    -- 9. Add is_admin column to users table
+    ALTER TABLE users 
+    ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false;
+
+    -- 10. Insert default quick response templates
+    INSERT INTO quick_response_templates (category, template_text, is_system_template) 
+    VALUES 
+    ('General', 'Hei! Er denne gjenstanden fortsatt tilgjengelig?', true),
+    ('General', 'Takk for meldingen! Jeg svarer så snart som mulig.', true),
+    ('General', 'Kan vi avtale en tid for å hente/levere?', true),
+    ('General', 'Perfekt! Når passer det best for deg?', true),
+    ('General', 'Beklager, men denne er ikke tilgjengelig lenger.', true),
+    ('Rental', 'Hvor lenge trenger du å leie denne?', true),
+    ('Rental', 'Kan du hente den i dag?', true),
+    ('Rental', 'Hva er din adresse for levering?', true),
+    ('Rental', 'Takk for at du leide hos meg!', true),
+    ('Inquiry', 'Kan du fortelle meg mer om tilstanden?', true),
+    ('Inquiry', 'Har du flere bilder?', true),
+    ('Inquiry', 'Hvor gammel er denne gjenstanden?', true)
     ON CONFLICT DO NOTHING;
 
     -- 7. Create function to update listing sponsorship status

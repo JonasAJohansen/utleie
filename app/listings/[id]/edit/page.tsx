@@ -13,15 +13,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, ImagePlus, X } from 'lucide-react'
+import { Loader2, ImagePlus, X, Trash2, Crown } from 'lucide-react'
 import Image from 'next/image'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { SponsorshipModal } from '@/components/sponsorship/SponsorshipModal'
 
 const listingSchema = z.object({
-  name: z.string().min(1, 'Title is required').max(100, 'Title must be under 100 characters'),
-  description: z.string().min(10, 'Description must be at least 10 characters').max(2000, 'Description must be under 2000 characters'),
-  price: z.number().min(0, 'Price cannot be negative'),
-  location: z.string().min(1, 'Location is required'),
-  categoryId: z.string().min(1, 'Category is required'),
+  name: z.string().min(1, 'Tittel er påkrevd').max(100, 'Tittel må være under 100 tegn'),
+  description: z.string().min(10, 'Beskrivelse må være minst 10 tegn').max(2000, 'Beskrivelse må være under 2000 tegn'),
+  price: z.number().min(0, 'Pris kan ikke være negativ'),
+  location: z.string().min(1, 'Lokasjon er påkrevd'),
+  categoryId: z.string().min(1, 'Kategori er påkrevd'),
 }).refine((data) => {
   // If Gis Bort is selected, price must be 0
   if (data.categoryId === 'Gis Bort') {
@@ -30,7 +32,7 @@ const listingSchema = z.object({
   // For other categories, price must be greater than 0
   return data.price > 0
 }, {
-  message: 'Price must be greater than 0 for regular listings, or 0 for Gis Bort items',
+  message: 'Pris må være større enn 0 for vanlige annonser, eller 0 for Gis Bort gjenstander',
   path: ['price']
 })
 
@@ -75,6 +77,8 @@ export default function EditListingPage({ params }: EditListingPageProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [photos, setPhotos] = useState<ListingPhoto[]>([])
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showSponsorshipModal, setShowSponsorshipModal] = useState(false)
 
   const form = useForm<ListingFormValues>({
     resolver: zodResolver(listingSchema),
@@ -118,8 +122,8 @@ export default function EditListingPage({ params }: EditListingPageProps) {
         // Check if user owns this listing
         if (listingData.userId !== user?.id) {
           toast({
-            title: "Access Denied",
-            description: "You can only edit your own listings.",
+            title: "Tilgang nektet",
+            description: "Du kan kun redigere dine egne annonser.",
             variant: "destructive",
           })
           router.push('/listings')
@@ -150,8 +154,8 @@ export default function EditListingPage({ params }: EditListingPageProps) {
       } catch (error) {
         console.error('Error fetching data:', error)
         toast({
-          title: "Error",
-          description: "Failed to load listing data.",
+          title: "Feil",
+          description: "Kunne ikke laste annonsedata.",
           variant: "destructive",
         })
         router.push('/listings')
@@ -184,16 +188,16 @@ export default function EditListingPage({ params }: EditListingPageProps) {
       }
 
       toast({
-        title: "Success",
-        description: "Your listing has been updated successfully.",
+        title: "Suksess",
+        description: "Annonsen din har blitt oppdatert.",
       })
 
       router.push(`/listings/${listing.id}`)
     } catch (error) {
       console.error('Error updating listing:', error)
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update listing. Please try again.",
+        title: "Feil",
+        description: error instanceof Error ? error.message : "Kunne ikke oppdatere annonse. Prøv igjen.",
         variant: "destructive",
       })
     } finally {
@@ -226,14 +230,14 @@ export default function EditListingPage({ params }: EditListingPageProps) {
       }
       
       toast({
-        title: "Success",
-        description: "Photos uploaded successfully.",
+        title: "Suksess",
+        description: "Bilder lastet opp.",
       })
     } catch (error) {
       console.error('Error uploading photos:', error)
       toast({
-        title: "Error",
-        description: "Failed to upload photos. Please try again.",
+        title: "Feil",
+        description: "Kunne ikke laste opp bilder. Prøv igjen.",
         variant: "destructive",
       })
     } finally {
@@ -250,17 +254,49 @@ export default function EditListingPage({ params }: EditListingPageProps) {
       if (response.ok) {
         setPhotos(prev => prev.filter(photo => photo.id !== photoId))
         toast({
-          title: "Success",
-          description: "Photo deleted successfully.",
+          title: "Suksess",
+          description: "Bilde slettet.",
         })
       }
     } catch (error) {
       console.error('Error deleting photo:', error)
       toast({
-        title: "Error",
-        description: "Failed to delete photo. Please try again.",
+        title: "Feil",
+        description: "Kunne ikke slette bilde. Prøv igjen.",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleDeleteListing = async () => {
+    if (!listing) return
+    
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/listings/${listing.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to delete listing')
+      }
+
+      toast({
+        title: "Suksess",
+        description: "Annonsen din har blitt slettet.",
+      })
+
+      router.push('/listings')
+    } catch (error) {
+      console.error('Error deleting listing:', error)
+      toast({
+        title: "Feil",
+        description: error instanceof Error ? error.message : "Kunne ikke slette annonse. Prøv igjen.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -278,9 +314,9 @@ export default function EditListingPage({ params }: EditListingPageProps) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Listing not found</h1>
+          <h1 className="text-2xl font-bold mb-4">Annonse ikke funnet</h1>
           <Button onClick={() => router.push('/listings')}>
-            Back to Listings
+            Tilbake til annonser
           </Button>
         </div>
       </div>
@@ -291,7 +327,7 @@ export default function EditListingPage({ params }: EditListingPageProps) {
     <div className="max-w-4xl mx-auto px-4 py-8">
       <Card>
         <CardHeader>
-          <CardTitle>Edit Listing</CardTitle>
+          <CardTitle>Rediger annonse</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -301,9 +337,9 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Title</FormLabel>
+                    <FormLabel>Tittel</FormLabel>
                     <FormControl>
-                      <Input placeholder="What are you listing?" {...field} />
+                      <Input placeholder="Hva leier du ut?" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -315,10 +351,10 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Description</FormLabel>
+                    <FormLabel>Beskrivelse</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Describe your item in detail..."
+                        placeholder="Beskriv gjenstanden din i detalj..."
                         className="min-h-[120px]"
                         {...field}
                       />
@@ -336,7 +372,7 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price per day (NOK)</FormLabel>
+                        <FormLabel>Pris per dag (NOK)</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -358,11 +394,11 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                   name="categoryId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Category</FormLabel>
+                      <FormLabel>Kategori</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a category" />
+                            <SelectValue placeholder="Velg en kategori" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -401,9 +437,9 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>Lokasjon</FormLabel>
                     <FormControl>
-                      <Input placeholder="City, Region" {...field} />
+                      <Input placeholder="By, Region" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -411,7 +447,7 @@ export default function EditListingPage({ params }: EditListingPageProps) {
               />
 
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Photos</h3>
+                <h3 className="text-lg font-semibold">Bilder</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {photos.map((photo) => (
                     <div key={photo.id} className="relative group">
@@ -431,7 +467,7 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                       </button>
                       {photo.isMain && (
                         <div className="absolute bottom-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded">
-                          Main
+                          Hovedbilde
                         </div>
                       )}
                     </div>
@@ -439,7 +475,7 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                   
                   <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors">
                     <ImagePlus className="h-8 w-8 text-gray-400" />
-                    <span className="text-sm text-gray-500 mt-2">Add Photo</span>
+                    <span className="text-sm text-gray-500 mt-2">Legg til bilde</span>
                     <input
                       type="file"
                       accept="image/*"
@@ -451,7 +487,7 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                   </label>
                 </div>
                 {uploadingPhoto && (
-                  <p className="text-sm text-blue-600">Uploading photos...</p>
+                  <p className="text-sm text-blue-600">Laster opp bilder...</p>
                 )}
               </div>
 
@@ -460,23 +496,82 @@ export default function EditListingPage({ params }: EditListingPageProps) {
                   type="button"
                   variant="outline"
                   onClick={() => router.push(`/listings/${listing.id}`)}
-                  className="w-1/2"
+                  className="w-1/3"
                 >
-                  Cancel
+                  Avbryt
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-1/2"
+                  className="w-1/3"
                 >
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Update Listing
+                  Oppdater annonse
                 </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowSponsorshipModal(true)}
+                  disabled={isSubmitting || isDeleting}
+                  className="w-1/4"
+                >
+                  <Crown className="mr-2 h-4 w-4" />
+                  Fremhev annonse
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      disabled={isSubmitting || isDeleting}
+                      className="w-1/4"
+                    >
+                      {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Slett annonse
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Er du sikker?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Denne handlingen kan ikke angres. Dette vil permanent slette annonsen din og alle tilhørende data.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Avbryt</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteListing}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Slett annonse
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </form>
           </Form>
         </CardContent>
       </Card>
+
+      {/* Sponsorship Modal */}
+      {listing && (
+        <SponsorshipModal
+          isOpen={showSponsorshipModal}
+          onClose={() => setShowSponsorshipModal(false)}
+          listingId={listing.id}
+          listingTitle={listing.name}
+          userName={user?.username || undefined}
+          onSuccess={() => {
+            setShowSponsorshipModal(false)
+            toast({
+              title: "Suksess",
+              description: "Annonsen din er nå sponset!",
+            })
+          }}
+        />
+      )}
     </div>
   )
 } 

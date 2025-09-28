@@ -212,7 +212,7 @@ export function EnhancedLocationSelector({
 
       {/* Dropdown */}
       {showDropdown && (cities.length > 0 || isLoading) && (
-        <Card className="absolute top-full left-0 right-0 mt-1 z-50 max-h-64 overflow-y-auto">
+        <Card className="absolute top-full left-0 right-0 mt-1 z-[99999] max-h-64 overflow-y-auto shadow-lg border">
           <CardContent className="p-0">
             {isLoading ? (
               <div className="flex items-center justify-center py-4">
